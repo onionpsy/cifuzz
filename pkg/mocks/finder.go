@@ -87,7 +87,7 @@ func (m *RunfilesFinderMock) LogoPath() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *RunfilesFinderMock) GradleClasspathScriptPath() (string, error) {
+func (m *RunfilesFinderMock) GradleInitScriptPath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
 }

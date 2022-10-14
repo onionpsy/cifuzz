@@ -89,8 +89,8 @@ func (f RunfilesFinderImpl) LogoPath() (string, error) {
 	return f.findFollowSymlinks("share/cifuzz/share/logo.png")
 }
 
-func (f RunfilesFinderImpl) GradleClasspathScriptPath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/share/classpath.gradle")
+func (f RunfilesFinderImpl) GradleInitScriptPath() (string, error) {
+	return f.findFollowSymlinks("share/cifuzz/share/init.gradle")
 }
 
 // JavaHomePath returns the absolute path to the base directory of the

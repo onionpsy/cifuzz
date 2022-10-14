@@ -123,7 +123,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 }
 
 func (b *Builder) getDependencies() ([]string, error) {
-	classpathScript, err := runfiles.Finder.GradleClasspathScriptPath()
+	initScript, err := runfiles.Finder.GradleInitScriptPath()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -135,7 +135,7 @@ func (b *Builder) getDependencies() ([]string, error) {
 
 	cmd := exec.Command(gradleCmd,
 		"-I",
-		classpathScript,
+		initScript,
 		"printClasspath",
 	)
 
