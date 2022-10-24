@@ -2,12 +2,14 @@ package shared
 
 import (
 	"bufio"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -104,7 +106,8 @@ func GetFindings(t *testing.T, cifuzz string, dir string) []*finding.Finding {
 }
 
 // InstallCIFuzzInTemp creates an installation builder and
-// installs cifuzz in a temp folder and returns its path.
+// installs cifuzz in a temp folder and returns the path
+// to the executable.
 func InstallCIFuzzInTemp(t *testing.T) string {
 	t.Helper()
 
@@ -135,20 +138,26 @@ func InstallCIFuzzInTemp(t *testing.T) string {
 		err = builder.BuildCIFuzzAndDeps()
 		require.NoError(t, err)
 
-		// Install cifuzz
-		tempDir, err := os.MkdirTemp("", "cifuzz-")
+		// Create directory for installation files
+		installDir, err = os.MkdirTemp("", "cifuzz-")
 		require.NoError(t, err)
-		installDir = filepath.Join(tempDir, "cifuzz")
+
+		// Install cifuzz
 		installer := filepath.Join("cmd", "installer", "installer.go")
-		installCmd := exec.Command("go", "run", "-tags", "installer", installer, "-i", installDir)
+		installCmd := exec.Command("go", "run", "-tags", "installer", installer, "--ignore-installation-check")
 		installCmd.Stderr = os.Stderr
 		installCmd.Dir = projectDir
+		installCmd.Env = TestEnv(t, os.Environ())
 		t.Logf("Command: %s", installCmd.String())
 		err = installCmd.Run()
 		require.NoError(t, err)
 	})
 
-	return installDir
+	if runtime.GOOS == "windows" {
+		return filepath.Join(installDir, "cifuzz", "bin", "cifuzz")
+	}
+
+	return filepath.Join(installDir, ".local", "bin", "cifuzz")
 }
 
 func ModifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
@@ -183,4 +192,15 @@ func ModifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	require.NoError(t, err)
 	_, err = f.WriteString(strings.Join(lines, "\n"))
 	require.NoError(t, err)
+}
+
+func TestEnv(t *testing.T, env []string) []string {
+	resultEnv, err := envutil.Setenv(env, "XDG_DATA_HOME", installDir)
+	require.NoError(t, err)
+	resultEnv, err = envutil.Setenv(resultEnv, "HOME", installDir)
+	require.NoError(t, err)
+	resultEnv, err = envutil.Setenv(resultEnv, "APPDATA", installDir)
+	require.NoError(t, err)
+
+	return resultEnv
 }

@@ -58,7 +58,6 @@ deps/dev: deps
 
 .PHONY: install
 install:
-	-rm -rI ~/cifuzz
 	go run tools/builder/builder.go --version $(version)
 	go run -tags installer cmd/installer/installer.go
 	rm -r cmd/installer/build

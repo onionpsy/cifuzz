@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
-	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/envutil"
@@ -31,11 +30,9 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 		t.Skip("Building with bazel is currently broken on our macOS GitHub Action runner")
 	}
 
-	testutil.RegisterTestDepOnCIFuzz()
-
 	// Install cifuzz
-	installDir := shared.InstallCIFuzzInTemp(t)
-	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
+	testutil.RegisterTestDepOnCIFuzz()
+	cifuzz := shared.InstallCIFuzzInTemp(t)
 
 	// Copy testdata
 	dir := shared.CopyTestdataDir(t, "bazel")

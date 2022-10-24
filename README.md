@@ -17,32 +17,34 @@
 
   <br />
 
-  <a href="https://docs.code-intelligence.com/cifuzz-cli" target="_blank">Docs</a>
-  |
-  <a href="https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Glossary.md">Glossary</a>
-  |
-  <a href="https://github.com/CodeIntelligenceTesting/cifuzz/tree/main/examples">Examples</a>
-  |
-  <a href="https://www.code-intelligence.com/" target="_blank">Website</a>
-  |
-  <a href="https://www.code-intelligence.com/blog" target="_blank">Blog</a>
-  |
-  <a href="https://twitter.com/CI_Fuzz" target="_blank">Twitter</a>
-  |
-  <a href="https://www.youtube.com/channel/UCjXN5ac3tgXgtuCoSnQaEmA" target="_blank">YouTube</a>
+<a href="https://docs.code-intelligence.com/cifuzz-cli" target="_blank">Docs</a>
+|
+<a href="https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Glossary.md">Glossary</a>
+|
+<a href="https://github.com/CodeIntelligenceTesting/cifuzz/tree/main/examples">Examples</a>
+|
+<a href="https://www.code-intelligence.com/" target="_blank">Website</a>
+|
+<a href="https://www.code-intelligence.com/blog" target="_blank">Blog</a>
+|
+<a href="https://twitter.com/CI_Fuzz" target="_blank">Twitter</a>
+|
+<a href="https://www.youtube.com/channel/UCjXN5ac3tgXgtuCoSnQaEmA" target="_blank">YouTube</a>
 </div>
 
 ---
 > **_IMPORTANT:_** This project is under active development.
-Be aware that the behavior of the commands or the configuration
-can change.
+> Be aware that the behavior of the commands or the configuration
+> can change.
 
 ## What is cifuzz
+
 **cifuzz** is a CLI tool that helps you to integrate and run fuzzing
 based tests into your project.
 
 ### Features
-* Easily set up, create and run fuzz tests 
+
+* Easily set up, create and run fuzz tests
 * Generate coverage reports that [can be integrated in your
   IDE](docs/Coverage-ide-integrations.md)
 * Supports multiple programming languages and build systems
@@ -57,15 +59,16 @@ based tests into your project.
 ![Maven](/docs/assets/tools/maven.png)
 
 ## Getting started
+
 If you are new to the world of fuzzing, we recommend you to take a
-look at our [Glossary](docs/Glossary.md) and our 
+look at our [Glossary](docs/Glossary.md) and our
 [example projects](examples/).
 
 **Read the [getting started guide](docs/Getting-Started.md) if you just want to
 learn how to fuzz your applications with cifuzz.**
 
-
 ## Installation
+
 You can get the
 [latest release from GitHub](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest)
 or by running our install script:
@@ -74,7 +77,8 @@ or by running our install script:
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
 ```
 
-If you are using Windows you can download the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows.exe) 
+If you are using Windows you can download
+the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows.exe)
 and execute it.
 
 By default, cifuzz gets installed in your home directory under `cifuzz`.
@@ -82,8 +86,8 @@ You can customize the installation directory with `./cifuzz_installer -i /target
 
 Do not forget to add the installation's `bin` directory to your `PATH`.
 
-
 ### Prerequisites
+
 Depending on your language / build system of choice **cifuzz** has
 different prerequisites:
 
@@ -95,18 +99,21 @@ different prerequisites:
 
 **Ubuntu / Debian**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 sudo apt install cmake clang llvm
 ```
 
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 sudo pacman -S cmake clang llvm
 ```
 
 **macOS**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 brew install cmake llvm
 ```
@@ -115,9 +122,11 @@ brew install cmake llvm
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 <!-- clang is included in the llvm package --->
 At least Visual Studio 2022 version 17 is required.
+
 ```bash
 choco install cmake llvm
 ```
+
 </details>
 
 <details>
@@ -129,27 +138,32 @@ choco install cmake llvm
 
 **Ubuntu / Debian**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 sudo apt install openjdk maven
 ```
 
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 sudo pacman -S jdk-openjdk maven
 ```
 
 **macOS**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 brew install openjdk maven
 ```
 
 **Windows**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 choco install microsoft-openjdk maven
 ```
+
 </details>
 
 <details>
@@ -161,29 +175,83 @@ choco install microsoft-openjdk maven
 
 **Ubuntu / Debian**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 sudo apt install openjdk gradle
 ```
 
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 sudo pacman -S jdk-openjdk gradle
 ```
 
 **macOS**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 brew install openjdk gradle
 ```
 
 **Windows**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
 ```bash
 choco install microsoft-openjdk gradle
 ```
+
 </details>
 
+## Uninstall
+
+<details>
+<summary>Version <= 0.5.0</summary>
+
+If you installed cifuzz into the default directory as **root**:
+
+```bash
+sudo rm -rf ~/cifuzz /usr/local/share/cifuzz
+```
+
+If you installed cifuzz as **non-root**:
+```bash
+rm -rf ~/cifuzz ~/.cmake/packages/cifuzz
+```
+
+If you installed into a custom installation directory you have to remove that one instead.
+
+</details>
+<details>
+<summary>Version > 0.5.0</summary>
+
+From this version on the installation directory is fixed.
+
+If you installed cifuzz as **root**:
+
+```bash
+sudo rm -rf /opt/code-intelligence/cifuzz /usr/local/bin/cifuzz /usr/local/share/cifuzz
+```
+
+If you installed cifuzz as **non-root**:
+
+```bash
+rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/cifuzz" ~/.local/bin/cifuzz ~/.cmake/packages/cifuzz
+```
+
+If you installed cifuzz on **Windows**:
+
+```bash
+rd /s %APPDATA%/cifuzz
+```
+
+To delete the registry entry on **Windows**:
+```bash
+reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
+reg delete "HKCU\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
+```
+
+</details>
 
 ## Contributing
 

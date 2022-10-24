@@ -3,6 +3,7 @@
 package main
 
 import (
+	"code-intelligence.com/cifuzz/util/fileutil"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -19,7 +20,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/installer"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 //go:embed build
@@ -29,9 +29,9 @@ var notes []string
 
 func main() {
 	flags := pflag.NewFlagSet("cifuzz installer", pflag.ExitOnError)
-	installDir := flags.StringP("install-dir", "i", "~/cifuzz", "The directory to install cifuzz in")
 	helpRequested := flags.BoolP("help", "h", false, "")
 	flags.Bool("verbose", false, "Print verbose output")
+	ignoreCheck := flags.Bool("ignore-installation-check", false, "Doesn't check if a previous installation already exists")
 	cmdutils.ViperMustBindPFlag("verbose", flags.Lookup("verbose"))
 
 	err := flags.Parse(os.Args)
@@ -46,13 +46,26 @@ func main() {
 		os.Exit(0)
 	}
 
-	err = ExtractEmbeddedFiles(*installDir, &buildFiles)
+	if installDir, exists := oldInstallationExists(); exists && !*ignoreCheck {
+		log.Warnf(
+			`Old cifuzz installation exists in %s.
+To prevent version issues please remove the files.
+See https://github.com/CodeIntelligenceTesting/cifuzz#uninstall`,
+			filepath.Join(installDir, ".."))
+		os.Exit(0)
+	}
+
+	err = ExtractEmbeddedFiles(&buildFiles)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 
-	binDir := filepath.Join(*installDir, "bin")
+	binDir, err := installer.GetBinDir()
+	if err != nil {
+		log.Error(err, err.Error())
+		os.Exit(1)
+	}
 
 	log.Success("Installation successful")
 
@@ -90,18 +103,41 @@ If you haven't already done so.
 }
 
 // ExtractEmbeddedFiles extracts the embedded files that were built by
-// the cifuzz builder into targetDir and registers the CMake package
-func ExtractEmbeddedFiles(targetDir string, files *embed.FS) error {
+// the cifuzz builder into the installation directory and registers the
+// CMake package.
+func ExtractEmbeddedFiles(files *embed.FS) error {
 	// List of files which have to be made executable
+	cifuzzExecutable := filepath.Join("bin", "cifuzz")
 	executableFiles := []string{
-		"bin/cifuzz",
-		"bin/minijail0",
-		"lib/process_wrapper",
+		cifuzzExecutable,
+		filepath.Join("bin", "minijail0"),
+		filepath.Join("lib", "process_wrapper"),
 	}
 
-	targetDir, err := validateTargetDir(targetDir)
+	installDir, err := installer.GetInstallDir()
 	if err != nil {
 		return err
+	}
+	binDir, err := installer.GetBinDir()
+	if err != nil {
+		return err
+	}
+
+	if exists, _ := fileutil.Exists(installDir); exists {
+		log.Infof("Previous installation in %s & %s will be overwritten.", installDir, binDir)
+		if err = os.RemoveAll(installDir); err != nil {
+			return err
+		}
+	}
+	if err = os.RemoveAll(filepath.Join(binDir, "cifuzz")); err != nil {
+		return err
+	}
+
+	if runtime.GOOS == "windows" {
+		log.Printf("Installing cifuzz to %s", installDir)
+	} else {
+		log.Printf("Installing data files to %s", installDir)
+		log.Printf("Installing executable to %s", filepath.Join(binDir, "cifuzz"))
 	}
 
 	buildFS, err := fs.Sub(files, "build")
@@ -116,7 +152,14 @@ func ExtractEmbeddedFiles(targetDir string, files *embed.FS) error {
 		}
 
 		if !d.IsDir() {
-			targetDir := filepath.Dir(filepath.Join(targetDir, path))
+			var targetDir string
+			// cifuzz executable should be in extra bin directory
+			if path == cifuzzExecutable {
+				targetDir = binDir
+			} else {
+				targetDir = filepath.Dir(filepath.Join(installDir, path))
+			}
+
 			err = os.MkdirAll(targetDir, 0755)
 			if err != nil {
 				return errors.WithStack(err)
@@ -152,13 +195,13 @@ func ExtractEmbeddedFiles(targetDir string, files *embed.FS) error {
 
 	// Install the autocompletion script for the current shell (if the
 	// shell is supported)
-	cifuzzPath := filepath.Join(targetDir, "bin", "cifuzz")
+	cifuzzPath := filepath.Join(binDir, "cifuzz")
 	shell := filepath.Base(os.Getenv("SHELL"))
 	switch shell {
 	case "bash":
-		err = installBashCompletionScript(targetDir, cifuzzPath)
+		err = installBashCompletionScript(installDir, cifuzzPath)
 	case "zsh":
-		err = installZshCompletionScript(targetDir, cifuzzPath)
+		err = installZshCompletionScript(installDir, cifuzzPath)
 	case "fish":
 		err = installFishCompletionScript(cifuzzPath)
 	default:
@@ -183,7 +226,7 @@ func ExtractEmbeddedFiles(targetDir string, files *embed.FS) error {
 			// See:
 			// https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure
 			// https://gitlab.kitware.com/cmake/cmake/-/blob/5ed9232d781ccfa3a9fae709e12999c6649aca2f/Modules/Platform/UnixPaths.cmake#L30)
-			cmakeSrc := filepath.Join(targetDir, "share", "cifuzz")
+			cmakeSrc := filepath.Join(installDir, "share", "cifuzz")
 			cmakeDest := "/usr/local/share/cifuzz"
 			err = copy.Copy(cmakeSrc, cmakeDest)
 			if err != nil {
@@ -193,7 +236,7 @@ func ExtractEmbeddedFiles(targetDir string, files *embed.FS) error {
 			// The CMake package registry entry has to point directly to the directory
 			// containing the CIFuzzConfig.cmake file rather than any valid prefix for
 			// the config mode search procedure.
-			dirForRegistry := filepath.Join(targetDir, "share", "cifuzz", "cmake")
+			dirForRegistry := filepath.Join(installDir, "share", "cifuzz", "cmake")
 			err = installer.RegisterCMakePackage(dirForRegistry)
 			if err != nil {
 				return err
@@ -368,36 +411,28 @@ func installFishCompletionScript(cifuzzPath string) error {
 	return errors.WithStack(err)
 }
 
-func validateTargetDir(installDir string) (string, error) {
-	var err error
-
-	if strings.HasPrefix(installDir, "~") {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-		installDir = home + strings.TrimPrefix(installDir, "~")
+func oldInstallationExists() (string, bool) {
+	path, err := exec.LookPath("cifuzz")
+	if err != nil {
+		// Ignore error since it is no problem if it can't be found
+		return "", false
 	}
 
-	if installDir == "" {
-		installDir, err = os.MkdirTemp("", "cifuzz-install-dir-")
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-	} else {
-		installDir, err = filepath.Abs(installDir)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-
-		exists, err := fileutil.Exists(installDir)
-		if err != nil {
-			return "", err
-		}
-		if exists {
-			return "", errors.Errorf("Install directory '%s' already exists. Please remove it to continue.", installDir)
-		}
+	binDir, err := installer.GetBinDir()
+	if err != nil {
+		log.Error(err)
+		return "", false
 	}
 
-	return installDir, nil
+	// We do not want to alert the user if the old version is in a directory
+	// we expect (and overwrite anyway).
+	//
+	// It doesn't matter if there are other cifuzz installation paths in the $PATH
+	// because exec.LookPath always returns the first one that it finds and ergo the
+	// one that would be used when calling cifuzz
+	if filepath.Dir(path) == binDir {
+		return "", false
+	}
+
+	return path, true
 }

@@ -109,7 +109,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		args...,
 	)
 	cmd.Dir = opts.WorkDir
-	cmd.Env = opts.Env
+	cmd.Env = TestEnv(t, opts.Env)
 	stdoutPipe, err := cmd.StdoutTeePipe(os.Stdout)
 	require.NoError(t, err)
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)
