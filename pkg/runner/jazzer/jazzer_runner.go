@@ -76,7 +76,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	args := []string{javaBin}
 
 	// class paths
-	args = append(args, "-cp", strings.Join(r.ClassPaths, ":"))
+	args = append(args, "-cp", strings.Join(r.ClassPaths, string(os.PathListSeparator)))
 
 	// Jazzer main class
 	args = append(args, "com.code_intelligence.jazzer.Jazzer")
