@@ -172,3 +172,9 @@ site/update:
 	git -C site add -A
 	git -C site commit -m "update docs" || true
 	git -C site push
+
+.PHONY: installer-via-docker
+installer-via-docker:
+	@echo "Building a cifuzz Linux installer"
+	mkdir -p build
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f docker/cifuzz-builder/Dockerfile . --target bin --output build/bin
