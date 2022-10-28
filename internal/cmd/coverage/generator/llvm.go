@@ -61,12 +61,12 @@ func (cov *LLVMCoverageGenerator) Generate() (string, error) {
 	var err error
 	cov.tmpDir, err = os.MkdirTemp("", "llvm-coverage-")
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	cov.outputDir = filepath.Join(cov.tmpDir, "output")
 	err = os.Mkdir(cov.outputDir, 0o755)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	defer fileutil.Cleanup(cov.tmpDir)
 
@@ -94,7 +94,6 @@ func (cov *LLVMCoverageGenerator) Generate() (string, error) {
 func (cov *LLVMCoverageGenerator) build() error {
 	switch cov.BuildSystem {
 	case config.BuildSystemCMake:
-
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: cov.ProjectDir,
 			Engine:     "libfuzzer",
