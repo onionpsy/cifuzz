@@ -2,6 +2,7 @@ package completion
 
 import (
 	"bufio"
+	"code-intelligence.com/cifuzz/util/fileutil"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -64,40 +65,37 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 }
 
 func validBazelFuzzTests(toComplete string) ([]string, cobra.ShellCompDirective) {
+	// Get pwd and project workspace paths
 	workDir, err := os.Getwd()
 	if err != nil {
 		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
+	workSpace, err := getWorkspacePath()
+	if err != nil {
+		log.Error(err)
+		return nil, cobra.ShellCompDirectiveError
+	}
 
+	// Find all build.BAZEL/BUILD files in the project
 	var buildFiles []string
-	err = filepath.WalkDir(workDir, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(workSpace, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
-		}
-
-		relPath, err := filepath.Rel(workDir, path)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		// Don't skip the current working directory
-		if relPath == "." {
-			return nil
 		}
 
 		if d.IsDir() {
 			// Skip walking the directory if it doesn't start with the
 			// toComplete string
-			if !strings.HasPrefix(relPath, toComplete) {
+			if !strings.HasPrefix(path, strings.TrimPrefix(toComplete, "//")) {
 				return fs.SkipDir
 			}
 			return nil
 		}
 
-		baseName := filepath.Base(relPath)
+		baseName := filepath.Base(path)
 		if baseName == "BUILD.bazel" || baseName == "BUILD" {
-			buildFiles = append(buildFiles, relPath)
+			buildFiles = append(buildFiles, path)
 		}
 		return nil
 	})
@@ -107,47 +105,75 @@ func validBazelFuzzTests(toComplete string) ([]string, cobra.ShellCompDirective)
 	}
 
 	var res []string
+
+	// Check if we are searching for a relative or absolute label
+	if !strings.HasPrefix(toComplete, "//") {
+		for _, buildFile := range buildFiles {
+			targetNames, err := findTargetsInBuildFile(buildFile)
+			if err != nil {
+				// Command completion is best-effort: Do not fail on errors
+				log.Error(err)
+				continue
+			}
+
+			for _, name := range targetNames {
+				// Get path relative to working dir to create the package name in the label
+				relPath, err := filepath.Rel(workDir, buildFile)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+
+				// Ignore build files that are above the current working dir
+				if !strings.HasPrefix(relPath, "..") {
+					// Construct the relative target label (that's the term used
+					// by bazel for the target identifier, see
+					// https://bazel.build/concepts/labels)
+					var relLabel string
+					relPackageName := filepath.Dir(relPath)
+					if relPackageName == "." {
+						relLabel = name
+					} else {
+						relLabel = relPackageName + ":" + name
+					}
+					res = append(res, relLabel)
+				}
+			}
+		}
+
+		return res, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	err = os.Chdir(workSpace)
+	if err != nil {
+		log.Error(err)
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	// Check all build files in the workspace
 	for _, buildFile := range buildFiles {
-		file, err := os.Open(buildFile)
+		targetNames, err := findTargetsInBuildFile(buildFile)
 		if err != nil {
-			// Command completion is best-effort: Do not fail on errors
 			log.Error(err)
 			continue
 		}
 
-		// Read build file and remove comments and newlines, which is
-		// the same the bazel bash completion script does, see:
-		// https://github.com/bazelbuild/bazel/blob/021c2a053780d697899cbcbd76a032c72cd5cbbb/scripts/bazel-complete-template.bash#L166-L167
-		var text string
-		sc := bufio.NewScanner(file)
-		for sc.Scan() {
-			line := strings.TrimSpace(sc.Text())
-			if !strings.HasPrefix(line, "#") {
-				text += " " + line
-			}
-		}
-
-		if !strings.Contains(text, "cc_fuzz_test") {
-			continue
-		}
-
-		targetNames, found := regexutil.FindNamedGroupsMatch(bazelFuzzTestTargetPattern, text)
-		if !found {
-			continue
-		}
-
 		for _, name := range targetNames {
-			// Construct the relative target label (that's the term used
-			// by bazel for the target identifier, see
-			// https://bazel.build/concepts/labels)
-			var relLabel string
-			relPackageName := filepath.Dir(buildFile)
-			if relPackageName == "." {
-				relLabel = name
-			} else {
-				relLabel = relPackageName + ":" + name
+			relPath, err := filepath.Rel(workSpace, buildFile)
+			if err != nil {
+				log.Error(err)
+				continue
 			}
-			res = append(res, relLabel)
+
+			// Construct the absolute target label
+			var absLabel string
+			absPackageName := filepath.Dir(relPath)
+			if absPackageName == "." {
+				absLabel = "//" + name
+			} else {
+				absLabel = "//" + absPackageName + ":" + name
+			}
+			res = append(res, absLabel)
 		}
 	}
 
@@ -217,4 +243,68 @@ func validJavaFuzzTests(toComplete string, projectDir string) ([]string, cobra.S
 	}
 
 	return res, cobra.ShellCompDirectiveNoFileComp
+}
+
+// findTargetsInBuildFile returns all "cc_fuzz_test" targets in a given build file.
+func findTargetsInBuildFile(filePath string) (map[string]string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		// Command completion is best-effort: Do not fail on errors
+		return nil, err
+	}
+
+	// Read build file and remove comments and newlines, which is
+	// the same the bazel bash completion script does, see:
+	// https://github.com/bazelbuild/bazel/blob/021c2a053780d697899cbcbd76a032c72cd5cbbb/scripts/bazel-complete-template.bash#L166-L167
+	var text string
+	sc := bufio.NewScanner(file)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if !strings.HasPrefix(line, "#") {
+			text += " " + line
+		}
+	}
+
+	if !strings.Contains(text, "cc_fuzz_test") {
+		return nil, nil
+	}
+
+	targetNames, found := regexutil.FindNamedGroupsMatch(bazelFuzzTestTargetPattern, text)
+	if !found {
+		return nil, nil
+	}
+
+	return targetNames, nil
+}
+
+// getWorkSpacePath returns the directory that includes the WORKSPACE file
+// which should be the root of a bazel project.
+func getWorkspacePath() (string, error) {
+	workDir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	exists, err := fileutil.Exists(filepath.Join(workDir, "WORKSPACE"))
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		// current working directory is already the working space root path
+		return workDir, nil
+	}
+
+	for !exists {
+		parentDir := filepath.Join(workDir, "..")
+		exists, err = fileutil.Exists(filepath.Join(parentDir, "WORKSPACE"))
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return parentDir, nil
+		}
+		workDir = parentDir
+	}
+
+	return "", errors.New("not able to determine the workspace")
 }
