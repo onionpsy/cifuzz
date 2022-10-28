@@ -3,13 +3,16 @@ package coverage
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
+	"code-intelligence.com/cifuzz/internal/build/bazel"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/generator"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/completion"
@@ -17,6 +20,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
+	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -152,10 +156,31 @@ func (c *coverageCmd) run() error {
 	log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
 
 	var reportPath string
-	switch c.opts.BuildSystem {
-	case config.BuildSystemCMake,
-		config.BuildSystemOther:
 
+	switch c.opts.BuildSystem {
+	case config.BuildSystemBazel:
+		tmpDir, err := os.MkdirTemp("", "bazel-coverage-")
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer fileutil.Cleanup(tmpDir)
+		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
+			ProjectDir: c.opts.ProjectDir,
+			Engine:     "libfuzzer",
+			NumJobs:    c.opts.NumBuildJobs,
+			Stdout:     c.OutOrStdout(),
+			Stderr:     c.ErrOrStderr(),
+			TempDir:    tmpDir,
+			Verbose:    viper.GetBool("verbose"),
+		})
+		if err != nil {
+			return err
+		}
+		reportPath, err = builder.BuildAndCreateCoverageReport(c.opts.fuzzTest, c.opts.OutputPath)
+		if err != nil {
+			return err
+		}
+	case config.BuildSystemCMake, config.BuildSystemOther:
 		gen := &generator.LLVMCoverageGenerator{
 			OutputFormat:   c.opts.OutputFormat,
 			OutputPath:     c.opts.OutputPath,
@@ -170,11 +195,11 @@ func (c *coverageCmd) run() error {
 			StdErr:         c.OutOrStderr(),
 		}
 		reportPath, err = gen.Generate()
+		if err != nil {
+			return err
+		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
-	}
-	if err != nil {
-		return err
 	}
 
 	switch c.opts.OutputFormat {
@@ -192,12 +217,23 @@ func (c *coverageCmd) run() error {
 func (c *coverageCmd) handleHTMLReport(reportPath string) error {
 	// Open the browser if no output path was specified
 	if c.opts.OutputPath == "" {
+		var htmlFile string
+		// For bazel we use `genhtml` to generate the HTML report, which
+		// produces a directory containing the HTML files, for all other
+		// build systems we use `llvm-cov show` which produces a single
+		// HTML file.
+		if c.opts.BuildSystem == config.BuildSystemBazel {
+			htmlFile = filepath.Join(reportPath, "index.html")
+		} else {
+			htmlFile = reportPath
+		}
+
 		// try to open the report in the browser ...
-		err := c.openReport(reportPath)
+		err := c.openReport(htmlFile)
 		if err != nil {
 			//... if this fails print the file URI
 			log.Debug(err)
-			err = c.printReportURI(reportPath)
+			err = c.printReportURI(htmlFile)
 			if err != nil {
 				return err
 			}
@@ -231,11 +267,25 @@ func (c *coverageCmd) printReportURI(reportPath string) error {
 }
 
 func (c *coverageCmd) checkDependencies() (bool, error) {
-	deps := []dependencies.Key{
-		dependencies.CLANG, dependencies.LLVM_SYMBOLIZER, dependencies.LLVM_COV, dependencies.LLVM_PROFDATA,
-	}
-	if c.opts.BuildSystem == config.BuildSystemCMake {
-		deps = append(deps, dependencies.CMAKE)
+	var deps []dependencies.Key
+	switch c.opts.BuildSystem {
+	case config.BuildSystemBazel:
+		// TODO: genhtml
+	case config.BuildSystemCMake:
+		deps = []dependencies.Key{
+			dependencies.CLANG,
+			dependencies.CMAKE,
+			dependencies.LLVM_SYMBOLIZER,
+			dependencies.LLVM_COV,
+			dependencies.LLVM_PROFDATA,
+		}
+	case config.BuildSystemOther:
+		deps = []dependencies.Key{
+			dependencies.CLANG,
+			dependencies.LLVM_SYMBOLIZER,
+			dependencies.LLVM_COV,
+			dependencies.LLVM_PROFDATA,
+		}
 	}
 	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
 }
