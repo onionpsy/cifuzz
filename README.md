@@ -127,6 +127,33 @@ choco install cmake llvm
 </details>
 
 <details>
+ <summary>C/C++ (with Bazel)</summary>
+
+* [Bazel >= 5.3.1](https://bazel.build/install)
+* [LLVM >= 11](https://clang.llvm.org/get_started.html)
+* [lcov](https://github.com/linux-test-project/lcov)
+
+**Ubuntu / Debian**
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+```bash
+sudo apt install clang llvm lcov
+```
+
+**Arch**
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+```bash
+sudo pacman -S clang llvm lcov
+```
+
+**macOS**
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+```bash
+brew install llvm lcov
+```
+
+</details>
+
+<details>
  <summary>Java with Maven</summary>
 
 * Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
