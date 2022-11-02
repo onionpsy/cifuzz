@@ -17,6 +17,8 @@ const (
 	LLVM_SYMBOLIZER Key = "llvm-symbolizer"
 	LLVM_PROFDATA   Key = "llvm-profdata"
 
+	GENHTML Key = "genhtml"
+
 	JAVA   Key = "java"
 	MAVEN  Key = "mvn"
 	GRADLE Key = "gradle"

@@ -1,10 +1,16 @@
 package mocks
 
-import "github.com/stretchr/testify/mock"
+import (
+	"github.com/stretchr/testify/mock"
+
+	"code-intelligence.com/cifuzz/pkg/runfiles"
+)
 
 type RunfilesFinderMock struct {
 	mock.Mock
 }
+
+var _ runfiles.RunfilesFinder = (*RunfilesFinderMock)(nil)
 
 func (m *RunfilesFinderMock) CIFuzzIncludePath() (string, error) {
 	args := m.Called()
@@ -37,6 +43,11 @@ func (m *RunfilesFinderMock) LLVMProfDataPath() (string, error) {
 }
 
 func (m *RunfilesFinderMock) LLVMSymbolizerPath() (string, error) {
+	args := m.Called()
+	return args.String(0), args.Error(1)
+}
+
+func (m *RunfilesFinderMock) GenHTMLPath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
 }

@@ -57,11 +57,11 @@ func ResetDefaultsForTestsOnly() {
 func Define(keys []Key) (Dependencies, error) {
 	deps := Dependencies{}
 	for _, key := range keys {
-		if dep, found := all[key]; found {
+		if dep, found := All[key]; found {
 			// make a copy of the dependency to be able to modify it
 			// without side effects, for example in tests
 			newDep := dep
-			deps[key] = &newDep
+			deps[key] = newDep
 			continue
 		}
 		return nil, errors.Errorf("Unknown dependency %s", key)
@@ -69,8 +69,8 @@ func Define(keys []Key) (Dependencies, error) {
 	return deps, nil
 }
 
-// List of all known dependencies
-var all = map[Key]Dependency{
+// List of All known dependencies
+var All = Dependencies{
 	CLANG: {
 		Key:        CLANG,
 		MinVersion: *semver.MustParse("11.0.0"),
@@ -141,6 +141,21 @@ var all = map[Key]Dependency{
 		},
 		Installed: func(dep *Dependency) bool {
 			return dep.checkFinder(dep.finder.LLVMSymbolizerPath)
+		},
+	},
+	GENHTML: {
+		Key:        GENHTML,
+		MinVersion: *semver.MustParse("0.0.0"),
+		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+			return semver.NewVersion("0.0.0")
+		},
+		Installed: func(dep *Dependency) bool {
+			path, err := dep.finder.GenHTMLPath()
+			if err != nil {
+				return false
+			}
+			log.Debugf("Found genhtml in PATH: %s", path)
+			return true
 		},
 	},
 	JAVA: {

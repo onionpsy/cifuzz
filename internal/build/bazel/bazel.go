@@ -328,11 +328,15 @@ func (b *Builder) BuildAndCreateCoverageReport(fuzzTest string, outputPath strin
 	}
 
 	// Create an HTML report via genhtml
-	cmd = exec.Command("genhtml", "--output", outputPath, lcovReport)
+	genHTML, err := runfiles.Finder.GenHTMLPath()
+	if err != nil {
+		return "", err
+	}
+	cmd = exec.Command(genHTML, "--output", outputPath, lcovReport)
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	return outputPath, nil

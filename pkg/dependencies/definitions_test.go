@@ -39,13 +39,13 @@ func TestResetDefault(t *testing.T) {
 }
 func TestResetDefault_Panic(t *testing.T) {
 	// remove clang from dep list
-	clangDep := all[CLANG]
-	delete(all, CLANG)
+	clangDep := All[CLANG]
+	delete(All, CLANG)
 
 	assert.Panics(t, ResetDefaultsForTestsOnly)
 
 	// restore old dependency
-	all[CLANG] = clangDep
+	All[CLANG] = clangDep
 }
 
 func TestDefine(t *testing.T) {
@@ -57,12 +57,12 @@ func TestDefine(t *testing.T) {
 
 func TestDefine_Error(t *testing.T) {
 	// remove clang from dep list
-	clangDep := all[CLANG]
-	delete(all, CLANG)
+	clangDep := All[CLANG]
+	delete(All, CLANG)
 
 	_, err := Define([]Key{CLANG})
 	require.Error(t, err)
 
 	// restore old dependency
-	all[CLANG] = clangDep
+	All[CLANG] = clangDep
 }

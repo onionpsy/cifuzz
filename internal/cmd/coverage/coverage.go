@@ -270,7 +270,9 @@ func (c *coverageCmd) checkDependencies() (bool, error) {
 	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
-		// TODO: genhtml
+		deps = []dependencies.Key{
+			dependencies.GENHTML,
+		}
 	case config.BuildSystemCMake:
 		deps = []dependencies.Key{
 			dependencies.CLANG,
@@ -287,5 +289,5 @@ func (c *coverageCmd) checkDependencies() (bool, error) {
 			dependencies.LLVM_PROFDATA,
 		}
 	}
-	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	return dependencies.Check(deps, dependencies.All, runfiles.Finder)
 }

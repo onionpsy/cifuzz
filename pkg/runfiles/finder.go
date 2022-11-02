@@ -48,6 +48,11 @@ func (f RunfilesFinderImpl) LLVMSymbolizerPath() (string, error) {
 	return path, errors.WithStack(err)
 }
 
+func (f RunfilesFinderImpl) GenHTMLPath() (string, error) {
+	path, err := exec.LookPath("genhtml")
+	return path, errors.WithStack(err)
+}
+
 func (f RunfilesFinderImpl) JavaPath() (string, error) {
 	os.LookupEnv("JAVA_HOME")
 	path, err := exec.LookPath("java")
