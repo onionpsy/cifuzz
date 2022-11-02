@@ -2,3 +2,5 @@
 *_inputs
 /.cifuzz-corpus/
 /.cifuzz-findings/
+/.ijwb/
+/.clwb/
