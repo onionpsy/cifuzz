@@ -18,7 +18,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
+func TestIntegration_Bazel(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -37,20 +37,20 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata
-	dir := shared.CopyTestdataDir(t, "bazel")
-	defer fileutil.Cleanup(dir)
-	t.Logf("executing bazel integration test in %s", dir)
+	testdata := shared.CopyTestdataDir(t, "bazel")
+	t.Logf("executing bazel integration test in %s", testdata)
+	t.Cleanup(func() { fileutil.Cleanup(testdata) })
 
-	cifuzzRunner := shared.CIFuzzRunner{
+	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
-		DefaultWorkDir:  dir,
+		DefaultWorkDir:  testdata,
 		DefaultFuzzTest: "//src/parser:parser_fuzz_test",
 	}
 
 	// Execute the init command
 	linesToAdd := cifuzzRunner.Command(t, "init", nil)
 	// Append the lines to WORKSPACE
-	shared.AppendLines(t, filepath.Join(dir, "WORKSPACE"), linesToAdd)
+	shared.AppendLines(t, filepath.Join(testdata, "WORKSPACE"), linesToAdd)
 
 	// Execute the create command
 	outputPath := filepath.Join("src", "parser", "parser_fuzz_test.cpp")
@@ -59,20 +59,18 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 	)
 
 	// Check that the fuzz test was created in the correct directory
-	fuzzTestPath := filepath.Join(dir, outputPath)
+	fuzzTestPath := filepath.Join(testdata, outputPath)
 	require.FileExists(t, fuzzTestPath)
 
 	// Append the lines to BUILD.bazel
-	shared.AppendLines(t, filepath.Join(dir, "src", "parser", "BUILD.bazel"), linesToAdd)
+	shared.AppendLines(t, filepath.Join(testdata, "src", "parser", "BUILD.bazel"), linesToAdd)
 
-	// Check that the findings command doesn't list any findings yet
-	findings := shared.GetFindings(t, cifuzz, dir)
-	require.Empty(t, findings)
-
-	// Run the (empty) fuzz test
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
-		TerminateAfterExpectedOutput: true,
+	t.Run("runEmptyFuzzTest", func(t *testing.T) {
+		// Run the (empty) fuzz test
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
+			TerminateAfterExpectedOutput: true,
+		})
 	})
 
 	// Make the fuzz test call a function
@@ -80,10 +78,28 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 
 	// Add dependency on parser lib to BUILD.bazel
 	cmd := exec.Command("buildozer", "add deps :parser", "//src/parser:parser_fuzz_test")
-	cmd.Dir = dir
+	cmd.Dir = testdata
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	require.NoError(t, err)
+
+	t.Run("run", func(t *testing.T) {
+		testRun(t, cifuzzRunner)
+	})
+
+	t.Run("bundle", func(t *testing.T) {
+		testBundle(t, cifuzzRunner)
+	})
+
+	t.Run("remoteRun", func(t *testing.T) {
+		testRemoteRun(t, cifuzzRunner)
+	})
+}
+
+func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	t.Parallel()
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
 
 	// Run the fuzz test and check that it finds the use-after-free
 	expectedOutputs := []*regexp.Regexp{
@@ -100,7 +116,7 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 	cifuzzRunner.Run(t, &shared.RunOptions{ExpectedOutputs: expectedOutputs})
 
 	// Check that the findings command lists the findings
-	findings = shared.GetFindings(t, cifuzz, dir)
+	findings := shared.GetFindings(t, cifuzz, testdata)
 	// On Windows, only the ASan finding is expected, on Linux and macOS
 	// at least two findings are expected
 	require.Equal(t, len(findings), 1)
@@ -144,12 +160,24 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,
 	})
+}
 
+func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	t.Parallel()
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
 	// Run cifuzz bundle and verify the contents of the archive.
-	shared.TestBundle(t, dir, cifuzz, "//src/parser:parser_fuzz_test")
+	shared.TestBundle(t, testdata, cifuzz, "//src/parser:parser_fuzz_test")
+}
 
+func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	// The remote-run command is currently only supported on Linux
-	if runtime.GOOS == "linux" {
-		shared.TestRemoteRun(t, dir, cifuzz, "//src/parser:parser_fuzz_test")
+	if runtime.GOOS != "linux" {
+		t.Skip()
 	}
+	t.Parallel()
+
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	shared.TestRemoteRun(t, testdata, cifuzz, "//src/parser:parser_fuzz_test")
 }
