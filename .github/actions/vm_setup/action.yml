@@ -29,7 +29,7 @@ runs:
 
       - name: Setup - Linux
         if: contains(inputs.os, 'ubuntu')
-        run: sudo apt-get install -y libcap-dev
+        run: sudo apt-get install -y lcov libcap-dev
         shell: bash
 
       # needed to fix MacOSX clang/llvm after using the action above

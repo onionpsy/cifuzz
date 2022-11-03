@@ -15,6 +15,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -93,6 +94,10 @@ func TestIntegration_Bazel(t *testing.T) {
 
 	t.Run("remoteRun", func(t *testing.T) {
 		testRemoteRun(t, cifuzzRunner)
+	})
+
+	t.Run("coverage", func(t *testing.T) {
+		testCoverage(t, cifuzzRunner)
 	})
 }
 
@@ -180,4 +185,31 @@ func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRemoteRun(t, testdata, cifuzz, "//src/parser:parser_fuzz_test")
+}
+
+func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+
+	cmd := executil.Command(cifuzz, "coverage",
+		"--verbose",
+		"--output", "coverage-report",
+		"//src/parser:parser_fuzz_test")
+	cmd.Dir = testdata
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(testdata, "coverage-report", "parser", "index.html")
+	require.FileExists(t, reportPath)
+
+	// Check that the coverage report contains coverage for the
+	// parser.cpp source file, but not for our headers.
+	reportBytes, err := os.ReadFile(reportPath)
+	require.NoError(t, err)
+	report := string(reportBytes)
+	require.Contains(t, report, "parser.cpp")
+	require.NotContains(t, report, "include/cifuzz")
 }
