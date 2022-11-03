@@ -300,8 +300,11 @@ static void run_dir_entry(const char *dir, const char *file) {
 #ifdef _WIN32
   /* sprintf is deprecated in the Microsoft CRT. */
   sprintf_s(path, path_size, "%s\\%s", dir, file);
+#elif __APPLE__
+  /* sprintf is deprecated in macOS LLVM. */
+  snprintf(path, path_size, "%s/%s", dir, file);
 #else
-  /* sprintf_s is not available in Unix C90 system headers. */
+  /* sprintf_s and snprintf are not available in Unix C90 system headers. */
   sprintf(path, "%s/%s", dir, file);
 #endif
   run_file_or_dir(path);
@@ -569,6 +572,9 @@ int main(int argc, char **argv) {
        * Also, strip the ".exe" suffix to derive a platform-independent basename for the seed corpus. */
       strncpy_s(seed_corpus_path, seed_corpus_path_size, argv[0], strlen(argv[0]) - strlen(".exe"));
       strcat_s(seed_corpus_path, seed_corpus_path_size, SEED_CORPUS_SUFFIX);
+#elif __APPLE__
+      /* sprintf is deprecated on macOS LLVM. */
+      snprintf(seed_corpus_path, seed_corpus_path_size, "%s%s", argv[0], SEED_CORPUS_SUFFIX);
 #else
       /* sprintf_s is not available in Unix C90 system headers. */
       sprintf(seed_corpus_path, "%s%s", argv[0], SEED_CORPUS_SUFFIX);
