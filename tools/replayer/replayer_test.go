@@ -85,8 +85,6 @@ var clang = compilerCase{
 		"-fsanitize=address,undefined",
 		// Signal to the replayer that it is being built with sanitizers.
 		"-DCIFUZZ_HAS_SANITIZER",
-		// Make UBSan findings assertable by aborting.
-		"-fsanitize-undefined-trap-on-error",
 		// Disable compiler-specific extensions and use the C90 standard.
 		"-ansi",
 	},
@@ -121,8 +119,6 @@ var gcc = compilerCase{
 		"-fsanitize=address,undefined",
 		// Signal to the replayer that it is being built with sanitizers.
 		"-DCIFUZZ_HAS_SANITIZER",
-		// Make UBSan findings assertable by aborting.
-		"-fsanitize-undefined-trap-on-error",
 	}, mingw.flags...),
 	mingw.outputFlags,
 	mingw.disableFuzzerInitializeFlag,
@@ -516,6 +512,11 @@ func runReplayer(t *testing.T, baseTempDir string, replayerPath string, inputs .
 	}
 
 	c := exec.Command(replayerPath, inputPaths...)
+
+	// FIXME we add this env var here because there is a bug in replayer.c
+	// that does not set "halt_on_error=1" correctly
+	c.Env = append(os.Environ(), "UBSAN_OPTIONS=halt_on_error=1")
+
 	stdout, stderr, err := outputWithStderr(c)
 	// Split on both \r\n (Windows) and \n (Unix) after removing trailing newlines.
 	stdoutLines := strings.Split(strings.ReplaceAll(strings.TrimSpace(string(stdout)), "\r\n", "\n"), "\n")
