@@ -73,11 +73,6 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.
 		opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 	}
 
-	if !opts.Interactive && opts.ProjectName == "" {
-		err := errors.New("Flag \"project\" must be set")
-		return cmdutils.WrapIncorrectUsageError(err)
-	}
-
 	return nil
 }
 
@@ -229,9 +224,29 @@ your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
 	}
 
 	if c.opts.ProjectName == "" {
-		c.opts.ProjectName, err = c.selectProject(token)
-		if err != nil {
-			return err
+		if c.opts.Interactive {
+			c.opts.ProjectName, err = c.selectProject(token)
+			if err != nil {
+				return err
+			}
+		} else {
+			projects, err := c.listProjects(token)
+			if err != nil {
+				log.Error(err)
+				err = errors.New("Flag \"project\" must be set")
+				return cmdutils.WrapIncorrectUsageError(err)
+			}
+			var projectNames []string
+			for _, p := range projects {
+				projectNames = append(projectNames, strings.TrimPrefix(p.Name, "projects/"))
+			}
+			if len(projectNames) == 0 {
+				log.Warnf("No projects found. Please create a project first at %s.", c.opts.Server)
+				err = errors.New("Flag \"project\" must be set")
+				return cmdutils.WrapIncorrectUsageError(err)
+			}
+			err = errors.New("Flag \"project\" must be set. Valid projects:\n  " + strings.Join(projectNames, "\n  "))
+			return cmdutils.WrapIncorrectUsageError(err)
 		}
 	}
 
@@ -294,16 +309,19 @@ func (c *runRemoteCmd) selectProject(token string) (string, error) {
 	var displayNames []string
 	var names []string
 	for _, p := range projects {
-		if p.OwnerOrganizationName != FeaturedProjectsOrganization {
-			displayNames = append(displayNames, p.DisplayName)
-			names = append(names, p.Name)
-		}
+		displayNames = append(displayNames, p.DisplayName)
+		names = append(names, p.Name)
 	}
 	maxLen := stringutil.MaxLen(displayNames)
 	items := map[string]string{}
 	for i := range displayNames {
 		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
 		items[key] = names[i]
+	}
+
+	if len(items) == 0 {
+		err := errors.Errorf("No projects found. Please create a project first at %s.", c.opts.Server)
+		return "", errors.WithStack(err)
 	}
 
 	projectName, err := dialog.Select("Select the project you want to start a fuzzing run for", items)
@@ -513,7 +531,16 @@ func (c *runRemoteCmd) listProjects(token string) ([]*project, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	return projects, nil
+	// Filter out featured projects
+	var filteredProjects []*project
+	for _, p := range projects {
+		if p.OwnerOrganizationName == FeaturedProjectsOrganization {
+			continue
+		}
+		filteredProjects = append(filteredProjects, p)
+	}
+
+	return filteredProjects, nil
 }
 
 func responseToErrMsg(resp *http.Response) string {
