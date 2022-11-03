@@ -45,6 +45,7 @@ type artifact struct {
 type remoteRunOpts struct {
 	bundler.Opts `mapstructure:",squash"`
 	BundlePath   string `mapstructure:"artifacts-path"`
+	PrintJSON    bool   `mapstructure:"print-json"`
 	ProjectName  string `mapstructure:"project"`
 	Server       string `mapstructure:"server"`
 }
@@ -132,11 +133,17 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				opts.ProjectName = "projects/" + opts.ProjectName
 			}
 
+			// If --json was specified, print all build output to stderr
+			if opts.PrintJSON {
+				opts.Stdout = cmd.ErrOrStderr()
+			} else {
+				opts.Stdout = cmd.OutOrStdout()
+			}
+			opts.Stderr = cmd.ErrOrStderr()
+
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			opts.Stdout = c.OutOrStdout()
-			opts.Stderr = c.OutOrStderr()
 			cmd := runRemoteCmd{opts: opts}
 			return cmd.run()
 		},
@@ -151,6 +158,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 		cmdutils.AddDockerImageFlag,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
+		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddTimeoutFlag,
@@ -234,7 +242,31 @@ your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
 		return err
 	}
 
-	return c.startRemoteFuzzingRun(artifact, token)
+	campaignRunName, err := c.startRemoteFuzzingRun(artifact, token)
+	if err != nil {
+		return err
+	}
+
+	if c.opts.PrintJSON {
+		result := struct{ CampaignRun string }{campaignRunName}
+		s, err := stringutil.ToJsonString(result)
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(os.Stdout, s)
+	} else {
+		// TODO: Would be nice to be able to link to a page which immediately
+		//       shows details about the run, but currently details are only
+		//       shown on the "<fuzz target>/edit" page, which lists all runs
+		//       of the fuzz target.
+		log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
+
+    %s/dashboard/%s/overview
+
+`, c.opts.Server, campaignRunName)
+	}
+
+	return nil
 }
 
 func (c *runRemoteCmd) selectProject(token string) (string, error) {
@@ -310,9 +342,16 @@ func (c *runRemoteCmd) uploadBundle(path string, token string) (*artifact, error
 		}
 		defer f.Close()
 
-		fmt.Println("Uploading...")
-		progressR := progress.NewReader(f, fileInfo.Size(), "Upload complete")
-		_, err = io.Copy(part, progressR)
+		var reader io.Reader
+		printProgress := term.IsTerminal(int(os.Stdout.Fd()))
+		if printProgress {
+			fmt.Println("Uploading...")
+			reader = progress.NewReader(f, fileInfo.Size(), "Upload complete")
+		} else {
+			reader = f
+		}
+
+		_, err = io.Copy(part, reader)
 		return errors.WithStack(err)
 	})
 
@@ -370,10 +409,10 @@ func (c *runRemoteCmd) uploadBundle(path string, token string) (*artifact, error
 	return artifact, nil
 }
 
-func (c *runRemoteCmd) startRemoteFuzzingRun(artifact *artifact, token string) error {
+func (c *runRemoteCmd) startRemoteFuzzingRun(artifact *artifact, token string) (string, error) {
 	resp, err := c.sendRequest("POST", fmt.Sprintf("v1/%s:run", artifact.ResourceName), token)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -381,43 +420,32 @@ func (c *runRemoteCmd) startRemoteFuzzingRun(artifact *artifact, token string) e
 		msg := responseToErrMsg(resp)
 		err = errors.Errorf("Failed to start fuzzing run: %s", msg)
 		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return "", cmdutils.WrapSilentError(err)
 	}
 
 	// Get the campaign run name from the response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	var objmap map[string]json.RawMessage
 	err = json.Unmarshal(body, &objmap)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	campaignRunNameJSON, ok := objmap["name"]
 	if !ok {
 		err := errors.Errorf("Server response doesn't include run name: %v", stringutil.PrettyString(objmap))
 		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return "", cmdutils.WrapSilentError(err)
 	}
 	var campaignRunName string
 	err = json.Unmarshal(campaignRunNameJSON, &campaignRunName)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
-	// TODO: Would be nice to be able to link to a page which immediately
-	//       shows details about the run, but currently details are only
-	//       shown on the "<fuzz target>/edit" page, which lists all runs
-	//       of the fuzz target.
-	log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
-
-    %s/dashboard/%s/overview
-
-`,
-		c.opts.Server, campaignRunName)
-
-	return nil
+	return campaignRunName, nil
 }
 
 func (c *runRemoteCmd) sendRequest(method, endpoint, token string) (*http.Response, error) {
