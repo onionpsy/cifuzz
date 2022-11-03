@@ -97,8 +97,6 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`bin/minijail0`))
 	}
 
-	// Run the fuzz test with and verify check that it finds the heap
-	// buffer overflow
 	cifuzzRunner.Run(t, &shared.RunOptions{ExpectedOutputs: expectedOutputs})
 
 	// Check that the findings command lists the findings
