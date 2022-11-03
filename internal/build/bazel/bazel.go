@@ -333,6 +333,7 @@ func (b *Builder) BuildAndCreateCoverageReport(fuzzTest string, outputPath strin
 		return "", err
 	}
 	cmd = exec.Command(genHTML, "--output", outputPath, lcovReport)
+	cmd.Dir = b.ProjectDir
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
