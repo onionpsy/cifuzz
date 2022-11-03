@@ -118,14 +118,14 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	// To avoid part of the loading and/or analysis phase to rerun, we
 	// use the same flags for all bazel commands (except for those which
 	// are not supported by all bazel commands we use).
-	sharedFlags := []string{
+	commonFlags := []string{
 		"--repo_env=CC",
 		"--repo_env=CXX",
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 	}
 	if b.NumJobs != 0 {
-		sharedFlags = append(sharedFlags, "--jobs", fmt.Sprint(b.NumJobs))
+		commonFlags = append(commonFlags, "--jobs", fmt.Sprint(b.NumJobs))
 	}
 
 	// Flags which should only be used for bazel run because they are
@@ -158,7 +158,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	}
 
 	args := []string{"run"}
-	args = append(args, sharedFlags...)
+	args = append(args, commonFlags...)
 	args = append(args, runFlags...)
 	args = append(args, binLabels...)
 
@@ -186,7 +186,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 
 	for _, fuzzTest := range fuzzTests {
 		// Turn the fuzz test label into a valid path
-		path, err := pathFromLabel(fuzzTest, sharedFlags)
+		path, err := pathFromLabel(fuzzTest, commonFlags)
 		if err != nil {
 			return nil, err
 		}
@@ -363,7 +363,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 	// To avoid part of the loading and/or analysis phase to rerun, we
 	// use the same flags for all bazel commands (except for those which
 	// are not supported by all bazel commands we use).
-	sharedFlags := []string{
+	commonFlags := []string{
 		"--repo_env=CC",
 		"--repo_env=CXX",
 		"--repo_env=FUZZING_CFLAGS",
@@ -372,7 +372,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 	}
 	if b.NumJobs != 0 {
-		sharedFlags = append(sharedFlags, "--jobs", fmt.Sprint(b.NumJobs))
+		commonFlags = append(commonFlags, "--jobs", fmt.Sprint(b.NumJobs))
 	}
 
 	// Flags which should only be used for bazel build
@@ -400,7 +400,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 		if err != nil {
 			return nil, err
 		}
-		sharedFlags = append(sharedFlags,
+		commonFlags = append(commonFlags,
 			"--repo_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1",
 			"--repo_env=GCOV="+llvmProfData,
 			"--repo_env=BAZEL_LLVM_COV="+llvmCov,
@@ -427,7 +427,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 	}
 
 	args := []string{"build"}
-	args = append(args, sharedFlags...)
+	args = append(args, commonFlags...)
 	args = append(args, buildAndCQueryFlags...)
 
 	// We have to build the "*_oss_fuzz" target defined by the
@@ -460,7 +460,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 	for _, fuzzTest := range fuzzTests {
 		// Get the path to the archive created by the build
 		args := []string{"cquery", "--output=starlark", "--starlark:expr=target.files.to_list()[0].path"}
-		args = append(args, sharedFlags...)
+		args = append(args, commonFlags...)
 		args = append(args, buildAndCQueryFlags...)
 		args = append(args, fuzzTest+"_oss_fuzz")
 		cmd = exec.Command("bazel", args...)
@@ -484,7 +484,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 			return nil, err
 		}
 
-		path, err := pathFromLabel(fuzzTest, sharedFlags)
+		path, err := pathFromLabel(fuzzTest, commonFlags)
 		if err != nil {
 			return nil, err
 		}
