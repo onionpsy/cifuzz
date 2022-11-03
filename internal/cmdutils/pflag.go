@@ -116,6 +116,13 @@ func AddEnvFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddInteractiveFlag(cmd *cobra.Command) func() {
+	cmd.Flags().Bool("interactive", true, "Toggle interactive prompting in the terminal")
+	return func() {
+		ViperMustBindPFlag("interactive", cmd.Flags().Lookup("interactive"))
+	}
+}
+
 func AddPrintJSONFlag(cmd *cobra.Command) func() {
 	cmd.Flags().Bool("json", false, "Print output as JSON")
 	return func() {

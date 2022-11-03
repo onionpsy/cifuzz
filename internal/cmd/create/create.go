@@ -2,12 +2,14 @@ package create
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -20,9 +22,23 @@ import (
 
 type createOpts struct {
 	BuildSystem string `mapstructure:"build-system"`
+	Interactive bool   `mapstructure:"interactive"`
 
 	outputPath string
 	testType   config.FuzzTestType
+}
+
+func (opts *createOpts) Validate() error {
+	if opts.Interactive {
+		opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+	}
+
+	if !opts.Interactive && opts.testType == "" {
+		err := errors.New("Missing argument [cpp|java]")
+		return cmdutils.WrapIncorrectUsageError(err)
+	}
+
+	return nil
 }
 
 type createCmd struct {
@@ -42,7 +58,9 @@ func New() *cobra.Command {
 }
 
 func newWithOptions(opts *createOpts) *cobra.Command {
-	createCmd := &cobra.Command{
+	var bindFlags func()
+
+	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("create [%s]", strings.Join(maps.Values(supportedTestTypes), "|")),
 		Short: "Create a new fuzz test",
 		Long: `Creates a new templated fuzz test source file in the current directory.
@@ -50,6 +68,11 @@ After running this command, you should edit the created file in order to
 make it call the functions you want to fuzz. You can then execute the
 fuzz test via 'cifuzz run'.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Bind viper keys to flags. We can't do this in the New
+			// function, because that would re-bind viper keys which
+			// were bound to the flags of other commands before.
+			bindFlags()
+
 			if len(args) == 1 {
 				opts.testType = config.FuzzTestType(args[0])
 			}
@@ -60,7 +83,7 @@ fuzz test via 'cifuzz run'.`,
 				return cmdutils.WrapSilentError(err)
 			}
 
-			return nil
+			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			cmd := createCmd{
@@ -73,9 +96,12 @@ fuzz test via 'cifuzz run'.`,
 		ValidArgs: maps.Values(supportedTestTypes),
 	}
 
-	createCmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "File path of new fuzz test")
+	bindFlags = cmdutils.AddFlags(cmd,
+		cmdutils.AddInteractiveFlag,
+	)
+	cmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "File path of new fuzz test")
 
-	return createCmd
+	return cmd
 }
 
 func (c *createCmd) run() error {

@@ -45,6 +45,7 @@ type artifact struct {
 type remoteRunOpts struct {
 	bundler.Opts `mapstructure:",squash"`
 	BundlePath   string `mapstructure:"artifacts-path"`
+	Interactive  bool   `mapstructure:"interactive"`
 	PrintJSON    bool   `mapstructure:"print-json"`
 	ProjectName  string `mapstructure:"project"`
 	Server       string `mapstructure:"server"`
@@ -66,6 +67,15 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.
 		if err != nil {
 			return err
 		}
+	}
+
+	if opts.Interactive {
+		opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+	}
+
+	if !opts.Interactive && opts.ProjectName == "" {
+		err := errors.New("Flag \"project\" must be set")
+		return cmdutils.WrapIncorrectUsageError(err)
 	}
 
 	return nil
@@ -158,6 +168,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 		cmdutils.AddDockerImageFlag,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
+		cmdutils.AddInteractiveFlag,
 		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
@@ -189,7 +200,7 @@ func (c *runRemoteCmd) run() error {
 				return errors.WithStack(err)
 			}
 			token = string(b)
-		} else {
+		} else if c.opts.Interactive {
 			fmt.Printf(`Enter an API access token and press Enter. You can generate a token for
 your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
 			reader := bufio.NewReader(os.Stdin)
@@ -199,6 +210,9 @@ your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
 			}
 			log.Print()
 			token = strings.TrimSpace(token)
+		} else {
+			err := errors.New("An API token must be passed via stdin or CIFUZZ_API_TOKEN")
+			return cmdutils.WrapIncorrectUsageError(err)
 		}
 
 		// Try to authenticate with the access token

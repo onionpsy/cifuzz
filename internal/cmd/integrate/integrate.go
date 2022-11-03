@@ -1,7 +1,6 @@
 package integrate
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -20,10 +20,28 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
+type integrateOpts struct {
+	Interactive bool   `mapstructure:"interactive"`
+	ProjectDir  string `mapstructure:"project-dir"`
+	tools       []string
+}
+
+func (opts *integrateOpts) Validate() error {
+	if opts.Interactive {
+		opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+	}
+
+	if !opts.Interactive && len(opts.tools) == 0 {
+		err := errors.New("Missing argument <git|cmake|vscode>")
+		return cmdutils.WrapIncorrectUsageError(err)
+	}
+
+	return nil
+}
+
 type integrateCmd struct {
 	*cobra.Command
-
-	tools []string
+	opts *integrateOpts
 }
 
 var supportedTools = map[string]string{
@@ -33,6 +51,12 @@ var supportedTools = map[string]string{
 }
 
 func New() *cobra.Command {
+	return newWithOptions(&integrateOpts{})
+}
+
+func newWithOptions(opts *integrateOpts) *cobra.Command {
+	var bindFlags func()
+
 	cmd := &cobra.Command{
 		Use:   "integrate <git|cmake|vscode>",
 		Short: "Add integrations for the following tools: Git, CMake, VS Code",
@@ -57,15 +81,35 @@ Missing files are generated automatically.
 `,
 		ValidArgs: maps.Values(supportedTools),
 		Args:      cobra.MatchAll(cobra.RangeArgs(0, len(supportedTools)), cobra.OnlyValidArgs),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Bind viper keys to flags. We can't do this in the New
+			// function, because that would re-bind viper keys which
+			// were bound to the flags of other commands before.
+			bindFlags()
+
+			opts.tools = args
+
+			err := config.FindAndParseProjectConfig(opts)
+			if err != nil {
+				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+
+			return opts.Validate()
+		},
 		RunE: func(c *cobra.Command, args []string) error {
 			cmd := integrateCmd{
 				Command: c,
-				tools:   args,
+				opts:    opts,
 			}
 
 			return cmd.run()
 		},
 	}
+
+	bindFlags = cmdutils.AddFlags(cmd,
+		cmdutils.AddInteractiveFlag,
+	)
 
 	return cmd
 }
@@ -73,40 +117,28 @@ Missing files are generated automatically.
 func (c *integrateCmd) run() error {
 	var err error
 
-	projectDir, err := config.FindConfigDir()
-	if errors.Is(err, os.ErrNotExist) {
-		// The project directory doesn't exist, this is an expected
-		// error, so we print it and return a silent error to avoid
-		// printing a stack trace
-		log.Error(err, fmt.Sprintf("%s\nUse 'cifuzz init' to set up a project for use with cifuzz.", err.Error()))
-		return cmdutils.ErrSilent
-	}
-	if err != nil {
-		return err
-	}
-
-	if len(c.tools) == 0 {
+	if len(c.opts.tools) == 0 {
 		selectedTools, err := selectTools()
 		if err != nil {
 			return err
 		}
-		c.tools = selectedTools
+		c.opts.tools = selectedTools
 	}
 
-	for _, tool := range c.tools {
+	for _, tool := range c.opts.tools {
 		switch tool {
 		case "git":
-			err = setupGitIgnore(projectDir)
+			err = setupGitIgnore(c.opts.ProjectDir)
 			if err != nil {
 				return err
 			}
 		case "cmake":
-			err = setupCMakePresets(projectDir, runfiles.Finder)
+			err = setupCMakePresets(c.opts.ProjectDir, runfiles.Finder)
 			if err != nil {
 				return err
 			}
 		case "vscode":
-			err = setupVSCodeTasks(projectDir, runfiles.Finder)
+			err = setupVSCodeTasks(c.opts.ProjectDir, runfiles.Finder)
 			if err != nil {
 				return err
 			}

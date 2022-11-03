@@ -42,7 +42,7 @@ func TestMissingCIFuzzProject(t *testing.T) {
 	// called below a cifuzz project directory.
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "git")
 	require.Error(t, err)
-	testutil.CheckOutput(t, logOutput, "set up a project for use with cifuzz")
+	testutil.CheckOutput(t, logOutput, "cifuzz.yaml file does not exist")
 
 	// Initialize a cifuzz project
 	_, err = cmdutils.ExecuteCommand(t, initCmd.New(), os.Stdin)
