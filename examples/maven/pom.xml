@@ -32,6 +32,25 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+      <profile>
+        <id>cifuzz</id>
+         <build>
+           <directory>.cifuzz-build</directory>
+            <plugins>
+              <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+               <configuration>
+                  <formats>HTML,XML</formats>
+                  <outputDirectory>${cifuzz.report.output}</outputDirectory>
+                </configuration>
+                </plugin>
+            </plugins>
+         </build>
+      </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
