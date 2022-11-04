@@ -2,7 +2,7 @@ package com.example;
 
 public class ExploreMe {
     // Function with multiple paths that can be discovered by a fuzzer.
-    public static void exploreMe(int a, int b, String c) {
+    public void exploreMe(int a, int b, String c) {
         if (a >= 20000) {
             if (b >= 2000000) {
                 if (b - a < 100000) {
