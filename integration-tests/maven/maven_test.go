@@ -16,7 +16,9 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/coverage"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
+	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -43,9 +45,23 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	}
 
 	// Execute the init command
+	// The instructions file for maven includes both dependencies and a profile section for jacoco that
+	// need to be included at different locations in the pom.xml, so we split the instructions file
+	// at the <profile> occurrence.
 	linesToAdd := cifuzzRunner.Command(t, "init", nil)
 	assert.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
-	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "pom.xml"), linesToAdd, "    </dependencies>", false)
+	shared.AddLinesToFileAtBreakPoint(t,
+		filepath.Join(projectDir, "pom.xml"),
+		strings.Split(strings.Split(strings.Join(linesToAdd, "\n"), "<profile>")[0], "\n"),
+		"    </dependencies>",
+		false,
+	)
+	shared.AddLinesToFileAtBreakPoint(t,
+		filepath.Join(projectDir, "pom.xml"),
+		strings.Split("<profile>"+strings.Split(strings.Join(linesToAdd, "\n"), "<profile>")[1], "\n"),
+		"    </profiles>",
+		false,
+	)
 
 	// Execute the create command
 	testDir := filepath.Join(
@@ -135,6 +151,41 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
 	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0644)
 	require.NoError(t, err)
+
+	// Produce a jacoco xml coverage report
+	createJacocoXMLCoverageReport(t, cifuzz, projectDir)
+}
+
+func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
+	t.Helper()
+
+	cmd := executil.Command(cifuzz, "coverage", "-v",
+		"--output", "report", "com.example.FuzzTestCase")
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "report", "jacoco.xml")
+	require.FileExists(t, reportPath)
+
+	// Check that the coverage report contains coverage for
+	// ExploreMe.java source file, but not for App.java.
+	summary := coverage.ParseJacocoXML(reportPath)
+	for _, file := range summary.Files {
+		if file.Filename == "com/example/ExploreMe.java" {
+			assert.Equal(t, 2, file.Coverage.FunctionsHit)
+			assert.Equal(t, 8, file.Coverage.LinesHit)
+			assert.Equal(t, 8, file.Coverage.BranchesHit)
+
+		} else if file.Filename == "com/example/App.java" {
+			assert.Equal(t, 0, file.Coverage.FunctionsHit)
+			assert.Equal(t, 0, file.Coverage.LinesHit)
+			assert.Equal(t, 0, file.Coverage.BranchesHit)
+		}
+	}
 }
 
 func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
@@ -160,7 +211,8 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 				"        int a = data.consumeInt();",
 				"        int b = data.consumeInt();",
 				"        String c = data.consumeRemainingAsString();",
-				"        ExploreMe.exploreMe(a, b, c);",
+				"		 ExploreMe ex = new ExploreMe();",
+				"        ex.exploreMe(a, b, c);",
 			}...)
 			addedFunctionCall = true
 		}
