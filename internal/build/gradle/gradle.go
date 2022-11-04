@@ -19,6 +19,7 @@ import (
 )
 
 var classpathRegex = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
+var buildDirRegex = regexp.MustCompile("(?m)^cifuzz.test.buildDir=(?P<buildDir>.*)$")
 
 func FindGradleWrapper(projectDir string) (string, error) {
 	wrapper := "gradlew"
@@ -84,19 +85,9 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 		flags = append(flags, "--parallel")
 	}
 
-	gradleCmd, err := b.getGradleCommand()
-	if err != nil {
-		return nil, err
-	}
 	args := append([]string{"testClasses"}, flags...)
+	cmd, err := buildGradleCommand(b.ProjectDir, args)
 
-	cmd := exec.Command(gradleCmd, args...)
-	// Redirect the command's stdout to stderr to only have
-	// reports printed to stdout
-	cmd.Stdout = b.Stderr
-	cmd.Stderr = b.Stderr
-	cmd.Dir = b.ProjectDir
-	log.Debugf("Working directory: %s", cmd.Dir)
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
@@ -123,24 +114,10 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 }
 
 func (b *Builder) getDependencies() ([]string, error) {
-	initScript, err := runfiles.Finder.GradleInitScriptPath()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	gradleCmd, err := b.getGradleCommand()
+	cmd, err := buildGradleCommand(b.ProjectDir, []string{"printClasspath"})
 	if err != nil {
 		return nil, err
 	}
-
-	cmd := exec.Command(gradleCmd,
-		"-I",
-		initScript,
-		"printClasspath",
-	)
-
-	cmd.Dir = b.ProjectDir
-	log.Debugf("Working directory: %s", cmd.Dir)
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
 	if err != nil {
@@ -156,11 +133,11 @@ func (b *Builder) getDependencies() ([]string, error) {
 	return deps, nil
 }
 
-// getGradleCommand returns the name of the gradle command.
+// GetGradleCommand returns the name of the gradle command.
 // The gradle wrapper is preferred to use and gradle
 // acts as a fallback command.
-func (b *Builder) getGradleCommand() (string, error) {
-	wrapper, err := FindGradleWrapper(b.ProjectDir)
+func GetGradleCommand(projectDir string) (string, error) {
+	wrapper, err := FindGradleWrapper(projectDir)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}
@@ -173,4 +150,37 @@ func (b *Builder) getGradleCommand() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return gradleCmd, nil
+}
+
+func buildGradleCommand(projectDir string, args []string) (*exec.Cmd, error) {
+	gradleCmd, err := GetGradleCommand(projectDir)
+	if err != nil {
+		return nil, err
+	}
+
+	initScript, err := runfiles.Finder.GradleInitScriptPath()
+	if err != nil {
+		return nil, err
+	}
+	defaultArgs := []string{"-I", initScript}
+	args = append(args, defaultArgs...)
+
+	cmd := exec.Command(gradleCmd, args...)
+	cmd.Dir = projectDir
+
+	return cmd, nil
+}
+
+func GetBuildDirectory(projectDir string) (string, error) {
+	cmd, err := buildGradleCommand(projectDir, []string{"printBuildDir"})
+	if err != nil {
+		return "", nil
+	}
+
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	result := buildDirRegex.FindStringSubmatch(string(output))
+	buildDir := result[1]
+
+	return buildDir, nil
 }
