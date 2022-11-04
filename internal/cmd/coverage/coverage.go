@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
@@ -13,6 +14,8 @@ import (
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/build/bazel"
+	"code-intelligence.com/cifuzz/internal/build/gradle"
+	"code-intelligence.com/cifuzz/internal/build/maven"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/generator"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/completion"
@@ -37,17 +40,16 @@ type coverageOptions struct {
 	fuzzTest   string
 }
 
-func supportedOutputFormats() []string {
-	return []string{"html", "lcov"}
+var validOutputFormats = map[string][]string{
+	config.BuildSystemCMake:  {"html", "lcov"},
+	config.BuildSystemBazel:  {"html", "lcov"},
+	config.BuildSystemOther:  {"html", "lcov"},
+	config.BuildSystemMaven:  {"html"},
+	config.BuildSystemGradle: {"html"},
 }
 
 func (opts *coverageOptions) validate() error {
 	var err error
-
-	if !stringutil.Contains(supportedOutputFormats(), opts.OutputFormat) {
-		msg := `Flag "format" must be html or lcov`
-		return cmdutils.WrapIncorrectUsageError(errors.New(msg))
-	}
 
 	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
@@ -65,6 +67,12 @@ func (opts *coverageOptions) validate() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	validFormats := validOutputFormats[opts.BuildSystem]
+	if !stringutil.Contains(validFormats, opts.OutputFormat) {
+		msg := fmt.Sprintf("Flag \"format\" must be %s", strings.Join(validFormats, " or "))
+		return cmdutils.WrapIncorrectUsageError(errors.New(msg))
 	}
 
 	// To build with other build systems, a build command must be provided
@@ -176,9 +184,6 @@ func (c *coverageCmd) run() error {
 			TempDir:      tmpDir,
 			Verbose:      viper.GetBool("verbose"),
 		})
-		if err != nil {
-			return err
-		}
 	case config.BuildSystemCMake, config.BuildSystemOther:
 		gen := &generator.LLVMCoverageGenerator{
 			OutputFormat:   c.opts.OutputFormat,
@@ -194,11 +199,35 @@ func (c *coverageCmd) run() error {
 			StdErr:         c.OutOrStderr(),
 		}
 		reportPath, err = gen.Generate()
-		if err != nil {
-			return err
+	case config.BuildSystemGradle:
+		gen := &generator.GradleCoverageGenerator{
+			OutputPath: c.opts.OutputPath,
+			FuzzTest:   c.opts.fuzzTest,
+			ProjectDir: c.opts.ProjectDir,
+			Parallel: gradle.ParallelOptions{
+				Enabled: viper.IsSet("build-jobs"),
+			}, StdOut: c.OutOrStdout(),
+			StdErr: c.OutOrStderr(),
 		}
+		reportPath, err = gen.Generate()
+	case config.BuildSystemMaven:
+		gen := &generator.MavenCoverageGenerator{
+			OutputPath: c.opts.OutputPath,
+			FuzzTest:   c.opts.fuzzTest,
+			ProjectDir: c.opts.ProjectDir,
+			Parallel: maven.ParallelOptions{
+				Enabled: viper.IsSet("build-jobs"),
+				NumJobs: c.opts.NumBuildJobs,
+			},
+			StdOut: c.OutOrStdout(),
+			StdErr: c.OutOrStderr(),
+		}
+		reportPath, err = gen.Generate()
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
+	}
+	if err != nil {
+		return err
 	}
 
 	switch c.opts.OutputFormat {
@@ -210,7 +239,6 @@ func (c *coverageCmd) run() error {
 	default:
 		return errors.Errorf("Unsupported output format")
 	}
-
 }
 
 func (c *coverageCmd) handleHTMLReport(reportPath string) error {
@@ -260,8 +288,8 @@ func (c *coverageCmd) printReportURI(reportPath string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	reportUri := fmt.Sprintf("file://%s", filepath.ToSlash(absReportPath))
-	log.Infof("To view the report, open this URI in a browser:\n\n   %s\n\n", reportUri)
+	reportURI := fmt.Sprintf("file://%s", filepath.ToSlash(absReportPath))
+	log.Infof("To view the report, open this URI in a browser:\n\n   %s\n\n", reportURI)
 	return nil
 }
 
@@ -280,6 +308,23 @@ func (c *coverageCmd) checkDependencies() (bool, error) {
 			dependencies.LLVM_COV,
 			dependencies.LLVM_PROFDATA,
 		}
+	case config.BuildSystemMaven:
+		deps = []dependencies.Key{
+			dependencies.MAVEN,
+		}
+	case config.BuildSystemGradle:
+		// First check if gradle wrapper exists and check for gradle in path otherwise
+		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return false, err
+		}
+		if wrapper != "" {
+			return true, nil
+		}
+
+		deps = []dependencies.Key{
+			dependencies.GRADLE,
+		}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{
 			dependencies.CLANG,
@@ -287,6 +332,8 @@ func (c *coverageCmd) checkDependencies() (bool, error) {
 			dependencies.LLVM_COV,
 			dependencies.LLVM_PROFDATA,
 		}
+	default:
+		return false, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
 	return dependencies.Check(deps, dependencies.All, runfiles.Finder)
 }

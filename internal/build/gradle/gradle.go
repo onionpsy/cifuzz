@@ -180,6 +180,9 @@ func GetBuildDirectory(projectDir string) (string, error) {
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
 	result := buildDirRegex.FindStringSubmatch(string(output))
+	if result == nil {
+		return "", errors.New("Unable to parse gradle build directory from init script.")
+	}
 	buildDir := result[1]
 
 	return buildDir, nil

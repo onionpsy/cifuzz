@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.CodeIntelligenceTesting.cifuzz</groupId>
@@ -33,22 +34,21 @@
     </dependencies>
 
     <profiles>
-      <profile>
-        <id>cifuzz</id>
-         <build>
-           <directory>.cifuzz-build</directory>
-            <plugins>
-              <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-               <configuration>
-                  <formats>HTML,XML</formats>
-                  <outputDirectory>${cifuzz.report.output}</outputDirectory>
-                </configuration>
-                </plugin>
-            </plugins>
-         </build>
-      </profile>
+        <profile>
+            <id>cifuzz</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <formats>HTML,XML</formats>
+                            <outputDirectory>${cifuzz.report.output}</outputDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
