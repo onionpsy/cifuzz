@@ -49,7 +49,7 @@ allprojects {
         reports {
           xml.required = true
           xml.outputLocation = file("$output/jacoco.xml")
-          html.outputLocation = new File(output)
+          html.outputLocation = file("$output/html")
         }
 
         generate()
