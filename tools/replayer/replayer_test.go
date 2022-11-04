@@ -527,6 +527,7 @@ func runReplayer(t *testing.T, baseTempDir string, replayerPath string, inputs .
 func outputWithStderr(cmd *exec.Cmd) (stdout []byte, stderr []byte, err error) { //nolint:nonamedreturns
 	stderrBuf := &bytes.Buffer{}
 	cmd.Stderr = stderrBuf
+	log.Printf("Command: %s", cmd.String())
 	stdout, err = cmd.Output()
 	stderr = stderrBuf.Bytes()
 	// Also store stderr in the ExitError in case of failure to remain compatible with cmd.Output.
