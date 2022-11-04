@@ -164,19 +164,18 @@ func (c *coverageCmd) run() error {
 			return errors.WithStack(err)
 		}
 		defer fileutil.Cleanup(tmpDir)
-		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
-			ProjectDir: c.opts.ProjectDir,
-			Engine:     "libfuzzer",
-			NumJobs:    c.opts.NumBuildJobs,
-			Stdout:     c.OutOrStdout(),
-			Stderr:     c.ErrOrStderr(),
-			TempDir:    tmpDir,
-			Verbose:    viper.GetBool("verbose"),
+		reportPath, err = bazel.BuildAndCreateCoverageReport(&bazel.CoverageOptions{
+			FuzzTest:     c.opts.fuzzTest,
+			OutputFormat: c.opts.OutputFormat,
+			OutputPath:   c.opts.OutputPath,
+			ProjectDir:   c.opts.ProjectDir,
+			Engine:       "libfuzzer",
+			NumJobs:      c.opts.NumBuildJobs,
+			Stdout:       c.OutOrStdout(),
+			Stderr:       c.ErrOrStderr(),
+			TempDir:      tmpDir,
+			Verbose:      viper.GetBool("verbose"),
 		})
-		if err != nil {
-			return err
-		}
-		reportPath, err = builder.BuildAndCreateCoverageReport(c.opts.fuzzTest, c.opts.OutputPath)
 		if err != nil {
 			return err
 		}
