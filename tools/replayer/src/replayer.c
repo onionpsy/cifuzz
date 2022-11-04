@@ -112,7 +112,7 @@ C_LINKAGE const char *__ubsan_default_options() {
   /*
    * With the reproducer, UBSan findings should always be fatal so that they lead to a non-zero exit code.
    */
-  return "halt_on_error=1";
+  return "halt_on_error=1:abort_on_error=1";
 }
 
 C_LINKAGE int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size);
