@@ -206,7 +206,7 @@ var baseTempDir string
 func TestMain(m *testing.M) {
 	var err error
 	// Intentionally include a space here to test that we don't break on it.
-	baseTempDir, err = os.MkdirTemp("", "cifuzz replayer")
+	baseTempDir, err = os.MkdirTemp("", "cifuzz-replayer")
 	if err != nil {
 		log.Fatalf("Failed to create temp dir for tests: %+v", err)
 	}
