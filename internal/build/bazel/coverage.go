@@ -134,6 +134,30 @@ func BuildAndCreateCoverageReport(opts *CoverageOptions) (string, error) {
 	bazelOutputDir := strings.TrimSpace(string(out))
 	lcovReport := filepath.Join(bazelOutputDir, "_coverage", "_coverage_report.dat")
 
+	if opts.OutputFormat == "lcov" {
+		if opts.OutputPath == "" {
+			path, err := pathFromLabel(opts.FuzzTest, commonFlags)
+			if err != nil {
+				return "", err
+			}
+			name := strings.ReplaceAll(path, "/", "-")
+			opts.OutputPath = name + ".coverage.lcov"
+		}
+		// We don't use copy.Copy here to be able to set the permissions
+		// to 0o644 before umask - copy.Copy just copies the permissions
+		// from the source file, which has permissions 555 like all
+		// files created by bazel.
+		content, err := os.ReadFile(lcovReport)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		err = os.WriteFile(opts.OutputPath, content, 0o644)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		return opts.OutputPath, nil
+	}
+
 	// If no output path was specified, create the coverage report in a
 	// temporary directory
 	if opts.OutputPath == "" {
