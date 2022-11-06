@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="/docs/assets/logo.png" alt="Code Intelligence" />
+  <a href="https://code-intelligence.com"><img src="/docs/assets/logo.png" alt="Code Intelligence" /></a>
   <h1>cifuzz</h1>
   <p>makes fuzz tests as easy as unit tests</p>
   <a href="https://github.com/CodeIntelligenceTesting/cifuzz/releases">
