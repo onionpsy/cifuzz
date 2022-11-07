@@ -10,7 +10,7 @@ public class FuzzTestCase {
         int b = data.consumeInt();
         String c = data.consumeRemainingAsString();
 
-        ExploreMe ex = new ExploreMe();
-        ex.exploreMe(a, b, c);
+        ExploreMe ex = new ExploreMe(a);
+        ex.exploreMe(b, c);
     }
 }

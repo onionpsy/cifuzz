@@ -96,7 +96,7 @@ func TestIntegration_Gradle_InitCreateRun(t *testing.T) {
 		expectedStackTrace := []*stacktrace.StackFrame{
 			{
 				SourceFile:  "com.example.ExploreMe",
-				Line:        13,
+				Line:        19,
 				Column:      0,
 				FrameNumber: 0,
 				Function:    "exploreMe",
@@ -161,7 +161,7 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	for _, file := range summary.Files {
 		if file.Filename == "com/example/ExploreMe.java" {
 			assert.Equal(t, 2, file.Coverage.FunctionsHit)
-			assert.Equal(t, 8, file.Coverage.LinesHit)
+			assert.Equal(t, 10, file.Coverage.LinesHit)
 			assert.Equal(t, 8, file.Coverage.BranchesHit)
 
 		} else if file.Filename == "com/example/App.java" {
@@ -195,8 +195,8 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 				"        int a = data.consumeInt();",
 				"        int b = data.consumeInt();",
 				"        String c = data.consumeRemainingAsString();",
-				"		 ExploreMe ex = new ExploreMe();",
-				"        ex.exploreMe(a, b, c);",
+				"		 ExploreMe ex = new ExploreMe(a);",
+				"        ex.exploreMe(b, c);",
 			}...)
 			addedFunctionCall = true
 		}
