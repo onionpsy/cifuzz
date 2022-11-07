@@ -3,7 +3,6 @@
 package main
 
 import (
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -20,6 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/installer"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 //go:embed build

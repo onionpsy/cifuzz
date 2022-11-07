@@ -1,10 +1,11 @@
 package runfiles
 
 import (
-	"code-intelligence.com/cifuzz/internal/installer"
 	"os"
 
 	"github.com/pkg/errors"
+
+	"code-intelligence.com/cifuzz/internal/installer"
 )
 
 type RunfilesFinder interface {
