@@ -1,14 +1,11 @@
 # This Pipeline tests the minimum requirements by setting up a container with the
 # required versions. As it uses the installer created by the release pipeline it
-# only runs after the release pipeline finished.
+# only runs after a release is published.
 name: E2E min requirements
 
 on:
-  workflow_run:
-    workflows: ["Release Pipeline"]
-    types:
-      - completed
-    branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -30,8 +27,11 @@ jobs:
           cmake --version | grep 3.16
         shell: bash
 
+      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
       - name: Download & execute latest installer
-        run: sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
+          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
         # to make sure our install script is compatible to all the shells
         shell: sh
 
@@ -43,7 +43,7 @@ jobs:
       - name: Run CMake Example
         run: |
           cd examples/cmake
-          ~/cifuzz/bin/cifuzz run --use-sandbox=false my_fuzz_test 2>&1 | tee fuzzing.log
+          cifuzz run --use-sandbox=false my_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"
@@ -52,7 +52,7 @@ jobs:
       - name: Run Other Build System Example
         run: |
           cd examples/other
-          ~/cifuzz/bin/cifuzz run --use-sandbox=false my_fuzz_test 2>&1 | tee fuzzing.log
+          cifuzz run --use-sandbox=false my_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"

@@ -52,3 +52,19 @@ runs:
       - name: Setup - Windows
         uses: ilammy/msvc-dev-cmd@d8610e2b41c6d0f0c3b4c46dad8df0fd826c68e1
         if: contains(inputs.os, 'windows')
+
+      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
+      - name: Update Path - MacOS/Linux
+        if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu')
+        run: |
+          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        shell: bash
+
+      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
+      - name: Update Path - Windows
+        if: contains(inputs.os, 'windows')
+        run: |
+          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
+          echo "$HOME/AppData/Roaming/cifuzz/bin" >> $GITHUB_PATH
+        shell: bash

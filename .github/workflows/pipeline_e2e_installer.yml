@@ -50,13 +50,29 @@ jobs:
           echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
           echo "PATH=$PATH:$LLVM_PATH/bin" >> $GITHUB_ENV
 
+      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
+      - name: Update Path - MacOS/Linux
+        if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
+        run: |
+          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        shell: bash
+
+      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
+      - name: Update Path - Windows
+        if: contains(matrix.os, 'windows')
+        run: |
+          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
+          echo "$HOME/AppData/Roaming/cifuzz/bin" >> $GITHUB_PATH
+        shell: bash
+
       - name: Download & execute latest installer
         run: sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
         # to make sure our install script is compatible to all the shells 
         shell: sh 
 
       - name: Test cifuzz 
-        run: ~/cifuzz/bin/cifuzz --version | grep -E "^cifuzz version [0-9]+.[0-9]+.[0-9]+$"
+        run: cifuzz --version | grep -E "^cifuzz version [0-9]+.[0-9]+.[0-9]+$"
         shell: bash
 
       - name: Download Example Projects
@@ -68,7 +84,7 @@ jobs:
         if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
         run: |
           cd examples/cmake
-          ~/cifuzz/bin/cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
+          cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"
@@ -78,7 +94,7 @@ jobs:
         if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
         run: |
           cd examples/other
-          ~/cifuzz/bin/cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
+          cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"
@@ -88,7 +104,7 @@ jobs:
         if: contains(matrix.os, 'windows')
         run: |
           cd examples/cmake
-          ~/cifuzz/bin/cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
+          cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
           # we are not testing for the ubsan finding 
           # as we currently do not support ubsan on windows

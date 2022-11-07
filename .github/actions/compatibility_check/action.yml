@@ -9,7 +9,8 @@ runs:
   steps:
     - name: Setup (linux)
       if: contains(inputs.os, 'ubuntu')
-      run: echo "INSTALLER=cifuzz_installer_linux" >> $GITHUB_ENV
+      run: |
+        echo "INSTALLER=cifuzz_installer_linux" >> $GITHUB_ENV
       shell: bash
 
     - name: Setup (macos)
@@ -29,13 +30,14 @@ runs:
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
       shell: bash
 
+    # change paths as soon as the new install path is released
     - name: CMake Example (run + bundle)
       run: |
         cd examples/cmake
         export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1
-        ~/cifuzz/bin/cifuzz run --use-sandbox=false my_fuzz_test
-        ~/cifuzz/bin/cifuzz findings --json | jq -r '.[].name' >> findings.old
-        ~/cifuzz/bin/cifuzz bundle my_fuzz_test
+        cifuzz run --use-sandbox=false my_fuzz_test
+        cifuzz findings --json | jq -r '.[].name' >> findings.old
+        cifuzz bundle my_fuzz_test
       shell: bash
 
     # by now coverage runs are not supported on windows
@@ -43,7 +45,7 @@ runs:
       if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
-        ~/cifuzz/bin/cifuzz coverage my_fuzz_test
+        cifuzz coverage my_fuzz_test
       shell: bash
 
     - name: Replace current version with the newly created one
@@ -58,9 +60,9 @@ runs:
       run: |
         cd examples/cmake
         export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1
-        ~/cifuzz/bin/cifuzz run my_fuzz_test
-        ~/cifuzz/bin/cifuzz findings --json | jq -r '.[].name' >> findings.new
-        ~/cifuzz/bin/cifuzz bundle my_fuzz_test
+        cifuzz run my_fuzz_test
+        cifuzz findings --json | jq -r '.[].name' >> findings.new
+        cifuzz bundle my_fuzz_test
       shell: bash
 
     # by now coverage runs are not supported on windows
@@ -68,7 +70,7 @@ runs:
       if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
-        ~/cifuzz/bin/cifuzz coverage my_fuzz_test
+        cifuzz coverage my_fuzz_test
       shell: bash
 
     - name: Compare findings
