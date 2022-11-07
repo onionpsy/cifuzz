@@ -76,13 +76,19 @@ or by running our install script:
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
 ```
-
 If you are using Windows you can download
 the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows.exe)
 and execute it.
 
-By default, cifuzz gets installed in your home directory under `cifuzz`.
-You can customize the installation directory with `./cifuzz_installer -i /target/dir`.
+**Installation directories:**
+* *Linux / macOS* **user** installation:
+  * `~/.local/share/cifuzz` (default) or
+  * `$XDG_DATA_HOME/cifuzz` if set
+* *Linux / macOS* **root** installation:
+  * `/opt/code-intelligence/cifuzz`
+* *Windows* installation:
+  * `%APPDATA%/cifuzz`
+
 
 Do not forget to add the installation's `bin` directory to your `PATH`.
 
