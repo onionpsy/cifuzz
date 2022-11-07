@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -26,6 +27,7 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 		t.Skip("Running Jazzer is currently broken on our Windows GitHub Action runner")
 	}
 
+	testutil.RegisterTestDepOnCIFuzz()
 	cifuzz := shared.InstallCIFuzzInTemp(t)
 
 	// Copy testdata
