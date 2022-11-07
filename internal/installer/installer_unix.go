@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
+	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 func RegisterCMakePackage(packageDir string) error {
@@ -20,6 +22,7 @@ func RegisterCMakePackage(packageDir string) error {
 		return errors.WithStack(err)
 	}
 	cmakePackagesDir := filepath.Join(homeDir, ".cmake", "packages", "cifuzz")
+	log.Printf("Adding CMake package to %s", cmakePackagesDir)
 	err = os.MkdirAll(cmakePackagesDir, 0755)
 	if err != nil {
 		return errors.WithStack(err)
