@@ -120,7 +120,7 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 			},
 			{
 				SourceFile:  "src/parser/parser_fuzz_test.cpp",
-				Line:        20,
+				Line:        30,
 				Column:      3,
 				FrameNumber: 1,
 				Function:    "LLVMFuzzerTestOneInputNoReturn",
