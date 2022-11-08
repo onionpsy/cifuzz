@@ -80,17 +80,8 @@ If you are using Windows you can download
 the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows.exe)
 and execute it.
 
-**Installation directories:**
-* *Linux / macOS* **user** installation:
-  * `~/.local/share/cifuzz` (default) or
-  * `$XDG_DATA_HOME/cifuzz` if set
-* *Linux / macOS* **root** installation:
-  * `/opt/code-intelligence/cifuzz`
-* *Windows* installation:
-  * `%APPDATA%/cifuzz`
-
-
-Do not forget to add the installation's `bin` directory to your `PATH`.
+Do not forget to add the installation's `bin` directory to your `PATH`. 
+You can find additional information in our [Installation Guide](docs/Installation-Guide.md).
 
 ### Prerequisites
 
@@ -205,56 +196,6 @@ brew install openjdk gradle
 
 ```bash
 choco install microsoft-openjdk gradle
-```
-
-</details>
-
-## Uninstall
-
-<details>
-<summary>Version <= 0.5.0</summary>
-
-If you installed cifuzz into the default directory as **root**:
-
-```bash
-sudo rm -rf ~/cifuzz /usr/local/share/cifuzz
-```
-
-If you installed cifuzz as **non-root**:
-```bash
-rm -rf ~/cifuzz ~/.cmake/packages/cifuzz
-```
-
-If you installed into a custom installation directory you have to remove that one instead.
-
-</details>
-<details>
-<summary>Version > 0.5.0</summary>
-
-From this version on the installation directory is fixed.
-
-If you installed cifuzz as **root**:
-
-```bash
-sudo rm -rf /opt/code-intelligence/cifuzz /usr/local/bin/cifuzz /usr/local/share/cifuzz
-```
-
-If you installed cifuzz as **non-root**:
-
-```bash
-rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/cifuzz" ~/.local/bin/cifuzz ~/.cmake/packages/cifuzz
-```
-
-If you installed cifuzz on **Windows**:
-
-```bash
-rd /s %APPDATA%/cifuzz
-```
-
-To delete the registry entry on **Windows**:
-```bash
-reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
-reg delete "HKCU\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
 ```
 
 </details>
