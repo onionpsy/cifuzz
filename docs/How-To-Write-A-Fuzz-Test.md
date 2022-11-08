@@ -20,14 +20,9 @@ functions. A useful tool for this is The
 <details>
 <summary>C/C++</summary>
 
-If you use Clang/LLVM as your compiler of choice you can use it directly with 
-`#include <fuzzer/FuzzedDataProvider.h>`, otherwise you can just copy 
-the source file and add it to your project. 
-
 An example can look like this:
 
 ``` cpp
-#include <stdio.h>
 #include <cifuzz/cifuzz.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
