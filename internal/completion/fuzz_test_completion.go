@@ -2,7 +2,6 @@ package completion
 
 import (
 	"bufio"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/regexutil"
 )
 
@@ -65,115 +65,85 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 }
 
 func validBazelFuzzTests(toComplete string) ([]string, cobra.ShellCompDirective) {
-	// Get pwd and project workspace paths
-	workDir, err := os.Getwd()
-	if err != nil {
-		log.Error(err)
-		return nil, cobra.ShellCompDirectiveError
+	if strings.HasPrefix(toComplete, "//") {
+		return absoluteBazelFuzzTestLabels(toComplete)
+	} else {
+		return relativeBazelFuzzTestLabels(toComplete)
 	}
+}
+
+func absoluteBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDirective) {
+	var res []string
+
 	workSpace, err := getWorkspacePath()
 	if err != nil {
 		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
-
-	// Find all build.BAZEL/BUILD files in the project
-	var buildFiles []string
-	err = filepath.WalkDir(workSpace, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			// Skip walking the directory if it doesn't start with the
-			// toComplete string
-			if !strings.HasPrefix(path, strings.TrimPrefix(toComplete, "//")) {
-				return fs.SkipDir
-			}
-			return nil
-		}
-
-		baseName := filepath.Base(path)
-		if baseName == "BUILD.bazel" || baseName == "BUILD" {
-			buildFiles = append(buildFiles, path)
-		}
-		return nil
-	})
+	buildFiles, err := findBazelBuildFiles(toComplete, workSpace)
 	if err != nil {
 		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
+	for _, buildFile := range buildFiles {
+		// Construct the absolute target label
+		var labelPrefix string
+		absPackageName := filepath.Dir(buildFile)
+		if absPackageName == "." {
+			labelPrefix = "//:"
+		} else {
+			labelPrefix = "//" + absPackageName + ":"
+		}
+
+		targetNames, err := findTargetsInBuildFile(buildFile)
+		if err != nil {
+			// Command completion is best-effort: Do not fail on errors
+			log.Error(err)
+			continue
+		}
+		for _, name := range targetNames {
+			res = append(res, labelPrefix+name)
+		}
+	}
+
+	return res, cobra.ShellCompDirectiveNoFileComp
+}
+
+func relativeBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDirective) {
 	var res []string
 
-	// Check if we are searching for a relative or absolute label
-	if !strings.HasPrefix(toComplete, "//") {
-		for _, buildFile := range buildFiles {
-			targetNames, err := findTargetsInBuildFile(buildFile)
-			if err != nil {
-				// Command completion is best-effort: Do not fail on errors
-				log.Error(err)
-				continue
-			}
-
-			for _, name := range targetNames {
-				// Get path relative to working dir to create the package name in the label
-				relPath, err := filepath.Rel(workDir, buildFile)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-
-				// Ignore build files that are above the current working dir
-				if !strings.HasPrefix(relPath, "..") {
-					// Construct the relative target label (that's the term used
-					// by bazel for the target identifier, see
-					// https://bazel.build/concepts/labels)
-					var relLabel string
-					relPackageName := filepath.Dir(relPath)
-					if relPackageName == "." {
-						relLabel = name
-					} else {
-						relLabel = relPackageName + ":" + name
-					}
-					res = append(res, relLabel)
-				}
-			}
-		}
-
-		return res, cobra.ShellCompDirectiveNoFileComp
+	workDir, err := os.Getwd()
+	if err != nil {
+		log.Error(err)
+		return nil, cobra.ShellCompDirectiveError
 	}
-
-	err = os.Chdir(workSpace)
+	buildFiles, err := findBazelBuildFiles(toComplete, workDir)
 	if err != nil {
 		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	// Check all build files in the workspace
 	for _, buildFile := range buildFiles {
 		targetNames, err := findTargetsInBuildFile(buildFile)
 		if err != nil {
+			// Command completion is best-effort: Do not fail on errors
 			log.Error(err)
 			continue
 		}
 
 		for _, name := range targetNames {
-			relPath, err := filepath.Rel(workSpace, buildFile)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-
-			// Construct the absolute target label
-			var absLabel string
-			absPackageName := filepath.Dir(relPath)
-			if absPackageName == "." {
-				absLabel = "//" + name
+			// Construct the relative target label (that's the term used
+			// by bazel for the target identifier, see
+			// https://bazel.build/concepts/labels)
+			var relLabel string
+			relPackageName := filepath.Dir(buildFile)
+			if relPackageName == "." {
+				relLabel = name
 			} else {
-				absLabel = "//" + absPackageName + ":" + name
+				relLabel = relPackageName + ":" + name
 			}
-			res = append(res, absLabel)
+			res = append(res, relLabel)
 		}
 	}
 
@@ -245,11 +215,42 @@ func validJavaFuzzTests(toComplete string, projectDir string) ([]string, cobra.S
 	return res, cobra.ShellCompDirectiveNoFileComp
 }
 
+// findBazelBuildFiles returns the paths to all BUILD.bazel and BUILD files
+// found in the given directory.
+func findBazelBuildFiles(toComplete string, dir string) ([]string, error) {
+	var buildFiles []string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		path, err = filepath.Rel(dir, path)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if d.IsDir() {
+			// Skip walking the directory if it doesn't start with the
+			// toComplete string
+			if !strings.HasPrefix(path, strings.TrimPrefix(toComplete, "//")) {
+				return fs.SkipDir
+			}
+			return nil
+		}
+
+		baseName := filepath.Base(path)
+		if baseName == "BUILD.bazel" || baseName == "BUILD" {
+			buildFiles = append(buildFiles, path)
+		}
+		return nil
+	})
+	return buildFiles, errors.WithStack(err)
+}
+
 // findTargetsInBuildFile returns all "cc_fuzz_test" targets in a given build file.
 func findTargetsInBuildFile(filePath string) (map[string]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		// Command completion is best-effort: Do not fail on errors
 		return nil, err
 	}
 
