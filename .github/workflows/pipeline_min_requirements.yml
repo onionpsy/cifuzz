@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          apt install -y cmake llvm-11 clang-11 openjdk-8-jdk maven subversion curl unzip
+          DEBIAN_FRONTEND=noninteractive apt install -y cmake llvm-11 clang-11 openjdk-8-jdk maven subversion curl unzip git
           ln -s /usr/bin/clang-11 /usr/bin/clang
           ln -s /usr/bin/clang++-11 /usr/bin/clang++
           ln -s /usr/bin/llvm-symbolizer-11 /usr/bin/llvm-symbolizer
@@ -30,6 +30,11 @@ jobs:
           cmake --version | grep 3.16
           java --version | grep 8
         shell: bash
+
+      - name: Install Bazel
+        run: |
+          curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.15.0/bazelisk-linux-amd64 -o /usr/bin/bazel
+          chmod +x /usr/bin/bazel
 
       # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
       - name: Download & execute latest installer
@@ -77,3 +82,10 @@ jobs:
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"
         shell: bash
+
+      - name: Run Bazel Example
+        run: |
+          cd examples/bazel
+          cifuzz run --use-sandbox=false src:explore_me_fuzz_test 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "heap buffer overflow"
+          cat fuzzing.log | grep -E "Findings:\s+1"  
