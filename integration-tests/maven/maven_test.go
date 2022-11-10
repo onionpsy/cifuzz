@@ -26,9 +26,6 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Running Jazzer is currently broken on our Windows GitHub Action runner")
-	}
 
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
@@ -117,12 +114,6 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 				FrameNumber: 0,
 				Function:    "exploreMe",
 			},
-		}
-		if runtime.GOOS == "windows" {
-			// On Windows, the column is not printed
-			for i := range expectedStackTrace {
-				expectedStackTrace[i].Column = 0
-			}
 		}
 
 		require.Equal(t, expectedStackTrace, findings[0].StackTrace)
