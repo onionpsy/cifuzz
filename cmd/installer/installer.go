@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 
@@ -102,9 +101,21 @@ func installCIFuzz(installDir string) error {
 			// https://gitlab.kitware.com/cmake/cmake/-/blob/5ed9232d781ccfa3a9fae709e12999c6649aca2f/Modules/Platform/UnixPaths.cmake#L30)
 			cmakeSrc := filepath.Join(installDir, "share", "cifuzz")
 			cmakeDest := "/usr/local/share/cifuzz"
-			err = copy.Copy(cmakeSrc, cmakeDest)
+			log.Printf("Creating symlink %s -> %s", cmakeSrc, cmakeDest)
+			// Older versions of the installer copied the directory, so
+			// we ensure that no directory exists in the destination to
+			// avoid fileutil.ForceSymlink to fail
+			err = os.RemoveAll(cmakeDest)
 			if err != nil {
 				return errors.WithStack(err)
+			}
+			err = os.MkdirAll(filepath.Dir(cmakeDest), 0755)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			err = fileutil.ForceSymlink(cmakeSrc, cmakeDest)
+			if err != nil {
+				return err
 			}
 		} else {
 			// The CMake package registry entry has to point directly to the directory
