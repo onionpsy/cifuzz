@@ -30,6 +30,7 @@ var shells = []string{"bash", "zsh", "fish"}
 
 func main() {
 	flags := pflag.NewFlagSet("cifuzz installer", pflag.ExitOnError)
+	installDirFlag := flags.StringP("install-dir", "i", "", "The directory to install cifuzz in")
 	helpRequested := flags.BoolP("help", "h", false, "")
 	flags.Bool("verbose", false, "Print verbose output")
 	ignoreCheck := flags.Bool("ignore-installation-check", false, "Doesn't check if a previous installation already exists")
@@ -47,10 +48,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	installDir, err := getInstallDir()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+	var installDir string
+	if *installDirFlag != "" {
+		installDir = *installDirFlag
+	} else {
+		installDir, err = getInstallDir()
+		if err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
 	}
 
 	if !*ignoreCheck {
