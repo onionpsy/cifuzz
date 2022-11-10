@@ -151,28 +151,35 @@ func installCIFuzz(installDir string) error {
 		log.Note(note)
 	}
 
-	if runtime.GOOS == "windows" {
-		// TODO: On Windows, users generally don't expect having to fiddle with their PATH. We should update it for
-		//       them, but that requires asking for admin access.
-		log.Notef(`Please add the following directory to your PATH:
+	// Tell the user how to add cifuzz to the PATH (unless it's already
+	// in the PATH)
+	cifuzzInPATH, err := cifuzzInPATH(installDir)
+	if err != nil {
+		return err
+	}
+	if !cifuzzInPATH {
+		if runtime.GOOS == "windows" {
+			// TODO: On Windows, users generally don't expect having to fiddle with their PATH. We should update it for
+			//       them, but that requires asking for admin access.
+			log.Notef(`Please add the following directory to your PATH:
 	%s
-If you haven't already done so.
 `, filepath.Join(installDir, "bin"))
-	} else {
-		shell := filepath.Base(os.Getenv("SHELL"))
-		var profileName string
-		if shell == "bash" {
-			profileName = "~/.bash_profile"
-		} else if shell == "zsh" {
-			profileName = "~/.zprofile"
 		} else {
-			profileName = "~/.profile"
-		}
-		log.Notef(`To add cifuzz to your PATH:
+			shell := filepath.Base(os.Getenv("SHELL"))
+			var profileName string
+			if shell == "bash" {
+				profileName = "~/.bash_profile"
+			} else if shell == "zsh" {
+				profileName = "~/.zprofile"
+			} else {
+				profileName = "~/.profile"
+			}
+			log.Notef(`To add cifuzz to your PATH:
 
     export PATH="$PATH:%s" >> %s
 
 `, binDir, profileName)
+		}
 	}
 
 	return nil
@@ -395,6 +402,20 @@ func installFishCompletionScript(cifuzzPath string) error {
 	log.Printf("Command: %s", cmd.String())
 	err = cmd.Run()
 	return errors.WithStack(err)
+}
+
+func cifuzzInPATH(installDir string) (bool, error) {
+	cifuzzPath, err := exec.LookPath("cifuzz")
+	if err != nil {
+		return false, nil
+	}
+
+	cifuzzPath, err = filepath.EvalSymlinks(cifuzzPath)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return cifuzzPath == filepath.Join(installDir, "bin", "cifuzz"), nil
 }
 
 func checkExistingCIFuzz(installDir string) error {
