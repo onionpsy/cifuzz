@@ -26,6 +26,8 @@ var buildFiles embed.FS
 
 var notes []string
 
+var shells = []string{"bash", "zsh", "fish"}
+
 func main() {
 	flags := pflag.NewFlagSet("cifuzz installer", pflag.ExitOnError)
 	helpRequested := flags.BoolP("help", "h", false, "")
@@ -86,6 +88,16 @@ func installCIFuzz(installDir string) error {
 		return err
 	}
 
+	// Create the command completion scripts (not supported on Windows)
+	if runtime.GOOS != "windows" {
+		for _, shell := range shells {
+			err = createCommandCompletionScript(installDir, shell)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	// Install and register the CMake package - unless the user
 	// set CIFUZZ_INSTALLER_NO_CMAKE. One use case for not installing
 	// CMake is when cifuzz is installed in a sandbox which doesn't
@@ -131,15 +143,14 @@ func installCIFuzz(installDir string) error {
 
 	// Install the autocompletion script for the current shell (if the
 	// shell is supported)
-	cifuzzPath := filepath.Join(installDir, "bin", "cifuzz")
 	shell := filepath.Base(os.Getenv("SHELL"))
 	switch shell {
 	case "bash":
-		err = installBashCompletionScript(installDir, cifuzzPath)
+		err = installBashCompletionScript(installDir)
 	case "zsh":
-		err = installZshCompletionScript(installDir, cifuzzPath)
+		err = installZshCompletionScript(installDir)
 	case "fish":
-		err = installFishCompletionScript(cifuzzPath)
+		err = installFishCompletionScript(installDir)
 	default:
 		log.Printf("Not installing shell completion script: Unsupported shell: %s", shell)
 	}
@@ -159,12 +170,12 @@ func installCIFuzz(installDir string) error {
 			}
 			symlinkPath = filepath.Join(home, ".local", "bin", "cifuzz")
 		}
-		log.Printf("Creating symlink in %s", symlinkPath)
+		log.Printf("Creating symlink %s", symlinkPath)
 		err = os.MkdirAll(filepath.Dir(symlinkPath), 0755)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		err = fileutil.ForceSymlink(cifuzzPath, symlinkPath)
+		err = fileutil.ForceSymlink(cifuzzPath(installDir), symlinkPath)
 		if err != nil {
 			return err
 		}
@@ -269,28 +280,14 @@ func extractEmbeddedFiles(files *embed.FS, installDir string) error {
 	return err
 }
 
-func installBashCompletionScript(targetDir, cifuzzPath string) error {
+func installBashCompletionScript(installDir string) error {
 	// Installing the bash completion script is only supported on Linux
 	// and macOS
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		return nil
 	}
 
-	// Install the completion script in the target directory
-	completionsDir := filepath.Join(targetDir, "share", "cifuzz", "bash", "completions")
-	err := os.MkdirAll(completionsDir, 0700)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	completionScriptPath := filepath.Join(completionsDir, "_cifuzz")
-	cmd := exec.Command("sh", "-c", "'"+cifuzzPath+"' completion bash > \""+completionScriptPath+"\"")
-	cmd.Stderr = os.Stderr
-	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	completionScript := completionScriptPath(installDir, "bash")
 
 	switch runtime.GOOS {
 	case "linux":
@@ -313,11 +310,11 @@ func installBashCompletionScript(targetDir, cifuzzPath string) error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		cmd = exec.Command("bash", "-c", "'"+cifuzzPath+"' completion bash > \""+dir+"/cifuzz\"")
-		log.Debugf("Command: %s", cmd.String())
-		err = cmd.Run()
+		symlinkPath := filepath.Join(dir, "cifuzz")
+		log.Printf("Creating symlink %s", symlinkPath)
+		err = fileutil.ForceSymlink(completionScript, symlinkPath)
 		if err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	case "darwin":
 		// There are no bash completion directories on macOS by default,
@@ -329,33 +326,17 @@ func installBashCompletionScript(targetDir, cifuzzPath string) error {
     # enable cifuzz completion:
     echo source '%s' >> ~/.bash_profile
 
-`, completionScriptPath))
+`, completionScript))
 	}
 
 	return nil
 }
 
-func installZshCompletionScript(targetDir, cifuzzPath string) error {
+func installZshCompletionScript(installDir string) error {
 	// Installing the zsh completion script is only supported on Linux
 	// and macOS
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		return nil
-	}
-
-	// Install the completion script in the target directory
-	completionsDir := filepath.Join(targetDir, "share", "cifuzz", "zsh", "completions")
-	err := os.MkdirAll(completionsDir, 0700)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	completionScriptPath := filepath.Join(completionsDir, "_cifuzz")
-	cmd := exec.Command("sh", "-c", "'"+cifuzzPath+"' completion zsh > \""+completionScriptPath+"\"")
-	cmd.Stderr = os.Stderr
-	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
-	if err != nil {
-		return errors.WithStack(err)
 	}
 
 	// Check if we can write to the first path in the fpath, in which
@@ -369,7 +350,7 @@ func installZshCompletionScript(targetDir, cifuzzPath string) error {
 	// When run as root, it's expected that /root/.zshrc doesn't
 	// exist, which leaves $fpath[1] at the default which should be only
 	// writeable as root.
-	cmd = exec.Command("zsh", "-c", ". ${ZDOTDIR:-${HOME}}/.zshrc 2>/dev/null; echo \"$fpath[1]\"")
+	cmd := exec.Command("zsh", "-c", ". ${ZDOTDIR:-${HOME}}/.zshrc 2>/dev/null; echo \"$fpath[1]\"")
 	cmd.Stderr = os.Stderr
 	log.Debugf("Command: %s", cmd.String())
 	out, err := cmd.Output()
@@ -378,22 +359,27 @@ func installZshCompletionScript(targetDir, cifuzzPath string) error {
 	}
 	fpath := strings.TrimSpace(string(out))
 
-	// Try to write the script to the first fpath directory
-	cmd = exec.Command("zsh", "-c", "'"+cifuzzPath+"' completion zsh > \""+fpath+"/_cifuzz\"")
-	cmd.Stderr = os.Stderr
-	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
+	// Ensure that the directory exists. Ignore errors here, if this
+	// fails, creating the symlink below will also fail and we handle
+	// the error there
+	_ = os.MkdirAll(fpath, 0755)
+
+	// Try to create a symlink in the first fpath directory
+	completionScript := completionScriptPath(installDir, "zsh")
+	symlinkPath := filepath.Join(fpath, "_cifuzz")
+	err = fileutil.ForceSymlink(completionScript, symlinkPath)
 	if err != nil {
-		// Writing to the first fpath directory failed, so we tell the
-		// user to add the completion script from our install directory
-		// to their fpath instead
+		// Creating a symlink in the first fpath directory failed, so we
+		// tell the user to add the completion script from our install
+		// directory to their fpath instead
 		notes = append(notes, fmt.Sprintf(`To enable command completion:
 
     echo fpath=(%s $fpath) >> ~/.zshrc
     echo "autoload -U compinit; compinit" >> ~/.zshrc
 
-`, completionsDir))
+`, filepath.Dir(completionScript)))
 	} else {
+		log.Printf("Creating symlink %s", symlinkPath)
 		notes = append(notes, `To enable command completion (if not already enabled):
 
     echo "autoload -U compinit; compinit" >> ~/.zshrc
@@ -404,7 +390,13 @@ func installZshCompletionScript(targetDir, cifuzzPath string) error {
 	return nil
 }
 
-func installFishCompletionScript(cifuzzPath string) error {
+func installFishCompletionScript(installDir string) error {
+	// Installing the zsh completion script is only supported on Linux
+	// and macOS
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+		return nil
+	}
+
 	var dir string
 	// Choose the correct directory for the completion script.
 	// See https://fishshell.com/docs/current/completions.html#where-to-put-completions
@@ -426,10 +418,10 @@ func installFishCompletionScript(cifuzzPath string) error {
 		return errors.WithStack(err)
 	}
 
-	cmd := exec.Command("fish", "-c", "'"+cifuzzPath+"' completion fish > \""+dir+"/cifuzz.fish\"")
-	cmd.Stderr = os.Stderr
-	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
+	completionScript := completionScriptPath(installDir, "fish")
+	symlinkPath := filepath.Join(dir, "cifuzz.fish")
+	log.Printf("Creating symlink %s", symlinkPath)
+	err = fileutil.ForceSymlink(completionScript, symlinkPath)
 	return errors.WithStack(err)
 }
 
@@ -468,4 +460,30 @@ func checkExistingCIFuzz(installDir string) error {
 	return errors.Errorf(`cifuzz is already installed in %s.
 To avoid issues with incompatible versions, please uninstall cifuzz first.
 See https://github.com/CodeIntelligenceTesting/cifuzz#uninstall`, oldCIFuzzPath)
+}
+
+func createCommandCompletionScript(installDir, shell string) error {
+	cifuzz := cifuzzPath(installDir)
+	completionScript := completionScriptPath(installDir, shell)
+	err := os.MkdirAll(filepath.Dir(completionScript), 0700)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	cmd := exec.Command("sh", "-c", "'"+cifuzz+"' completion "+shell+" > '"+completionScript+"'")
+	cmd.Stderr = os.Stderr
+	log.Debugf("Command: %s", cmd.String())
+	err = cmd.Run()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func completionScriptPath(installDir, shell string) string {
+	return filepath.Join(installDir, "share", "cifuzz", "completions", shell)
+}
+
+func cifuzzPath(installDir string) string {
+	return filepath.Join(installDir, "bin", "cifuzz")
 }
