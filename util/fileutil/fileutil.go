@@ -118,3 +118,22 @@ func CanonicalPath(path string) (string, error) {
 	}
 	return canonicalPath, nil
 }
+
+// ForceSymlink creates newname as a symbolic link to oldname. If
+// newname already exists, it will be overwritten.
+func ForceSymlink(oldname, newname string) error {
+	newnameTmp := newname + ".tmp"
+	err := os.Remove(newnameTmp)
+	if err != nil && !os.IsNotExist(err) {
+		return errors.WithStack(err)
+	}
+	err = os.Symlink(oldname, newnameTmp)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = os.Rename(newnameTmp, newname)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}

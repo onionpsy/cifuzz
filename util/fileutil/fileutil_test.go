@@ -46,3 +46,34 @@ func TestIsBelow(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, isBelow)
 }
+
+func TestForceSymlink(t *testing.T) {
+	var err error
+
+	// Test that a symlink can be created
+	sourcePath := filepath.Join(t.TempDir(), "source")
+	symlinkPath := filepath.Join(t.TempDir(), "link")
+	err = ForceSymlink(sourcePath, symlinkPath)
+	require.NoError(t, err)
+	// Check that the symlink exists
+	stat, err := os.Lstat(symlinkPath)
+	require.NoError(t, err)
+	require.True(t, stat.Mode()&os.ModeSymlink != 0)
+	// Check that the symlink points to the source
+	target, err := os.Readlink(symlinkPath)
+	require.NoError(t, err)
+	require.Equal(t, sourcePath, target)
+
+	// Test that a new symlink can be created in the same path
+	source2Path := filepath.Join(t.TempDir(), "source2")
+	err = ForceSymlink(source2Path, symlinkPath)
+	require.NoError(t, err)
+	// Check that the symlink exists
+	stat, err = os.Lstat(symlinkPath)
+	require.NoError(t, err)
+	require.True(t, stat.Mode()&os.ModeSymlink != 0)
+	// Check that the symlink points to the source
+	target, err = os.Readlink(symlinkPath)
+	require.NoError(t, err)
+	require.Equal(t, source2Path, target)
+}

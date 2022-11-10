@@ -46,32 +46,3 @@ func GetInstallDir() (string, error) {
 
 	return installDir, nil
 }
-
-func GetBinDir() (string, error) {
-	var binDir string
-	var err error
-
-	// Executable should be in installation directory on Windows
-	if runtime.GOOS == "windows" {
-		installDir, err := GetInstallDir()
-		if err != nil {
-			return "", err
-		}
-		binDir = filepath.Join(installDir, "bin")
-	} else if os.Getuid() == 0 {
-		binDir = "/usr/local/bin"
-	} else {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-		binDir = filepath.Join(home, ".local", "bin")
-	}
-
-	binDir, err = filepath.Abs(binDir)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return binDir, nil
-}

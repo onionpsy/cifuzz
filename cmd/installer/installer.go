@@ -118,14 +118,9 @@ func installCIFuzz(installDir string) error {
 		}
 	}
 
-	binDir, err := installer.GetBinDir()
-	if err != nil {
-		return err
-	}
-	cifuzzPath := filepath.Join(binDir, "cifuzz")
-
 	// Install the autocompletion script for the current shell (if the
 	// shell is supported)
+	cifuzzPath := filepath.Join(installDir, "bin", "cifuzz")
 	shell := filepath.Base(os.Getenv("SHELL"))
 	switch shell {
 	case "bash":
@@ -139,6 +134,29 @@ func installCIFuzz(installDir string) error {
 	}
 	if err != nil {
 		return err
+	}
+
+	// Create a symlink to the cifuzz executable
+	var symlinkPath string
+	if runtime.GOOS != "windows" {
+		if os.Getuid() == 0 {
+			symlinkPath = "/usr/local/bin/cifuzz"
+		} else {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			symlinkPath = filepath.Join(home, ".local", "bin", "cifuzz")
+		}
+		log.Printf("Creating symlink in %s", symlinkPath)
+		err = os.MkdirAll(filepath.Dir(symlinkPath), 0755)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		err = fileutil.ForceSymlink(cifuzzPath, symlinkPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Success("Installation successful")
@@ -178,7 +196,7 @@ func installCIFuzz(installDir string) error {
 
     export PATH="$PATH:%s" >> %s
 
-`, binDir, profileName)
+`, filepath.Dir(symlinkPath), profileName)
 		}
 	}
 
