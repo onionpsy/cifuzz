@@ -286,7 +286,7 @@ func installBashCompletionScript(targetDir, cifuzzPath string) error {
 	completionScriptPath := filepath.Join(completionsDir, "_cifuzz")
 	cmd := exec.Command("sh", "-c", "'"+cifuzzPath+"' completion bash > \""+completionScriptPath+"\"")
 	cmd.Stderr = os.Stderr
-	log.Printf("Command: %s", cmd.String())
+	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
 		return errors.WithStack(err)
@@ -314,7 +314,7 @@ func installBashCompletionScript(targetDir, cifuzzPath string) error {
 			return errors.WithStack(err)
 		}
 		cmd = exec.Command("bash", "-c", "'"+cifuzzPath+"' completion bash > \""+dir+"/cifuzz\"")
-		log.Printf("Command: %s", cmd.String())
+		log.Debugf("Command: %s", cmd.String())
 		err = cmd.Run()
 		if err != nil {
 			return errors.WithStack(err)
@@ -352,7 +352,7 @@ func installZshCompletionScript(targetDir, cifuzzPath string) error {
 	completionScriptPath := filepath.Join(completionsDir, "_cifuzz")
 	cmd := exec.Command("sh", "-c", "'"+cifuzzPath+"' completion zsh > \""+completionScriptPath+"\"")
 	cmd.Stderr = os.Stderr
-	log.Printf("Command: %s", cmd.String())
+	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
 		return errors.WithStack(err)
@@ -371,7 +371,7 @@ func installZshCompletionScript(targetDir, cifuzzPath string) error {
 	// writeable as root.
 	cmd = exec.Command("zsh", "-c", ". ${ZDOTDIR:-${HOME}}/.zshrc 2>/dev/null; echo \"$fpath[1]\"")
 	cmd.Stderr = os.Stderr
-	log.Printf("Command: %s", cmd.String())
+	log.Debugf("Command: %s", cmd.String())
 	out, err := cmd.Output()
 	if err != nil {
 		return errors.WithStack(err)
@@ -381,7 +381,7 @@ func installZshCompletionScript(targetDir, cifuzzPath string) error {
 	// Try to write the script to the first fpath directory
 	cmd = exec.Command("zsh", "-c", "'"+cifuzzPath+"' completion zsh > \""+fpath+"/_cifuzz\"")
 	cmd.Stderr = os.Stderr
-	log.Printf("Command: %s", cmd.String())
+	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
 		// Writing to the first fpath directory failed, so we tell the
@@ -428,7 +428,7 @@ func installFishCompletionScript(cifuzzPath string) error {
 
 	cmd := exec.Command("fish", "-c", "'"+cifuzzPath+"' completion fish > \""+dir+"/cifuzz.fish\"")
 	cmd.Stderr = os.Stderr
-	log.Printf("Command: %s", cmd.String())
+	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	return errors.WithStack(err)
 }
