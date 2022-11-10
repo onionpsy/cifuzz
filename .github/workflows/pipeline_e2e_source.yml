@@ -26,12 +26,12 @@ jobs:
         # please make sure this is in sync with the README.md / installation docs
         # glibc was added as it is required by nodejs which is used to run
         # the github action "action/checkout"
-        run: pacman -Sy --noconfirm git make cmake clang llvm go
+        run: pacman -Sy --noconfirm git make cmake clang llvm go jdk17-openjdk maven gradle
 
       - name: Build libcap statically 
         if: contains(matrix.container, 'archlinux')
         run: |
-          pacman -Sy --noconfirm glibc pam linux-api-headers make diffutils
+          pacman -Syu --noconfirm glibc pam linux-api-headers make diffutils
           mkdir /libcap
           cd /libcap
           curl --output libcap.tar.gz --fail --location https://git.kernel.org/pub/scm/libs/libcap/libcap.git/snapshot/libcap-2.65.tar.gz
@@ -47,7 +47,14 @@ jobs:
         # please make sure this is in sync with the README.md / installation docs
         run: |
           apt update
-          apt --yes install git make cmake clang llvm golang-go libcap-dev 
+          apt --yes install git make cmake clang llvm golang-go libcap-dev default-jdk maven curl unzip
+
+      - name: Install gradle
+        if: contains(matrix.container, 'ubuntu')
+        run: |
+          curl --fail --location https://services.gradle.org/distributions/gradle-7.5.1-bin.zip --output /tmp/gradle-7.5.1-bin.zip
+          unzip -d /opt/gradle /tmp/gradle-7.5.1-bin.zip
+          echo "/opt/gradle/gradle-7.5.1/bin" >> $GITHUB_PATH
 
       - uses: actions/checkout@v3
 
@@ -69,6 +76,20 @@ jobs:
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"
+
+      - name: Run Maven Example
+        run: |
+          cd examples/maven
+          cifuzz run com.example.FuzzTestCase -v 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "Remote Code Execution"
+          cat fuzzing.log | grep -E "Findings:\s+1"
+
+      - name: Run Gradle Example
+        run: |
+          cd examples/gradle
+          cifuzz run com.example.FuzzTestCase 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "Remote Code Execution"
+          cat fuzzing.log | grep -E "Findings:\s+1"
 
   # In general it would be nice to use windows container for testing this,
   # but by now they are not available for windows based github runner
@@ -99,16 +120,6 @@ jobs:
           cat fuzzing.log | grep -E "Findings:\s+2"
         shell: bash
 
-      - name: Run Other Build System Example (MacOS)
-        if: contains(matrix.os, 'macos')
-        run: |
-          cd examples/other
-          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behaviour"
-          cat fuzzing.log | grep -E "Findings:\s+2"
-        shell: bash
-
       - name: Run CMake Example (Windows)
         if: contains(matrix.os, 'windows')
         run: |
@@ -119,3 +130,30 @@ jobs:
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep -E "Findings:\s+1"
         shell: bash
+
+      - name: Run Other Build System Example (MacOS)
+        if: contains(matrix.os, 'macos')
+        run: |
+          cd examples/other
+          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "heap buffer overflow"
+          cat fuzzing.log | grep "undefined behaviour"
+          cat fuzzing.log | grep -E "Findings:\s+2"
+        shell: bash
+
+      - name: Run Maven Example
+        run: |
+          cd examples/maven
+          cifuzz run -v com.example.FuzzTestCase -v 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "Remote Code Execution"
+          cat fuzzing.log | grep -E "Findings:\s+1"
+        shell: bash
+
+      - name: Run Gradle Example
+        run: |
+          cd examples/gradle
+          cifuzz run -v com.example.FuzzTestCase 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "Remote Code Execution"
+          cat fuzzing.log | grep -E "Findings:\s+1"
+        shell: bash
+

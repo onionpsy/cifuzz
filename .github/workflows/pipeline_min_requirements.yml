@@ -19,12 +19,16 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          apt install -y cmake llvm-11 clang-11 subversion curl
+          apt install -y cmake llvm-11 clang-11 openjdk-8-jdk maven subversion curl unzip
           ln -s /usr/bin/clang-11 /usr/bin/clang
           ln -s /usr/bin/clang++-11 /usr/bin/clang++
           ln -s /usr/bin/llvm-symbolizer-11 /usr/bin/llvm-symbolizer
+          curl --fail --location https://services.gradle.org/distributions/gradle-7.5.1-bin.zip --output /tmp/gradle-7.5.1-bin.zip
+          unzip -d /opt/gradle /tmp/gradle-7.5.1-bin.zip
+          echo "/opt/gradle/gradle-7.5.1/bin" >> $GITHUB_PATH
           # to make sure the version from the apt repository is as expected
           cmake --version | grep 3.16
+          java --version | grep 8
         shell: bash
 
       # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
@@ -47,6 +51,22 @@ jobs:
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep "undefined behaviour"
           cat fuzzing.log | grep -E "Findings:\s+2"
+        shell: bash
+
+      - name: Run Maven Example
+        run: |
+          cd examples/maven
+          cifuzz run com.example.FuzzTestCase -v 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "Remote Code Execution"
+          cat fuzzing.log | grep -E "Findings:\s+1"
+        shell: bash
+
+      - name: Run Gradle Example
+        run: |
+          cd examples/gradle
+          cifuzz run com.example.FuzzTestCase 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "Remote Code Execution"
+          cat fuzzing.log | grep -E "Findings:\s+1"
         shell: bash
 
       - name: Run Other Build System Example
