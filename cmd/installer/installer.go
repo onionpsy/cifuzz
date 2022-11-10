@@ -52,7 +52,7 @@ func main() {
 To prevent version issues please remove the files.
 See https://github.com/CodeIntelligenceTesting/cifuzz#uninstall`,
 			filepath.Join(installDir, ".."))
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	err = ExtractEmbeddedFiles(&buildFiles)
