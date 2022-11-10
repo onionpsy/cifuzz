@@ -47,7 +47,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	installDir, err := installer.GetInstallDir()
+	installDir, err := getInstallDir()
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -486,4 +486,39 @@ func completionScriptPath(installDir, shell string) string {
 
 func cifuzzPath(installDir string) string {
 	return filepath.Join(installDir, "bin", "cifuzz")
+}
+
+// getInstallDir returns the absolute path to the installation
+// directory which is chosen according to the OS, root privileges
+// and environment variables.
+func getInstallDir() (string, error) {
+	var installDir string
+
+	xdgPath, xdgSet := os.LookupEnv("XDG_DATA_HOME")
+
+	switch {
+	case runtime.GOOS == "windows":
+		appdata, err := os.UserConfigDir()
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		installDir = filepath.Join(appdata, "cifuzz")
+	case os.Getuid() == 0:
+		installDir = "/opt/code-intelligence/cifuzz"
+	case xdgSet:
+		installDir = filepath.Join(xdgPath, "cifuzz")
+	default:
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		installDir = filepath.Join(home, ".local", "share", "cifuzz")
+	}
+
+	installDir, err := filepath.Abs(installDir)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return installDir, nil
 }

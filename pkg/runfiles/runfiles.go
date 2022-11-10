@@ -2,10 +2,9 @@ package runfiles
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
-
-	"code-intelligence.com/cifuzz/internal/installer"
 )
 
 type RunfilesFinder interface {
@@ -33,12 +32,21 @@ func init() {
 	// Set the default runfiles finder.
 	//
 	// If the environment variable CIFUZZ_INSTALL_ROOT is set, we use
-	// that as the installation directory otherwise we check the standard
-	// installation directory.
+	// that as the installation directory, else we assume that the
+	// current executable lives in $INSTALL_DIR/bin, so we go up one
+	// directory from there and use that as the installation directory.
 	installDir, found := os.LookupEnv("CIFUZZ_INSTALL_ROOT")
 	if !found || installDir == "" {
-		var err error
-		installDir, err = installer.GetInstallDir()
+		executablePath, err := os.Executable()
+		if err != nil {
+			panic(errors.WithStack(err))
+		}
+		executablePath, err = filepath.EvalSymlinks(executablePath)
+		if err != nil {
+			panic(errors.WithStack(err))
+		}
+
+		installDir, err = filepath.Abs(filepath.Join(filepath.Dir(executablePath), ".."))
 		if err != nil {
 			panic(errors.WithStack(err))
 		}
