@@ -20,6 +20,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/pkg/coverage"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -38,14 +39,6 @@ type coverageOptions struct {
 
 	ProjectDir string
 	fuzzTest   string
-}
-
-var validOutputFormats = map[string][]string{
-	config.BuildSystemCMake:  {"html", "lcov"},
-	config.BuildSystemBazel:  {"html", "lcov"},
-	config.BuildSystemOther:  {"html", "lcov"},
-	config.BuildSystemMaven:  {"html"},
-	config.BuildSystemGradle: {"html"},
 }
 
 func (opts *coverageOptions) validate() error {
@@ -69,7 +62,7 @@ func (opts *coverageOptions) validate() error {
 		}
 	}
 
-	validFormats := validOutputFormats[opts.BuildSystem]
+	validFormats := coverage.ValidOutputFormats[opts.BuildSystem]
 	if !stringutil.Contains(validFormats, opts.OutputFormat) {
 		msg := fmt.Sprintf("Flag \"format\" must be %s", strings.Join(validFormats, " or "))
 		return cmdutils.WrapIncorrectUsageError(errors.New(msg))
@@ -148,6 +141,10 @@ Write out an lcov trace file:
 	)
 	cmd.Flags().StringP("format", "f", "html", "Output format of the coverage report (html/lcov).")
 	cmd.Flags().StringP("output", "o", "", "Output path of the coverage report.")
+	err := cmd.RegisterFlagCompletionFunc("format", completion.ValidCoverageOutputFormat)
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
