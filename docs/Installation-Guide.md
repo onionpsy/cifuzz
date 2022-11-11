@@ -21,7 +21,9 @@ All files are installed to `%APPDATA%/cifuzz` with the executable located in `%A
 
 ## How to uninstall cifuzz
 
-### Version < 0.7.0
+### Linux / macOS
+
+#### Version < 0.7.0
 
 If you installed cifuzz into the default directory as **root**:
 
@@ -37,9 +39,9 @@ rm -rf ~/cifuzz ~/.cmake/packages/cifuzz
 
 If you installed into a custom installation directory you have to remove that one instead.
 
-### Version >= 0.7.0
+#### Version >= 0.7.0
 
-From version 0.7.0 on the default installation directory has changed.
+From version 0.7.0 the default installation directory has changed.
 
 If you installed cifuzz as **root**:
 
@@ -55,13 +57,15 @@ rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/cifuzz" ~/.local/bin/cifuzz ~/.cmak
 
 If you installed into a custom installation directory you have to remove that one instead.
 
-If you installed cifuzz on **Windows**:
+### Windows
+
+To uninstall cifuzz on Windows:
 
 ```bash
 rd /s %APPDATA%/cifuzz
 ```
 
-To delete the registry entries on **Windows**:
+To delete the registry entries:
 
 ```bash
 reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
