@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -19,7 +18,6 @@ import (
 
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/pkg/finding"
-	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 )
 
@@ -106,8 +104,7 @@ func GetFindings(t *testing.T, cifuzz string, dir string) []*finding.Finding {
 }
 
 // InstallCIFuzzInTemp creates an installation builder and
-// installs cifuzz in a temp folder and returns the path
-// to the executable.
+// installs cifuzz in a temp folder and returns its path.
 func InstallCIFuzzInTemp(t *testing.T) string {
 	t.Helper()
 
@@ -144,20 +141,15 @@ func InstallCIFuzzInTemp(t *testing.T) string {
 
 		// Install cifuzz
 		installer := filepath.Join("cmd", "installer", "installer.go")
-		installCmd := exec.Command("go", "run", "-tags", "installer", installer, "--ignore-installation-check")
+		installCmd := exec.Command("go", "run", "-tags", "installer", installer, "-i", installDir, "--ignore-installation-check")
 		installCmd.Stderr = os.Stderr
 		installCmd.Dir = projectDir
-		installCmd.Env = TestEnv(t, os.Environ())
 		t.Logf("Command: %s", installCmd.String())
 		err = installCmd.Run()
 		require.NoError(t, err)
 	})
 
-	if runtime.GOOS == "windows" {
-		return filepath.Join(installDir, "cifuzz", "bin", "cifuzz")
-	}
-
-	return filepath.Join(installDir, ".local", "bin", "cifuzz")
+	return installDir
 }
 
 func ModifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
@@ -192,15 +184,4 @@ func ModifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	require.NoError(t, err)
 	_, err = f.WriteString(strings.Join(lines, "\n"))
 	require.NoError(t, err)
-}
-
-func TestEnv(t *testing.T, env []string) []string {
-	resultEnv, err := envutil.Setenv(env, "XDG_DATA_HOME", installDir)
-	require.NoError(t, err)
-	resultEnv, err = envutil.Setenv(resultEnv, "HOME", installDir)
-	require.NoError(t, err)
-	resultEnv, err = envutil.Setenv(resultEnv, "APPDATA", installDir)
-	require.NoError(t, err)
-
-	return resultEnv
 }

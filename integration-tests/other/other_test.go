@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
+	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -32,7 +33,8 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	}
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
-	cifuzz := shared.InstallCIFuzzInTemp(t)
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
@@ -62,7 +64,8 @@ func TestIntegration_Other_DetailedCoverage(t *testing.T) {
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 
-	cifuzz := shared.InstallCIFuzzInTemp(t)
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
@@ -81,7 +84,8 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	}
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
-	cifuzz := shared.InstallCIFuzzInTemp(t)
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
@@ -112,7 +116,6 @@ func runFuzzer(t *testing.T, cifuzz string, dir string, fuzzTest string, expecte
 	}, args...)
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
-	cmd.Env = shared.TestEnv(t, os.Environ())
 	stdoutPipe, err := cmd.StdoutTeePipe(os.Stdout)
 	require.NoError(t, err)
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)
@@ -153,7 +156,6 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, fuzzTest 
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = shared.TestEnv(t, os.Environ())
 	t.Logf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 	err := cmd.Run()
 	require.NoError(t, err)
@@ -183,7 +185,6 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = shared.TestEnv(t, os.Environ())
 	err := cmd.Run()
 	require.NoError(t, err)
 

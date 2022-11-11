@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
+	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/envutil"
@@ -32,7 +33,8 @@ func TestIntegration_Bazel_InitCreateRunBundle(t *testing.T) {
 
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
-	cifuzz := shared.InstallCIFuzzInTemp(t)
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata
 	dir := shared.CopyTestdataDir(t, "bazel")

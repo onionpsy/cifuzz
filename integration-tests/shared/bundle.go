@@ -69,7 +69,7 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	cmd.Dir = dir
 	env, err := envutil.Setenv(os.Environ(), "BAR", "bar")
 	require.NoError(t, err)
-	cmd.Env = TestEnv(t, env)
+	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
+	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
@@ -31,8 +32,9 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
-	cifuzz := shared.InstallCIFuzzInTemp(t)
-	err := os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(cifuzz, "..", "..", ".."))
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
+	err := os.Setenv("CMAKE_PREFIX_PATH", installDir)
 	require.NoError(t, err)
 
 	// Copy testdata
@@ -218,7 +220,6 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = shared.TestEnv(t, os.Environ())
 	err := cmd.Run()
 	require.NoError(t, err)
 
@@ -247,7 +248,6 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string) 
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = shared.TestEnv(t, os.Environ())
 	err := cmd.Run()
 	require.NoError(t, err)
 

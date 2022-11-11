@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
+	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -28,7 +29,8 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	}
 
 	testutil.RegisterTestDepOnCIFuzz()
-	cifuzz := shared.InstallCIFuzzInTemp(t)
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "maven")
