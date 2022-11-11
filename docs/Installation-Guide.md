@@ -20,7 +20,7 @@ All files will be installed to `%APPDATA%/cifuzz` with the executable located in
 
 ## How to uninstall cifuzz
 
-### Version <= 0.6.0
+### Version < 0.7.0
 
 If you installed cifuzz into the default directory as **root**:
 
