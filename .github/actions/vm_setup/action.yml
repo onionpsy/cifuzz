@@ -45,6 +45,10 @@ runs:
           echo "CPPFLAGS=-I$LLVM_PATH/include" >> $GITHUB_ENV
           echo "CC=$LLVM_PATH/bin/clang" >> $GITHUB_ENV
           echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
+          # use below opts to fix linking issues on macOS, e.g. that "assert.h" is missing, etc.
+          echo "common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" >> ~/.bazelrc
+          echo 'common --repo_env="BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fuse-ld=lld"' >> ~/.bazelrc
+          echo "USE_BAZEL_VERSION=6.0.0rc1" >> $GITHUB_ENV
         shell: bash
 
       # Add cl.exe to the PATH on Windows for the replayer integration test.

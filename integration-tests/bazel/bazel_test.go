@@ -27,11 +27,6 @@ func TestIntegration_Bazel(t *testing.T) {
 		t.Skip("Using cifuzz with bazel is currently only supported on Unix")
 	}
 
-	// TODO: Fix this test on macOS
-	if runtime.GOOS == "darwin" {
-		t.Skip("Building with bazel is currently broken on our macOS GitHub Action runner")
-	}
-
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
@@ -56,7 +51,8 @@ func TestIntegration_Bazel(t *testing.T) {
 	// Execute the create command
 	outputPath := filepath.Join("src", "parser", "parser_fuzz_test.cpp")
 	linesToAdd = cifuzzRunner.Command(t, "create", &shared.CommandOptions{
-		Args: []string{"cpp", "--output", outputPath}},
+		Args: []string{"cpp", "--output", outputPath},
+	},
 	)
 
 	// Check that the fuzz test was created in the correct directory
@@ -168,6 +164,9 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	if runtime.GOOS == "darwin" {
+		t.Skip("Bundle is currently not supported on macOS")
+	}
 	t.Parallel()
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
@@ -188,6 +187,10 @@ func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// TODO: fix coverage on macOS CI
+	if runtime.GOOS == "darwin" {
+		t.Skip("Coverage is currently not working on our macOS CI")
+	}
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 
