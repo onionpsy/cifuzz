@@ -62,20 +62,11 @@ that one instead.
 
 ### Windows
 
-To uninstall cifuzz on Windows:
+To uninstall cifuzz and delete the corresponding registry entries:
 
 ```bash
 rd /s %APPDATA%/cifuzz
-```
 
-To uninstall cifuzz on Windows and to delete the corresponding registry entries:
-```bash
-rd /s %APPDATA%/cifuzz
-
-reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
-reg delete "HKCU\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
-
-```bash
 reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
 reg delete "HKCU\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
 ```
