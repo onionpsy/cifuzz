@@ -4,7 +4,7 @@
 
 ### Linux/MacOS
 
-Executing the installation as a **user**, files will be installed to
+Executing the installation as a **non-root** user, files will be installed to
 
 * `~/.local/share/cifuzz` (default) or
 * `$XDG_DATA_HOME/cifuzz` if set.
@@ -28,7 +28,7 @@ If you installed cifuzz into the default directory as **root**:
 sudo rm -rf ~/cifuzz /usr/local/share/cifuzz
 ```
 
-If you installed cifuzz as **non-root**:
+If you installed cifuzz as a **non-root** user:
 
 ```bash
 rm -rf ~/cifuzz ~/.cmake/packages/cifuzz
@@ -46,7 +46,7 @@ If you installed cifuzz as **root**:
 sudo rm -rf /opt/code-intelligence/cifuzz /usr/local/bin/cifuzz /usr/local/share/cifuzz
 ```
 
-If you installed cifuzz as **non-root**:
+If you installed cifuzz as a **non-root** user:
 
 ```bash
 rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/cifuzz" ~/.local/bin/cifuzz ~/.cmake/packages/cifuzz
