@@ -39,7 +39,7 @@ If you installed into a custom installation directory you have to remove that on
 
 ### Version >= 0.7.0
 
-From this version on the installation directory is fixed.
+From version 0.7.0 on the default installation directory has changed.
 
 If you installed cifuzz as **root**:
 
@@ -52,6 +52,8 @@ If you installed cifuzz as a **non-root** user:
 ```bash
 rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/cifuzz" ~/.local/bin/cifuzz ~/.cmake/packages/cifuzz
 ```
+
+If you installed into a custom installation directory you have to remove that one instead.
 
 If you installed cifuzz on **Windows**:
 
