@@ -4,19 +4,20 @@
 
 ### Linux/MacOS
 
-Executing the installation as a **non-root** user, files will be installed to
+When running the installer as a **non-root** user, files are installed to:
 
 * `~/.local/share/cifuzz` (default) or
-* `$XDG_DATA_HOME/cifuzz` if set.
+* `$XDG_DATA_HOME/cifuzz` if `$XDG_DATA_HOME` is set.
 
-The `cifuzz` executable will be installed to `~/.local/bin`.
+A symlink to the `cifuzz` executable is created in `~/.local/bin/cifuzz`.
 
-Installing **cifuzz** with **root**, files will be installed to
-`/opt/code-intelligence/cifuzz` and the executable to `/usr/local/bin`.
+When running the installer as **root**, files are installed to
+`/opt/code-intelligence/cifuzz` and a symlink to the `cifuzz` executable
+if created in `/usr/local/bin/cifuzz`.
 
 ### Windows
 
-All files will be installed to `%APPDATA%/cifuzz` with the executable located in `%APPDATA%/cifuzz/bin`.
+All files are installed to `%APPDATA%/cifuzz` with the executable located in `%APPDATA%/cifuzz/bin`.
 
 ## How to uninstall cifuzz
 
