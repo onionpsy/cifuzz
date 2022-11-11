@@ -68,7 +68,12 @@ To uninstall cifuzz on Windows:
 rd /s %APPDATA%/cifuzz
 ```
 
-To delete the registry entries:
+To uninstall cifuzz on Windows and to delete the corresponding registry entries:
+```bash
+rd /s %APPDATA%/cifuzz
+
+reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
+reg delete "HKCU\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
 
 ```bash
 reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
