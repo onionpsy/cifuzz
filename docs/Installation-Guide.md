@@ -17,7 +17,8 @@ if created in `/usr/local/bin/cifuzz`.
 
 ### Windows
 
-All files are installed to `%APPDATA%/cifuzz` with the executable located in `%APPDATA%/cifuzz/bin`.
+All files are installed to `%APPDATA%/cifuzz` with the executable located
+in `%APPDATA%/cifuzz/bin`.
 
 ## How to uninstall cifuzz
 
@@ -37,7 +38,8 @@ If you installed cifuzz as a **non-root** user:
 rm -rf ~/cifuzz ~/.cmake/packages/cifuzz
 ```
 
-If you installed into a custom installation directory you have to remove that one instead.
+If you installed into a custom installation directory you have to remove
+that one instead.
 
 #### Version >= 0.7.0
 
@@ -55,7 +57,8 @@ If you installed cifuzz as a **non-root** user:
 rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/cifuzz" ~/.local/bin/cifuzz ~/.cmake/packages/cifuzz
 ```
 
-If you installed into a custom installation directory you have to remove that one instead.
+If you installed into a custom installation directory you have to remove
+that one instead.
 
 ### Windows
 
