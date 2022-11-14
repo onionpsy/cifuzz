@@ -205,17 +205,12 @@ and $FUZZ_TEST_LDFLAGS to the linker.`)
 }
 
 func (c *createCmd) checkDependencies() (bool, error) {
-	deps := []dependencies.Key{}
-
-	switch c.opts.testType {
-	case config.CPP:
-		deps = append(deps, dependencies.CLANG)
-	}
-
+	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
-		deps = append(deps, dependencies.CMAKE)
+		deps = []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}
+	case config.BuildSystemOther:
+		deps = []dependencies.Key{dependencies.CLANG}
 	}
-
 	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
 }
