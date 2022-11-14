@@ -164,7 +164,7 @@ brew install llvm lcov
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 
 ```bash
-sudo apt install openjdk maven
+sudo apt install default-jdk maven
 ```
 
 **Arch**
@@ -201,7 +201,7 @@ choco install microsoft-openjdk maven
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 
 ```bash
-sudo apt install openjdk gradle
+sudo apt install default-jdk gradle
 ```
 
 **Arch**
