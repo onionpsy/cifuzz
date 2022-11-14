@@ -216,13 +216,13 @@ func installCIFuzz(installDir string) error {
 			if shell == "bash" {
 				profileName = "~/.bash_profile"
 			} else if shell == "zsh" {
-				profileName = "~/.zprofile"
+				profileName = "~/.zshrc"
 			} else {
 				profileName = "~/.profile"
 			}
 			log.Notef(`To add cifuzz to your PATH:
 
-    export PATH="$PATH:%s" >> %s
+    echo 'export PATH="$PATH:%s"' >> %s
 
 `, filepath.Dir(symlinkPath), profileName)
 		}
