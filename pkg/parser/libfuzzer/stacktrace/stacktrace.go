@@ -207,8 +207,11 @@ func (p *parser) validateSourceFile(path string) (string, error) {
 		// Ignore files from the Java standard library. We can't filter
 		// these out via the regex because go regex doesn't support
 		// lookups to filter out specific words.
-		if strings.Contains(path, "java.base") {
-			return "", nil
+		javaPrefixes := []string{"java.base", "java.lang"}
+		for _, prefix := range javaPrefixes {
+			if strings.Contains(path, prefix) {
+				return "", nil
+			}
 		}
 	}
 
