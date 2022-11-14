@@ -536,9 +536,12 @@ func (b *Bundler) copyArtifactsToTempdir(buildResult *build.Result, tempDir stri
 }
 
 func (b *Bundler) checkDependencies() (bool, error) {
-	deps := []dependencies.Key{dependencies.CLANG}
-	if b.Opts.BuildSystem == config.BuildSystemCMake {
-		deps = append(deps, dependencies.CMAKE)
+	var deps []dependencies.Key
+	switch b.Opts.BuildSystem {
+	case config.BuildSystemCMake:
+		deps = []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}
+	case config.BuildSystemOther:
+		deps = []dependencies.Key{dependencies.CLANG}
 	}
 	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
 }
