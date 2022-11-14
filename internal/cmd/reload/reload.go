@@ -1,7 +1,6 @@
 package reload
 
 import (
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/build/cmake"
@@ -78,11 +77,9 @@ func (c *reloadCmd) run() error {
 
 	if c.opts.BuildSystem == config.BuildSystemCMake {
 		return c.reloadCMake()
-	} else if c.opts.BuildSystem == config.BuildSystemOther {
-		// Nothing to reload for other build system
-		return nil
 	} else {
-		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
+		// Nothing to reload for build systems other than CMake
+		return nil
 	}
 }
 
