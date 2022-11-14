@@ -48,9 +48,19 @@ runs:
         cifuzz coverage my_fuzz_test
       shell: bash
 
-    - name: Replace current version with the newly created one
+    - name: Replace current version with the newly created one (linux & macOS)
+      if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu')
       run: |
-        rm -r ~/cifuzz
+        rm -r ~/.local/bin/cifuzz
+        cd build/bin
+        chmod u+x $INSTALLER
+        ./$INSTALLER
+      shell: bash
+
+    - name: Replace current version with the newly created one (windows)
+      if: contains(inputs.os, 'windows')
+      run: |
+        rm -r ~/AppData/Roaming/cifuzz/bin
         cd build/bin
         chmod u+x $INSTALLER
         ./$INSTALLER
