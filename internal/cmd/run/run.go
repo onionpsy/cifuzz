@@ -492,12 +492,15 @@ func (c *runCmd) checkDependencies() (bool, error) {
 			dependencies.GRADLE,
 		}
 		return dependencies.Check(deps, dependencies.GradleDeps, runfiles.Finder)
-	case config.BuildSystemBazel, config.BuildSystemOther:
+	case config.BuildSystemOther:
 		deps := []dependencies.Key{
 			dependencies.CLANG,
 			dependencies.LLVM_SYMBOLIZER,
 		}
 		return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	case config.BuildSystemBazel:
+		// When bazel is used, all dependencies are managed via bazel
+		return true, nil
 	}
 
 	return false, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
