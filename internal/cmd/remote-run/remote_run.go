@@ -116,7 +116,7 @@ and used the next time the remote-run command is used.
 
 			// Fail early if the platform is not supported
 			if runtime.GOOS != "linux" {
-				system := strings.ToTitle(runtime.GOOS)
+				system := cases.Title(language.Und).String(runtime.GOOS)
 				if runtime.GOOS == "darwin" {
 					system = "macOS"
 				}

@@ -3,7 +3,6 @@ package bundle
 import (
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -86,7 +85,7 @@ project:
 			// still be able to test that creating the bundle works on
 			// all platforms.
 			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" && runtime.GOOS != "linux" {
-				system := strings.ToTitle(runtime.GOOS)
+				system := cases.Title(language.Und).String(runtime.GOOS)
 				if runtime.GOOS == "darwin" {
 					system = "macOS"
 				}
