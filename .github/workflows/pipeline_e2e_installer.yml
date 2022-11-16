@@ -52,7 +52,13 @@ jobs:
           echo "CC=$LLVM_PATH/bin/clang" >> $GITHUB_ENV
           echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
           echo "PATH=$PATH:$LLVM_PATH/bin" >> $GITHUB_ENV
-
+          # use below opts to fix compilation issues on macOS, e.g. that "assert.h" is missing, etc.
+          # at some point we would like to remove these lines but we haven't found a way to fix this otherwise
+          echo "common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" >> ~/.bazelrc
+          echo "common --repo_env=BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" >> ~/.bazelrc
+          # change bazel version to stable release as soon as version 6 is released  
+          echo "USE_BAZEL_VERSION=8349c95fc98beb4008085942a67a57f0c4da074b" >> $GITHUB_ENV
+      
       # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
       - name: Update Path - MacOS/Linux
         if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
@@ -96,6 +102,15 @@ jobs:
         run: |
           cd examples/other
           cifuzz run my_fuzz_test 2>&1 | tee fuzzing.log
+          cat fuzzing.log | grep "heap buffer overflow"
+          cat fuzzing.log | grep -E "Findings:\s+1"
+        shell: bash
+
+      - name: Run Bazel Example
+        if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
+        run: |
+          cd examples/bazel
+          cifuzz run -v src:explore_me_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
           cat fuzzing.log | grep -E "Findings:\s+1"
         shell: bash
