@@ -29,6 +29,38 @@ jobs:
       - name: Run linting check
         run: make lint
 
+  no-wip-commits:
+    name: No WIP or XXX commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch the base branch
+        run: git fetch origin "${GITHUB_BASE_REF}"
+
+      - name: Check no commits starting with WIP
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}"
+          git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}"
+          if git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}" | grep -B4 -i -e "^\s\+WIP"; then
+            exit 1
+          fi
+
+      - name: Check no commits starting with XXX
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}"
+          if git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}" | grep -B4 -i -e "^\s\+XXX"; then
+            exit 1
+          fi
+
+      - name: Check no commits starting with fixup
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}"
+          if git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}" | grep -B4 -i -e "^\s\+fixup"; then
+            exit 1
+          fi
+
   unit_tests:
     name: unit tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
