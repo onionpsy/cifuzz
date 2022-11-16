@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"code-intelligence.com/cifuzz/internal/build/bazel"
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/build/maven"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/generator"
@@ -169,7 +168,7 @@ func (c *coverageCmd) run() error {
 			return errors.WithStack(err)
 		}
 		defer fileutil.Cleanup(tmpDir)
-		reportPath, err = bazel.BuildAndCreateCoverageReport(&bazel.CoverageOptions{
+		reportPath, err = generator.GenerateCoverageReportWithBazel(&generator.CoverageOptions{
 			FuzzTest:     c.opts.fuzzTest,
 			OutputFormat: c.opts.OutputFormat,
 			OutputPath:   c.opts.OutputPath,

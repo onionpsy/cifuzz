@@ -186,7 +186,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 
 	for _, fuzzTest := range fuzzTests {
 		// Turn the fuzz test label into a valid path
-		path, err := pathFromLabel(fuzzTest, commonFlags)
+		path, err := PathFromLabel(fuzzTest, commonFlags)
 		if err != nil {
 			return nil, err
 		}
@@ -350,7 +350,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 			return nil, err
 		}
 
-		path, err := pathFromLabel(fuzzTest, commonFlags)
+		path, err := PathFromLabel(fuzzTest, commonFlags)
 		if err != nil {
 			return nil, err
 		}
@@ -431,7 +431,12 @@ func (b *Builder) setLibFuzzerEnv(env []string) ([]string, error) {
 	return env, nil
 }
 
-func pathFromLabel(label string, flags []string) (string, error) {
+// PathFromLabel turns a bazel label into a valid path, which can for
+// example be used to create the fuzz test's corpus directory.
+// Flags which should be passed to the `bazel query` command can be
+// passed via the flags argument (to avoid bazel discarding the analysis
+// cache).
+func PathFromLabel(label string, flags []string) (string, error) {
 	// Get a canonical form of label via `bazel query`
 	args := append([]string{"query"}, flags...)
 	args = append(args, label)

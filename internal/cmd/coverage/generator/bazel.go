@@ -1,4 +1,4 @@
-package bazel
+package generator
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/build"
+	"code-intelligence.com/cifuzz/internal/build/bazel"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -30,7 +31,7 @@ type CoverageOptions struct {
 	Verbose      bool
 }
 
-func BuildAndCreateCoverageReport(opts *CoverageOptions) (string, error) {
+func GenerateCoverageReportWithBazel(opts *CoverageOptions) (string, error) {
 	var err error
 
 	// The cc_fuzz_test rule defines multiple bazel targets: If the
@@ -144,7 +145,7 @@ func BuildAndCreateCoverageReport(opts *CoverageOptions) (string, error) {
 
 	if opts.OutputFormat == "lcov" {
 		if opts.OutputPath == "" {
-			path, err := pathFromLabel(opts.FuzzTest, commonFlags)
+			path, err := bazel.PathFromLabel(opts.FuzzTest, commonFlags)
 			if err != nil {
 				return "", err
 			}
@@ -173,7 +174,7 @@ func BuildAndCreateCoverageReport(opts *CoverageOptions) (string, error) {
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		path, err := pathFromLabel(opts.FuzzTest, commonFlags)
+		path, err := bazel.PathFromLabel(opts.FuzzTest, commonFlags)
 		if err != nil {
 			return "", err
 		}
