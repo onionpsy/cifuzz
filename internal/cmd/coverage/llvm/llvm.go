@@ -1,4 +1,4 @@
-package generator
+package llvm
 
 import (
 	"bytes"

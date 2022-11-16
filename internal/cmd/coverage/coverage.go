@@ -15,7 +15,10 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/build/maven"
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/generator"
+	bazelCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/bazel"
+	gradleCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/gradle"
+	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
+	mavenCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/maven"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -168,7 +171,7 @@ func (c *coverageCmd) run() error {
 			return errors.WithStack(err)
 		}
 		defer fileutil.Cleanup(tmpDir)
-		reportPath, err = generator.GenerateCoverageReportWithBazel(&generator.CoverageOptions{
+		reportPath, err = bazelCoverage.GenerateCoverageReport(&bazelCoverage.CoverageOptions{
 			FuzzTest:     c.opts.fuzzTest,
 			OutputFormat: c.opts.OutputFormat,
 			OutputPath:   c.opts.OutputPath,
@@ -181,7 +184,7 @@ func (c *coverageCmd) run() error {
 			Verbose:      viper.GetBool("verbose"),
 		})
 	case config.BuildSystemCMake, config.BuildSystemOther:
-		gen := &generator.LLVMCoverageGenerator{
+		gen := &llvmCoverage.LLVMCoverageGenerator{
 			OutputFormat:   c.opts.OutputFormat,
 			OutputPath:     c.opts.OutputPath,
 			BuildSystem:    c.opts.BuildSystem,
@@ -196,7 +199,7 @@ func (c *coverageCmd) run() error {
 		}
 		reportPath, err = gen.Generate()
 	case config.BuildSystemGradle:
-		gen := &generator.GradleCoverageGenerator{
+		gen := &gradleCoverage.GradleCoverageGenerator{
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
@@ -207,7 +210,7 @@ func (c *coverageCmd) run() error {
 		}
 		reportPath, err = gen.Generate()
 	case config.BuildSystemMaven:
-		gen := &generator.MavenCoverageGenerator{
+		gen := &mavenCoverage.MavenCoverageGenerator{
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,

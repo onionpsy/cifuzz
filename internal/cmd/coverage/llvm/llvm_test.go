@@ -1,4 +1,4 @@
-package generator
+package llvm
 
 import (
 	"bytes"
@@ -44,7 +44,7 @@ func TestLLVM(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cwd, err := os.Getwd()
 			require.NoError(t, err)
-			testdataDir := filepath.Join(cwd, "testdata", "llvm")
+			testdataDir := filepath.Join(cwd, "testdata")
 			testutil.RegisterTestDeps(testdataDir)
 
 			// get path to shared include

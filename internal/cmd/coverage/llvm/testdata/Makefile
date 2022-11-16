@@ -5,10 +5,10 @@ all: main
 clean:
 	rm -f *.o *.a *.so a.out
 
-libexplore.so: src/explore_me.cpp src/explore_me.h
+libexplore.so: src ../src
 	${CXX} ${CXXFLAGS} -shared -fpic -o libexplore.so $<
 
-explore_me.o: src/explore_me.cpp src/explore_me.h
+explore_me.o: src ../src
 	${CXX} ${CXXFLAGS} -fpic $< -c
 
 explore_me.a: explore_me.o

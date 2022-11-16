@@ -1,4 +1,4 @@
-package generator
+package bazel
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ type CoverageOptions struct {
 	Verbose      bool
 }
 
-func GenerateCoverageReportWithBazel(opts *CoverageOptions) (string, error) {
+func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	var err error
 
 	// The cc_fuzz_test rule defines multiple bazel targets: If the
