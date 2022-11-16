@@ -4,9 +4,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -31,7 +31,7 @@ func ValidCoverageOutputFormat(cmd *cobra.Command, args []string, toComplete str
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	outputFormat, ok := summary.ValidOutputFormats[conf.BuildSystem]
+	outputFormat, ok := coverage.ValidOutputFormats[conf.BuildSystem]
 	if !ok {
 		err := errors.Errorf("Unknown build system %q", conf.BuildSystem)
 		log.Error(err)

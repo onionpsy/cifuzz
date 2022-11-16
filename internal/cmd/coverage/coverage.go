@@ -19,10 +19,10 @@ import (
 	gradleCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/gradle"
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
 	mavenCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/maven"
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -64,7 +64,7 @@ func (opts *coverageOptions) validate() error {
 		}
 	}
 
-	validFormats := summary.ValidOutputFormats[opts.BuildSystem]
+	validFormats := coverage.ValidOutputFormats[opts.BuildSystem]
 	if !stringutil.Contains(validFormats, opts.OutputFormat) {
 		msg := fmt.Sprintf("Flag \"format\" must be %s", strings.Join(validFormats, " or "))
 		return cmdutils.WrapIncorrectUsageError(errors.New(msg))

@@ -6,18 +6,9 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
-
-var ValidOutputFormats = map[string][]string{
-	config.BuildSystemCMake:  {"html", "lcov"},
-	config.BuildSystemBazel:  {"html", "lcov"},
-	config.BuildSystemOther:  {"html", "lcov"},
-	config.BuildSystemMaven:  {"html"},
-	config.BuildSystemGradle: {"html"},
-}
 
 type CoverageSummary struct {
 	Total *Coverage
