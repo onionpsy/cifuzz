@@ -18,10 +18,10 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/cmake"
 	"code-intelligence.com/cifuzz/internal/build/other"
+	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/binary"
-	"code-intelligence.com/cifuzz/pkg/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/minijail"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -317,7 +317,7 @@ func (cov *LLVMCoverageGenerator) report() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	coverage.ParseLcov(lcovReportSummary).PrintTable(cov.StdErr)
+	summary.ParseLcov(lcovReportSummary).PrintTable(cov.StdErr)
 
 	reportPath := ""
 	switch cov.OutputFormat {

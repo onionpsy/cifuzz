@@ -1,4 +1,4 @@
-package coverage
+package summary
 
 import (
 	"io"

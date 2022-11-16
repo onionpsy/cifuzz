@@ -12,8 +12,8 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/bazel"
+	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/pkg/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
@@ -141,7 +141,7 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	coverage.ParseLcov(string(lcovReportContent)).PrintTable(opts.Stderr)
+	summary.ParseLcov(string(lcovReportContent)).PrintTable(opts.Stderr)
 
 	if opts.OutputFormat == "lcov" {
 		if opts.OutputPath == "" {

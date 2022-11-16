@@ -10,8 +10,8 @@ import (
 	"syscall"
 
 	"code-intelligence.com/cifuzz/internal/build/gradle"
+	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/pkg/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -107,7 +107,7 @@ func (cov *GradleCoverageGenerator) Generate() (string, error) {
 		return "", err
 	}
 
-	coverage.ParseJacocoXML(filepath.Join(cov.OutputPath, "jacoco.xml")).PrintTable(cov.StdErr)
+	summary.ParseJacocoXML(filepath.Join(cov.OutputPath, "jacoco.xml")).PrintTable(cov.StdErr)
 
 	return filepath.Join(cov.OutputPath, "html", "index.html"), nil
 }
