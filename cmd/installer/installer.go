@@ -380,7 +380,7 @@ func installZshCompletionScript(installDir string) error {
 		// directory to their fpath instead
 		notes = append(notes, fmt.Sprintf(`To enable command completion:
 
-    echo fpath=(%s $fpath) >> ~/.zshrc
+    echo 'fpath=(%s $fpath)' >> ~/.zshrc
     echo "autoload -U compinit; compinit" >> ~/.zshrc
 
 `, filepath.Dir(completionScript)))
