@@ -98,7 +98,7 @@ or a lcov trace file.
     cifuzz coverage <fuzz test>
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("HTML") + `
-    cifuzz coverage --output coverage.html <fuzz test>
+    cifuzz coverage --output coverage-report <fuzz test>
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("LCOV") + `
     cifuzz coverage --format=lcov <fuzz test>
@@ -234,19 +234,10 @@ func (c *coverageCmd) run() error {
 }
 
 func (c *coverageCmd) handleHTMLReport(reportPath string) error {
+	htmlFile := filepath.Join(reportPath, "index.html")
+
 	// Open the browser if no output path was specified
 	if c.opts.OutputPath == "" {
-		var htmlFile string
-		// For bazel we use `genhtml` to generate the HTML report, which
-		// produces a directory containing the HTML files, for all other
-		// build systems we use `llvm-cov show` which produces a single
-		// HTML file.
-		if c.opts.BuildSystem == config.BuildSystemBazel {
-			htmlFile = filepath.Join(reportPath, "index.html")
-		} else {
-			htmlFile = reportPath
-		}
-
 		// try to open the report in the browser ...
 		err := c.openReport(htmlFile)
 		if err != nil {
@@ -259,7 +250,7 @@ func (c *coverageCmd) handleHTMLReport(reportPath string) error {
 		}
 	} else {
 		log.Successf("Created coverage HTML report: %s", reportPath)
-		err := c.printReportURI(reportPath)
+		err := c.printReportURI(htmlFile)
 		if err != nil {
 			return err
 		}
@@ -299,6 +290,7 @@ func (c *coverageCmd) checkDependencies() error {
 			dependencies.LLVM_SYMBOLIZER,
 			dependencies.LLVM_COV,
 			dependencies.LLVM_PROFDATA,
+			dependencies.GENHTML,
 		}
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{
@@ -323,6 +315,7 @@ func (c *coverageCmd) checkDependencies() error {
 			dependencies.LLVM_SYMBOLIZER,
 			dependencies.LLVM_COV,
 			dependencies.LLVM_PROFDATA,
+			dependencies.GENHTML,
 		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)

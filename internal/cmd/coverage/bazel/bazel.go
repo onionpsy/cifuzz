@@ -188,9 +188,12 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cmd = exec.Command(genHTML, "--output", opts.OutputPath, lcovReport)
+	args = []string{"--prefix", opts.ProjectDir, "--output", opts.OutputPath, lcovReport}
+
+	cmd = exec.Command(genHTML, args...)
 	cmd.Dir = opts.ProjectDir
 	cmd.Stderr = os.Stderr
+	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
 		return "", errors.WithStack(err)

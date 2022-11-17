@@ -243,7 +243,7 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
 	t.Helper()
 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
-		"--output", "parser_fuzz_test.coverage.html",
+		"--output", "coverage-report",
 		"parser_fuzz_test")
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
@@ -252,7 +252,7 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
 	require.NoError(t, err)
 
 	// Check that the coverage report was created
-	reportPath := filepath.Join(dir, "parser_fuzz_test.coverage.html")
+	reportPath := filepath.Join(dir, "coverage-report", "src", "parser", "index.html")
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for the

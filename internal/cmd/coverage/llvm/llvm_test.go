@@ -83,8 +83,13 @@ func TestLLVM(t *testing.T) {
 			reportPath, err := testLLVM.Generate()
 			require.NoError(t, err)
 
-			assert.FileExists(t, reportPath)
-			assert.True(t, strings.HasSuffix(reportPath, tc.format))
+			if tc.format == "lcov" {
+				assert.FileExists(t, reportPath)
+				assert.True(t, strings.HasSuffix(reportPath, tc.format))
+			} else {
+				assert.DirExists(t, reportPath)
+				assert.FileExists(t, filepath.Join(reportPath, "index.html"))
+			}
 			assert.Contains(t, bOut.String(), "src/explore_me.cpp")
 			assert.Contains(t, bOut.String(), "my_fuzz_test.cpp")
 		})

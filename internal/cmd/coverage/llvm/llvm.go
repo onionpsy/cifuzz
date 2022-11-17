@@ -383,7 +383,7 @@ func (cov *LLVMCoverageGenerator) rawProfilePattern(supportsContinuousMode bool)
 }
 
 func (cov *LLVMCoverageGenerator) generateHTMLReport() (string, error) {
-	args := []string{"show", "-format=html"}
+	args := []string{"export", "-format=lcov"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
 		return "", err
@@ -393,8 +393,17 @@ func (cov *LLVMCoverageGenerator) generateHTMLReport() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// Write lcov report to temp dir
+	reportDir, err := os.MkdirTemp("", "coverage-")
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	lcovReport := filepath.Join(reportDir, "coverage.lcov")
+	err = os.WriteFile(lcovReport, []byte(report), 0o644)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
 
-	outputPath := cov.OutputPath
 	if cov.OutputPath == "" {
 		// If no output path is specified, we create the output in a
 		// temporary directory.
@@ -402,15 +411,26 @@ func (cov *LLVMCoverageGenerator) generateHTMLReport() (string, error) {
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		outputPath = filepath.Join(outputDir, cov.defaultReportName())
+		cov.OutputPath = filepath.Join(outputDir, cov.executableName())
 	}
 
-	err = os.WriteFile(outputPath, []byte(report), 0o644)
+	// Create an HTML report via genhtml
+	genHTML, err := runfiles.Finder.GenHTMLPath()
+	if err != nil {
+		return "", err
+	}
+	args = []string{"--prefix", cov.ProjectDir, "--output", cov.OutputPath, lcovReport}
+
+	cmd := exec.Command(genHTML, args...)
+	cmd.Dir = cov.ProjectDir
+	cmd.Stderr = os.Stderr
+	log.Debugf("Command: %s", cmd.String())
+	err = cmd.Run()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	return outputPath, nil
+	return cov.OutputPath, nil
 }
 
 func (cov *LLVMCoverageGenerator) runLlvmCov(args []string) (string, error) {
@@ -466,7 +486,7 @@ func (cov *LLVMCoverageGenerator) generateLcovReport() (string, error) {
 		// directory like we do for HTML reports, because we can't open
 		// the lcov report in a browser, so the command is only useful
 		// if the lcov report is accessible after it was created.
-		outputPath = cov.defaultReportName()
+		outputPath = cov.executableName() + ".coverage.lcov"
 	}
 
 	err = os.WriteFile(outputPath, []byte(report), 0o644)
@@ -510,8 +530,8 @@ func (cov *LLVMCoverageGenerator) indexedProfilePath() string {
 	return filepath.Join(cov.tmpDir, filepath.Base(cov.buildResult.Executable)+".profdata")
 }
 
-func (cov *LLVMCoverageGenerator) defaultReportName() string {
-	return filepath.Base(cov.buildResult.Executable) + ".coverage." + cov.OutputFormat
+func (cov *LLVMCoverageGenerator) executableName() string {
+	return filepath.Base(cov.buildResult.Executable)
 }
 
 // Returns an llvm-cov -arch flag indicating the preferred architecture of the given object on macOS, where objects can
