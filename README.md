@@ -137,18 +137,31 @@ choco install cmake llvm
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
 sudo apt install clang llvm lcov
+sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 ```
 
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo pacman -S clang llvm lcov
+sudo pacman -S clang llvm lcov python
+sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 ```
 
 **macOS**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-brew install llvm lcov
+brew install llvm lcov bazelisk
+```
+
+**Windows**
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+<!-- clang is included in the llvm package --->
+At least Visual Studio 2022 version 17 is required.
+
+```bash
+choco install cmake llvm bazelisk
 ```
 
 </details>
