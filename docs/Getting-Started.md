@@ -37,22 +37,9 @@ on how to generate and visualize coverage reports right from your IDE.
 
 ## Regression testing
 
-**Important:** In general there are two ways to run your fuzz test:
-
-1. As an actual fuzzing run, by calling: `cifuzz run my_fuzz_test_1`.  The
-   fuzzer will rapidly generate new inputs and feed them into your fuzz test.
-   Any input that covers new parts of the fuzzed project will be added to the
-   generated corpus. cifuzz will run until a crash occurs and report detailed
-   information about the finding.
-
-2. As a regression test, by invoking it through your IDE/editor or by directly
-   [executing the replayer binary](How-To-Write-A-Fuzz-Test.md#regression-test--replayer).
-   This will run the fuzz test on all inputs stored in the
-   `<fuzz-test-name>_inputs` next to the fuzz test.  In case a crash was found,
-   the directory will be created and the crashing input is added to this
-   directory automatically. The fuzz test will stop immediately after applying
-   all inputs or earlier if a regression occurs.
-
+If you are interested in running your fuzz tests as regression tests to maintain 
+a fast and responsive development cycle, you can check out our 
+[regression testing](Regression-Testing.md) guide.
 
 ## Sandboxing
 

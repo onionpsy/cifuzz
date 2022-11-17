@@ -64,33 +64,4 @@ public class FuzzTestCase {
 ```
 </details>
 
-## Best Practices
 
-### Regression Test / Replayer
-
-After creating a new fuzz test we recommend to use the regression test
-mode (see [README](../README.md#regression-testing)) to maintain a 
-fast and responsive development cycle. The fuzz test has to be build
-with so-called sanitizers, which track the execution at runtime to
-be able to detect various errors.
-
-It is recommended to use the provided CMake user presets, which can be
-generated with `cifuzz integrate cmake`. Those provide a preset for
-regression testing, which can be executed from within your IDE or in
-the cli.
-
-After selecting the preset the fuzz test is executed in regression
-test mode.
-
-![fuzz test in CMake](/docs/assets/cmake_clion.gif)
-
-You can also run the fuzz tests in regression test mode from the CLI:
-
-```bash
-cmake --preset="cifuzz (Regression Test)"
-cmake --build --preset="cifuzz (Regression Test)"
-ctest --preset="cifuzz (Regression Test)"
-```
-
-You can find the generated binaries in
-`.cifuzz-build/replayer/address+undefined/`.
