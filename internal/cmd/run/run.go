@@ -125,6 +125,13 @@ depends on the build system configured for the project:
    the <fuzz test> argument works if the fuzz test has been built before
    or after running 'cifuzz reload'. The '--build-command' flag is ignored.
 
+ * For Bazel, <fuzz test> is the name of the target as defined in the 
+   'BUILD.bazel' file as a 'cc_fuzz_test'. The name can either be written as 
+   a relative or absolute label, corresponding to the Bazel standard.
+   Command completion for the <fuzz test> argument works if the fuzz test has 
+   been built before or after running 'cifuzz reload'. The '--build-command' 
+   flag is ignored.
+
  * For other build systems, a command which builds the fuzz test executable
    must be provided via the '--build-command' flag or the 'build-command'
    setting in cifuzz.yaml. In this case, <fuzz test> is the path to the
