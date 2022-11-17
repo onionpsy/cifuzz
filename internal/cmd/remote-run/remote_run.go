@@ -271,7 +271,7 @@ your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
 		bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
 		c.opts.BundlePath = bundlePath
 		c.opts.Opts.OutputPath = bundlePath
-		b := bundler.NewBundler(&c.opts.Opts)
+		b := bundler.New(&c.opts.Opts)
 		err = b.Bundle()
 		if err != nil {
 			return err

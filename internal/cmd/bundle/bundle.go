@@ -23,7 +23,13 @@ type options struct {
 }
 
 func (opts *options) Validate() error {
-	if !sliceutil.Contains([]string{config.BuildSystemBazel, config.BuildSystemCMake, config.BuildSystemOther}, opts.BuildSystem) {
+	if !sliceutil.Contains([]string{
+		config.BuildSystemBazel,
+		config.BuildSystemCMake,
+		config.BuildSystemOther,
+		config.BuildSystemMaven,
+		config.BuildSystemGradle,
+	}, opts.BuildSystem) {
 		err := errors.Errorf(`Creating a bundle is currently not supported for %[1]s projects. If you
 are interested in using this feature with %[1]s, please file an issue at
 https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))
@@ -90,6 +96,12 @@ system configured for the project.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
+			err := config.FindAndParseProjectConfig(opts)
+			if err != nil {
+				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+
 			// Fail early if the platform is not supported. Creating the
 			// bundle actually works on all platforms, but the backend
 			// currently only supports running a bundle on Linux, so the
@@ -99,7 +111,11 @@ system configured for the project.
 			// We set CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS in tests to
 			// still be able to test that creating the bundle works on
 			// all platforms.
-			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" && runtime.GOOS != "linux" {
+			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven ||
+				opts.BuildSystem == config.BuildSystemGradle
+			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
+				runtime.GOOS != "linux" &&
+				!isOSIndependent {
 				system := cases.Title(language.Und).String(runtime.GOOS)
 				if runtime.GOOS == "darwin" {
 					system = "macOS"
@@ -111,19 +127,13 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				return cmdutils.WrapSilentError(err)
 			}
 
-			err := config.FindAndParseProjectConfig(opts)
-			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
-			}
-
 			opts.FuzzTests = args
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			opts.Stdout = c.OutOrStdout()
 			opts.Stderr = c.OutOrStderr()
-			return bundler.NewBundler(&opts.Opts).Bundle()
+			return bundler.New(&opts.Opts).Bundle()
 		},
 	}
 

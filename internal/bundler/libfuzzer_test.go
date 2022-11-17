@@ -63,10 +63,10 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		ProjectDir:  projectDir,
 	}
 
-	b := NewBundler(&Opts{
+	b := newLibfuzzerBundler(&Opts{
 		Env: []string{"FOO=foo"},
 	})
-	b.tempDir = tempDir
+	b.opts.tempDir = tempDir
 	fuzzers, manifest, systemDeps, err := b.assembleArtifacts(buildResult)
 	require.NoError(t, err)
 
@@ -82,7 +82,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		EngineOptions: artifact.EngineOptions{Env: []string{"FOO=foo", "NO_CIFUZZ=1"}},
 	}, *fuzzers[0])
 
-	require.Equal(t, map[string]string{
+	require.Equal(t, archiveManifest{
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "bin", "pkg", "some_fuzz_test"):             filepath.Join(buildDir, "pkg", "some_fuzz_test"),
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "bin", "lib", "helper.so"):                  filepath.Join(buildDir, "lib", "helper.so"),
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "external_libs", "libfoo.so"):               externalDep,
@@ -130,9 +130,9 @@ func TestAssembleArtifacts_Coverage(t *testing.T) {
 		ProjectDir:  projectDir,
 	}
 
-	c := NewBundler(&Opts{})
-	c.tempDir = tempDir
-	fuzzers, manifest, systemDeps, err := c.assembleArtifacts(buildResult)
+	b := newLibfuzzerBundler(&Opts{})
+	b.opts.tempDir = tempDir
+	fuzzers, manifest, systemDeps, err := b.assembleArtifacts(buildResult)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(fuzzers))
@@ -149,7 +149,7 @@ func TestAssembleArtifacts_Coverage(t *testing.T) {
 		},
 	}, *fuzzers[0])
 
-	assert.Equal(t, map[string]string{
+	assert.Equal(t, archiveManifest{
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "bin", "pkg", "some_fuzz_test"):             filepath.Join(buildDir, "pkg", "some_fuzz_test"),
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "bin", "lib", "helper.so"):                  filepath.Join(buildDir, "lib", "helper.so"),
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "external_libs", "libfoo.so"):               externalDep,
