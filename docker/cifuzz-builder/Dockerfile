@@ -21,7 +21,10 @@ ENV CC=/usr/lib/llvm-12/bin/clang
 ENV CXX=/usr/lib/llvm-12/bin/clang++
 
 # Install Go
-# We cache the go source tarball in /var/cache/go-src
+# We cache the go source tarball in /var/cache/go-src.
+# We could look into ways to always install the latest Go release if we
+# find that we frequently have to update the Go version manually here
+# (which should only be necessary when we use new Go features).
 RUN --mount=type=cache,target=/var/cache/go-src \
     SHA256=$(sha256sum /var/cache/go-src/go.tar.gz | cut -d ' ' -f 1); \
     if [ "${SHA256:-}" != "5e8c5a74fe6470dd7e055a461acda8bb4050ead8c2df70f227e3ff7d8eb7eeb6" ]; then \
