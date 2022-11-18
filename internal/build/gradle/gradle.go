@@ -93,7 +93,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	if err != nil {
 		// It's expected that gradle might fail due to user configuration,
 		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		log.Error(err)
 		return nil, cmdutils.ErrSilent
 	}
@@ -123,7 +123,7 @@ func (b *Builder) getDependencies() ([]string, error) {
 	if err != nil {
 		// It's expected that gradle might fail due to user configuration,
 		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		log.Error(err)
 		return nil, cmdutils.ErrSilent
 	}

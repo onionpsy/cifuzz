@@ -300,7 +300,7 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 		}
 		// It's expected that the fuzz test executable might fail, so we
 		// print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd.Cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 		log.Error(err)
 		return cmdutils.ErrSilent
 	}

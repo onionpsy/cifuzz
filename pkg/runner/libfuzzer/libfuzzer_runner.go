@@ -326,7 +326,7 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 				if !r.Verbose {
 					log.Print(startupOutput.String())
 				}
-				return cmdutils.WrapExecError(err, r.cmd.Cmd)
+				return cmdutils.WrapExecError(errors.WithStack(err), r.cmd.Cmd)
 			}
 
 			if !reporter.FindingReported {

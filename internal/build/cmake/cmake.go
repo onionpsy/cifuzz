@@ -144,7 +144,7 @@ func (b *Builder) Configure() error {
 	if err != nil {
 		// It's expected that cmake might fail due to user configuration,
 		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		log.Error(err)
 		return cmdutils.ErrSilent
 	}
@@ -182,7 +182,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 	if err != nil {
 		// It's expected that cmake might fail due to user configuration,
 		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		log.Error(err)
 		return nil, cmdutils.ErrSilent
 	}
@@ -271,7 +271,7 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 	if err != nil {
 		// It's expected that cmake might fail due to user configuration,
 		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		log.Error(err)
 		return nil, cmdutils.ErrSilent
 	}

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/pkg/errors"
+
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -66,7 +68,7 @@ func (cov *GradleCoverageGenerator) runGradleCommand(args []string) error {
 	if err != nil {
 		// It's expected that gradle might fail due to user configuration,
 		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd.Cmd)
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 		log.Error(err)
 		return cmdutils.ErrSilent
 	}
