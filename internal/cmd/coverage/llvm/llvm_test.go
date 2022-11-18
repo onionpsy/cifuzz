@@ -19,7 +19,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	viper.Set("verbose", false)
+	viper.Set("verbose", true)
 
 	m.Run()
 }
