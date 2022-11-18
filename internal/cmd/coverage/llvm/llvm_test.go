@@ -67,8 +67,6 @@ func TestLLVM(t *testing.T) {
 
 			var bOut bytes.Buffer
 			outBuf := io.Writer(&bOut)
-			var bErr bytes.Buffer
-			errBuf := io.Writer(&bErr)
 
 			testLLVM := &LLVMCoverageGenerator{
 				OutputFormat:   tc.format,
@@ -78,7 +76,7 @@ func TestLLVM(t *testing.T) {
 				FuzzTest:       "my_fuzz_test",
 				ProjectDir:     tmpDir,
 				StdOut:         outBuf,
-				StdErr:         errBuf,
+				StdErr:         os.Stderr,
 				runfilesFinder: finderMock,
 			}
 
