@@ -32,7 +32,7 @@ default:
 clean: clean/examples/cmake clean/third-party/minijail
 	rm -rf build/
 
-.ONESHELL:
+.PHONY: clean/examples/cmake
 clean/examples/cmake:
 	-rm -rf examples/cmake/.cifuzz-*
 	-rm -rf examples/cmake/build/
