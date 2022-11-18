@@ -14,5 +14,7 @@ tools/install/bundler/embed/bundle
 coverage.out
 *.coverage.html
 
+*.tar.gz
+
 /cifuzz.yaml
 

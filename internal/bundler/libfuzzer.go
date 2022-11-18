@@ -2,7 +2,6 @@ package bundler
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -23,14 +22,9 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
-	"code-intelligence.com/cifuzz/pkg/vcs"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
-	"code-intelligence.com/cifuzz/util/sliceutil"
 )
-
-// The (possibly empty) directory inside the fuzzing artifact archive that will be the fuzzers working directory.
-const fuzzerWorkDirPath = "work_dir"
 
 type configureVariant struct {
 	Engine     string
@@ -74,13 +68,13 @@ func newLibfuzzerBundler(opts *Opts) *libfuzzerBundler {
 	return &libfuzzerBundler{opts}
 }
 
-func (b *libfuzzerBundler) bundle() (archiveManifest, error) {
+func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error) {
 	depsOk, err := b.checkDependencies()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !depsOk {
-		return nil, dependencies.Error()
+		return nil, nil, dependencies.Error()
 	}
 
 	// TODO: Do not hardcode these values.
@@ -95,18 +89,18 @@ func (b *libfuzzerBundler) bundle() (archiveManifest, error) {
 
 	buildResults, err := b.buildAllVariants()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Add all fuzz test artifacts to the archive. There will be one "Fuzzer" metadata object for each pair of fuzz test
 	// and Builder instance.
 	var fuzzers []*artifact.Fuzzer
-	archiveManifest := archiveManifest{}
+	manifest := archiveManifest{}
 	deduplicatedSystemDeps := make(map[string]struct{})
 	for _, buildResult := range buildResults {
 		fuzzTestFuzzers, fuzzTestArchiveManifest, systemDeps, err := b.assembleArtifacts(buildResult)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		fuzzers = append(fuzzers, fuzzTestFuzzers...)
 		for _, systemDep := range systemDeps {
@@ -115,56 +109,22 @@ func (b *libfuzzerBundler) bundle() (archiveManifest, error) {
 		// Produce an error when artifacts for different fuzzers conflict - this should never happen as
 		// assembleArtifacts is expected to add a unique prefix for each fuzz test.
 		for archivePath, absPath := range fuzzTestArchiveManifest {
-			existingAbsPath, conflict := archiveManifest[archivePath]
+			existingAbsPath, conflict := manifest[archivePath]
 			if conflict {
-				return nil, errors.Errorf("conflict for archive path %q: %q and %q", archivePath, existingAbsPath, absPath)
+				return nil, nil, errors.Errorf("conflict for archive path %q: %q and %q", archivePath, existingAbsPath, absPath)
 			}
-			archiveManifest[archivePath] = absPath
-		}
-
-		if b.opts.OutputPath == "" {
-			if len(b.opts.FuzzTests) == 1 {
-				b.opts.OutputPath = filepath.Base(buildResult.Executable) + ".tar.gz"
-			} else {
-				b.opts.OutputPath = "fuzz_tests.tar.gz"
-			}
+			manifest[archivePath] = absPath
 		}
 	}
+
 	systemDeps := maps.Keys(deduplicatedSystemDeps)
 	sort.Strings(systemDeps)
-
-	// Create and add the top-level metadata file.
-	metadata := &artifact.Metadata{
-		Fuzzers: fuzzers,
-		RunEnvironment: &artifact.RunEnvironment{
-			Docker: b.opts.DockerImage,
-		},
-		CodeRevision: b.getCodeRevision(),
-	}
-	metadataYamlContent, err := metadata.ToYaml()
-	if err != nil {
-		return nil, err
-	}
-	metadataYamlPath := filepath.Join(b.opts.tempDir, artifact.MetadataFileName)
-	err = os.WriteFile(metadataYamlPath, metadataYamlContent, 0o644)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to write %s", artifact.MetadataFileName)
-	}
-	archiveManifest[artifact.MetadataFileName] = metadataYamlPath
-
-	// The fuzzing artifact archive spec requires this directory even if it is empty.
-	workDirPath := filepath.Join(b.opts.tempDir, fuzzerWorkDirPath)
-	err = os.Mkdir(workDirPath, 0o755)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	archiveManifest[fuzzerWorkDirPath] = workDirPath
-
 	if len(systemDeps) != 0 {
 		log.Warnf(`The following system libraries are not part of the artifact and have to be provided by the Docker image %q:
-  %s`, metadata.RunEnvironment.Docker, strings.Join(systemDeps, "\n  "))
+      %s`, b.opts.DockerImage, strings.Join(systemDeps, "\n  "))
 	}
-	return archiveManifest, nil
+
+	return fuzzers, manifest, nil
 }
 
 func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
@@ -414,14 +374,13 @@ func (b *libfuzzerBundler) checkDependencies() (bool, error) {
 //nolint:nonamedreturns
 func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 	fuzzers []*artifact.Fuzzer,
-	archiveManifest map[string]string,
+	manifest archiveManifest,
 	systemDeps []string,
 	err error,
 ) {
 	manifest = archiveManifest{}
 	fuzzTestExecutableAbsPath := buildResult.Executable
 
-	archiveManifest = make(map[string]string)
 	// Add all build artifacts under a subdirectory of the fuzz test base path so that these files don't clash with
 	// seeds and dictionaries.
 	buildArtifactsPrefix := filepath.Join(fuzzTestPrefix(buildResult), "bin")
@@ -441,7 +400,7 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 		return
 	}
 	fuzzTestArchivePath := filepath.Join(buildArtifactsPrefix, fuzzTestExecutableRelPath)
-	archiveManifest[fuzzTestArchivePath] = fuzzTestExecutableAbsPath
+	manifest[fuzzTestArchivePath] = fuzzTestExecutableAbsPath
 
 	// On macOS, debug information is collected in a separate .dSYM file. We bundle it in to get source locations
 	// resolved in stack traces.
@@ -453,7 +412,7 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 	}
 	if dsymExists {
 		fuzzTestDsymArchivePath := fuzzTestArchivePath + ".dSYM"
-		archiveManifest[fuzzTestDsymArchivePath] = fuzzTestDsymAbsPath
+		manifest[fuzzTestDsymArchivePath] = fuzzTestDsymAbsPath
 	}
 
 	// Add the runtime dependencies of the fuzz test executable.
@@ -472,7 +431,7 @@ depsLoop:
 				err = errors.WithStack(err)
 				return
 			}
-			archiveManifest[filepath.Join(buildArtifactsPrefix, buildDirRelPath)] = dep
+			manifest[filepath.Join(buildArtifactsPrefix, buildDirRelPath)] = dep
 			continue
 		}
 
@@ -512,7 +471,7 @@ depsLoop:
 		// libraries are unique. If they aren't, we report a conflict.
 		externalLibrariesPrefix = filepath.Join(fuzzTestPrefix(buildResult), "external_libs")
 		archivePath := filepath.Join(externalLibrariesPrefix, filepath.Base(dep))
-		if conflictingDep, hasConflict := archiveManifest[archivePath]; hasConflict {
+		if conflictingDep, hasConflict := manifest[archivePath]; hasConflict {
 			err = errors.Errorf(
 				"fuzz test %q has conflicting runtime dependencies: %s and %s",
 				buildResult.Name,
@@ -521,14 +480,14 @@ depsLoop:
 			)
 			return
 		}
-		archiveManifest[archivePath] = dep
+		manifest[archivePath] = dep
 	}
 
 	// Add dictionary to archive
 	var archiveDict string
 	if b.opts.Dictionary != "" {
 		archiveDict = filepath.Join(fuzzTestPrefix(buildResult), "dict")
-		archiveManifest[archiveDict] = b.opts.Dictionary
+		manifest[archiveDict] = b.opts.Dictionary
 	}
 
 	// Add seeds from user-specified seed corpus dirs (if any) and the
@@ -545,27 +504,10 @@ depsLoop:
 	var archiveSeedsDir string
 	if len(seedCorpusDirs) > 0 {
 		archiveSeedsDir = filepath.Join(fuzzTestPrefix(buildResult), "seeds")
-		var targetDirs []string
-		for _, sourceDir := range seedCorpusDirs {
-			// Put the seeds into subdirectories of the "seeds" directory
-			// to avoid seeds with the same name to override each other.
 
-			// Choose a name for the target directory which wasn't used
-			// before
-			basename := filepath.Join(archiveSeedsDir, filepath.Base(sourceDir))
-			targetDir := basename
-			i := 1
-			for sliceutil.Contains(targetDirs, targetDir) {
-				targetDir = fmt.Sprintf("%s-%d", basename, i)
-				i++
-			}
-			targetDirs = append(targetDirs, targetDir)
-
-			// Add the seeds of the seed corpus directory to the target directory
-			err = artifact.AddDirToManifest(archiveManifest, targetDir, sourceDir)
-			if err != nil {
-				return
-			}
+		err = prepareSeeds(seedCorpusDirs, archiveSeedsDir, manifest)
+		if err != nil {
+			return
 		}
 	}
 
@@ -619,43 +561,6 @@ depsLoop:
 	}
 
 	return
-}
-
-func (b *libfuzzerBundler) getCodeRevision() *artifact.CodeRevision {
-	var err error
-	var gitCommit string
-	var gitBranch string
-
-	if b.opts.Commit == "" {
-		gitCommit, err = vcs.GitCommit()
-		if err != nil {
-			log.Debugf("failed to get Git commit: %+v", err)
-			return nil
-		}
-	} else {
-		gitCommit = b.opts.Commit
-	}
-
-	if b.opts.Branch == "" {
-		gitBranch, err = vcs.GitBranch()
-		if err != nil {
-			log.Debugf("failed to get Git branch: %+v", err)
-			return nil
-		}
-	} else {
-		gitBranch = b.opts.Branch
-	}
-
-	if vcs.GitIsDirty() {
-		log.Warnf("The Git repository has uncommitted changes. Archive metadata may be inaccurate.")
-	}
-
-	return &artifact.CodeRevision{
-		Git: &artifact.GitRevision{
-			Commit: gitCommit,
-			Branch: gitBranch,
-		},
-	}
 }
 
 // fuzzTestPrefix returns the path in the resulting artifact archive under which fuzz test specific files should be

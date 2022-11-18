@@ -113,21 +113,25 @@ system configured for the project.
 			// all platforms.
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven ||
 				opts.BuildSystem == config.BuildSystemGradle
+			system := cases.Title(language.Und).String(runtime.GOOS)
 			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
 				runtime.GOOS != "linux" &&
 				!isOSIndependent {
-				system := cases.Title(language.Und).String(runtime.GOOS)
 				if runtime.GOOS == "darwin" {
 					system = "macOS"
 				}
-				err := errors.Errorf(`Creating a bundle is currently only supported on Linux. If you are
+				err := errors.Errorf(`Creating a bundle for %s is currently only supported on Linux. If you are
 interested in using this feature on %s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
+https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, system)
 				log.Print(err.Error())
 				return cmdutils.WrapSilentError(err)
 			}
 
 			opts.FuzzTests = args
+			if isOSIndependent {
+				log.Warnf("WARNING: Bundling for %s is experimental and is currently not supported for remote runs.",
+					opts.BuildSystem)
+			}
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
