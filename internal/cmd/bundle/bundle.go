@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"github.com/pterm/pterm"
 	"os"
 	"runtime"
 
@@ -42,31 +43,45 @@ func newWithOptions(opts *options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle [flags] [<fuzz test>]...",
 		Short: "Bundles fuzz tests into an archive",
-		Long: `Bundles all runtime artifacts required by the given fuzz tests into
-a self-contained archive (bundle) that can be executed by a remote
-fuzzing server.
+		Long: `This command bundles all runtime artifacts required by the 
+given fuzz tests into a self-contained archive (bundle) that can be executed 
+by a remote fuzzing server. The usage of this command depends on the build 
+system configured for the project.
 
-The usage of this command depends on the build system configured for the
-project:
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("CMake") + `
+  <fuzz test> is the name of the fuzz test defined in the add_fuzz_test
+  command in your CMakeLists.txt.
 
- * For CMake, <fuzz test> is the name of the fuzz test as defined in the
-   'add_fuzz_test' command in your CMakeLists.txt. Command completion for
-   the <fuzz test> argument works if the fuzz test has been built before
-   or after running 'cifuzz reload'. The '--build-command' flag is ignored.
-   If no fuzz tests are specified, all fuzz tests are added to the bundle.
+  Command completion for the <fuzz test> argument is supported when the
+  fuzz test was built before or after running 'cifuzz reload'.
 
- * For other build systems, a command which builds the fuzz test executable
-   must be provided via the '--build-command' flag or the 'build-command'
-   setting in cifuzz.yaml. In this case, <fuzz test> is the path to the
-   fuzz test executable created by the build command. The value specified
-   for <fuzz test> is available to the build command in the FUZZ_TEST
-   environment variable. Example:
+  The --build-command flag is ignored.
 
-       echo "build-command: make clean && make \$FUZZ_TEST" >> cifuzz.yaml
-       cifuzz bundle my_fuzz_test
+  If no fuzz tests are specified, all fuzz tests are added to the bundle.
 
-   Alternatively, <fuzz test> can be the name of the fuzz test executable,
-   which will then be searched for recursively in the current directory.`,
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Bazel") + `
+  <fuzz test> is the name of the cc_fuzz_test target as defined in your
+  BUILD file, either as a relative or absolute Bazel label. 
+  
+  Command completion for the <fuzz test> argument is supported.
+
+  The '--build-command' flag is ignored.
+
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Other build systems") + `
+  <fuzz test> is either the path or basename of the fuzz test executable
+  created by the build command. If it's the basename, it will be searched
+  for recursively in the current working directory.
+
+  A command which builds the fuzz test executable must be provided via
+  the --build-command flag or the build-command setting in cifuzz.yaml.
+
+  The value specified for <fuzz test> is made available to the build
+  command in the FUZZ_TEST environment variable. For example:
+
+    echo "build-command: make clean && make \$FUZZ_TEST" >> cifuzz.yaml
+    cifuzz run my_fuzz_test
+
+`,
 		ValidArgsFunction: completion.ValidFuzzTests,
 		Args:              cobra.ArbitraryArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
