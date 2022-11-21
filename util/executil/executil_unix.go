@@ -3,6 +3,7 @@
 package executil
 
 import (
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -69,12 +70,30 @@ func (c *Cmd) TerminateProcessGroup() error {
 	return nil
 }
 
-func (c *Cmd) prepareProcessGroupTermination() {
-	// Set PGID so that we're able to terminate the process group on timeout
+func (c *Cmd) prepareProcessGroupTermination() error {
 	if c.SysProcAttr == nil {
 		c.SysProcAttr = &syscall.SysProcAttr{}
 	}
+
+	// Set PGID so that we're able to terminate the process group on
+	// timeout.
 	c.SysProcAttr.Setpgid = true
+
+	// To avoid that sending a SIGINT to the controlling terminal's
+	// foreground process group does not terminate the child process, we
+	// set the foreground process group to the child process group.
+	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
+	var syscallErr syscall.Errno
+	if errors.As(err, &syscallErr) && syscallErr == syscall.ENXIO {
+		// There is no controlling terminal
+		return nil
+	}
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	c.SysProcAttr.Ctty = int(tty.Fd())
+	c.SysProcAttr.Foreground = true
+	return nil
 }
 
 func (c *Cmd) getpgid() (int, error) {

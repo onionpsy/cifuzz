@@ -112,9 +112,12 @@ func (c *Cmd) Start() error {
 		}
 	}
 
-	c.prepareProcessGroupTermination()
+	err := c.prepareProcessGroupTermination()
+	if err != nil {
+		return err
+	}
 
-	err := c.Cmd.Start()
+	err = c.Cmd.Start()
 	if err != nil {
 		c.closeDescriptors(c.CloseAfterWait)
 		return errors.WithStack(err)
