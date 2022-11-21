@@ -90,7 +90,7 @@ Depending on your language / build system of choice **cifuzz** has
 different prerequisites:
 
 <details>
- <summary>C/C++ (with CMake)</summary>
+ <summary>C/C++ with CMake</summary>
 
 * [CMake >= 3.16](https://cmake.org/)
 * [LLVM >= 11](https://clang.llvm.org/get_started.html)
@@ -128,7 +128,7 @@ choco install cmake llvm
 </details>
 
 <details>
- <summary>C/C++ (with Bazel)</summary>
+ <summary>C/C++ with Bazel</summary>
 
 * [Bazel >= 5.3.1](https://bazel.build/install)
 * Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
