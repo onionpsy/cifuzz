@@ -18,6 +18,7 @@ type Metadata struct {
 // Fuzzer specifies the type and locations of fuzzers contained in the archive.
 type Fuzzer struct {
 	Target    string `yaml:"target"`
+	Name      string `yaml:"name,omitempty"`
 	Path      string `yaml:"path"`
 	Engine    string `yaml:"engine"`
 	Sanitizer string `yaml:"sanitizer,omitempty"`
@@ -28,6 +29,7 @@ type Fuzzer struct {
 	Dictionary    string        `yaml:"dictionary,omitempty"`
 	Seeds         string        `yaml:"seeds,omitempty"`
 	LibraryPaths  []string      `yaml:"library_paths,omitempty"`
+	RuntimePaths  []string      `yaml:"runtime_paths,omitempty"`
 	EngineOptions EngineOptions `yaml:"engine_options,omitempty"`
 	MaxRunTime    uint          `yaml:"max_run_time,omitempty"`
 }
