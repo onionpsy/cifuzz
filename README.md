@@ -212,7 +212,7 @@ choco install microsoft-openjdk maven
 
 * Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
-* [Gradle](https://gradle.org/install/)
+* [Gradle](https://gradle.org/install/) >= 4.9
 
 **Ubuntu / Debian**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
