@@ -217,13 +217,18 @@ func (b *Builder) setLibFuzzerEnv() error {
 		return err
 	}
 
-	// Users should pass the environment variable FUZZ_TEST_CFLAGS to the
-	// compiler command building the fuzz test.
+	// Users should pass the environment variable FUZZ_TEST_CFLAGS or
+	// FUZZ_TEST_CXXFLAGS to the compiler command building the fuzz test.
 	cifuzzIncludePath, err := b.RunfilesFinder.CIFuzzIncludePath()
 	if err != nil {
 		return err
 	}
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CFLAGS", "'-I"+cifuzzIncludePath+"'")
+	fuzzTestCFlags := []string{"'-I" + cifuzzIncludePath + "'"}
+	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CFLAGS", strings.Join(fuzzTestCFlags, " "))
+	if err != nil {
+		return err
+	}
+	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CXXFLAGS", strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
 	}
@@ -279,13 +284,18 @@ func (b *Builder) setCoverageEnv() error {
 		return err
 	}
 
-	// Users should pass the environment variable FUZZ_TEST_CFLAGS to the
-	// compiler command building the fuzz test.
+	// Users should pass the environment variable FUZZ_TEST_CFLAGS or
+	// FUZZ_TEST_CXXFLAGS to the compiler command building the fuzz test.
 	cifuzzIncludePath, err := b.RunfilesFinder.CIFuzzIncludePath()
 	if err != nil {
 		return err
 	}
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CFLAGS", "'-I"+cifuzzIncludePath+"'")
+	fuzzTestCFlags := []string{"'-I" + cifuzzIncludePath + "'"}
+	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CFLAGS", strings.Join(fuzzTestCFlags, " "))
+	if err != nil {
+		return err
+	}
+	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CXXFLAGS", strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
 	}
