@@ -253,7 +253,7 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 		line := lcov.Text()
 
 		if strings.HasPrefix(line, "SF:") {
-			if strings.HasSuffix(line, "/crashing_fuzz_test.cpp") {
+			if strings.HasSuffix(line, "/crashing_fuzz_test.c") {
 				isFuzzTestSource = true
 			} else {
 				isFuzzTestSource = false
@@ -276,6 +276,6 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 	assert.Subset(t, []uint{
 		// Lines after the three crashes. Whether these are covered depends on implementation details of the coverage
 		// instrumentation, so we conservatively assume they aren't covered.
-		21, 31, 41},
+		20, 30, 40},
 		uncoveredLines)
 }

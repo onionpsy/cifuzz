@@ -14,8 +14,8 @@ my_fuzz_test: libexplore.so
 	# done in a single invocation here, so we pass both to $CXX here).
 	${CXX} ${CXXFLAGS} ${FUZZ_TEST_CFLAGS} ${FUZZ_TEST_LDFLAGS} -o $@ $@.cpp -Wl,-rpath '-Wl,$$ORIGIN' -L. -lexplore
 
-crashing_fuzz_test.o: src/coverage/crashing_fuzz_test.cpp
-	${CXX} ${CXXFLAGS} ${FUZZ_TEST_CFLAGS} -c $<
+crashing_fuzz_test.o: src/coverage/crashing_fuzz_test.c
+	${CC} ${CFLAGS} ${FUZZ_TEST_CFLAGS} -c $<
 
 crashing_fuzz_test: crashing_fuzz_test.o
-	${CXX} -o $@ crashing_fuzz_test.o ${LDFLAGS} ${FUZZ_TEST_LDFLAGS}
+	${CC} -o $@ crashing_fuzz_test.o ${LDFLAGS} ${FUZZ_TEST_LDFLAGS}

@@ -1,6 +1,5 @@
 #include <assert.h>
-
-#include <iostream>
+#include <stdio.h>
 
 #include <cifuzz/cifuzz.h>
 
@@ -10,37 +9,37 @@ FUZZ_TEST(const uint8_t *data, size_t size) {
   }
   switch (data[0]) {
     case 'A':
-      std::cout << 'A' << std::endl;
+      printf("%s\n", "A");
       break;
     case 'B':
-      std::cout << 'B' << std::endl;
+      printf("%s\n", "B");
       break;
     case 'C':
-      std::cout << "C (assert failure)" << std::endl;
+      printf("%s\n", "C (assert failure)");
       assert(1 == 0);
       break;
     case 'D':
-      std::cout << 'D' << std::endl;
+      printf("%s\n", "D");
       break;
     case 'E':
-      std::cout << 'E' << std::endl;
+      printf("%s\n", "E");
       break;
     case 'F':
-      std::cout << "F (exit)" << std::endl;
+      printf("%s\n", "F (exit)");
       exit(1);
       break;
     case 'G':
-      std::cout << 'G' << std::endl;
+      printf("%s\n", "G");
       break;
     case 'H':
-      std::cout << 'H' << std::endl;
+      printf("%s\n", "H");
       break;
     case 'I':
-      std::cout << "I (segfault)" << std::endl;
+      printf("%s\n", "I (segfault)");
       *((volatile char *) 0) = 1;
       break;
     case 'J':
-      std::cout << 'J' << std::endl;
+      printf("%s\n", "J");
       break;
   }
 }
