@@ -236,6 +236,9 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 		"--repo_env=FUZZING_CXXFLAGS",
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
+		// rules_fuzzing only links in the UBSan C++ runtime when the
+		// sanitizer is set to "undefined"
+		"--repo_env=SANITIZER=undefined",
 	}
 	if b.NumJobs != 0 {
 		commonFlags = append(commonFlags, "--jobs", fmt.Sprint(b.NumJobs))
