@@ -89,7 +89,13 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 
 	seedCorpus := build.JazzerSeedCorpus(targetClass, b.ProjectDir)
 	generatedCorpus := build.JazzerGeneratedCorpus(targetClass, b.ProjectDir)
+	buildDir, err := GetBuildDirectory(b.ProjectDir)
+	if err != nil {
+		return nil, err
+	}
 	result := &build.Result{
+		Name:            targetClass,
+		BuildDir:        buildDir,
 		GeneratedCorpus: generatedCorpus,
 		SeedCorpus:      seedCorpus,
 		RuntimeDeps:     deps,
@@ -185,4 +191,26 @@ func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
 	}
 
 	return nil
+}
+
+func GetBuildDirectory(projectDir string) (string, error) {
+	cmd := exec.Command("mvn",
+		"help:evaluate",
+		"-Dexpression=project.build.directory",
+		"--quiet",
+		"-DforceStdout",
+	)
+	cmd.Dir = projectDir
+	log.Debugf("Working directory: %s", cmd.Dir)
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	if err != nil {
+		// It's expected that maven might fail due to user configuration, so we
+		// print the error without the stack trace.
+		err = cmdutils.WrapExecError(err, cmd)
+		log.Error(err)
+		return "", cmdutils.ErrSilent
+	}
+
+	return string(output), nil
 }

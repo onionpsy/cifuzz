@@ -18,8 +18,10 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-var classpathRegex = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
-var buildDirRegex = regexp.MustCompile("(?m)^cifuzz.test.buildDir=(?P<buildDir>.*)$")
+var (
+	classpathRegex = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
+	buildDirRegex  = regexp.MustCompile("(?m)^cifuzz.test.buildDir=(?P<buildDir>.*)$")
+)
 
 func FindGradleWrapper(projectDir string) (string, error) {
 	wrapper := "gradlew"
@@ -104,7 +106,14 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	}
 	seedCorpus := build.JazzerSeedCorpus(targetClass, b.ProjectDir)
 	generatedCorpus := build.JazzerGeneratedCorpus(targetClass, b.ProjectDir)
+
+	buildDir, err := GetBuildDirectory(b.ProjectDir)
+	if err != nil {
+		return nil, err
+	}
 	result := &build.Result{
+		Name:            targetClass,
+		BuildDir:        buildDir,
 		GeneratedCorpus: generatedCorpus,
 		SeedCorpus:      seedCorpus,
 		RuntimeDeps:     deps,
