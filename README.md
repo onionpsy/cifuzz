@@ -57,6 +57,7 @@ based tests into your project.
 ![CMake](/docs/assets/tools/cmake.png)
 ![gradle](/docs/assets/tools/gradle.png)
 ![Maven](/docs/assets/tools/maven.png)
+![Bazel](/docs/assets/tools/bazel.png)
 
 ## Getting started
 
