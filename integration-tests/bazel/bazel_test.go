@@ -171,7 +171,7 @@ func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	// Run cifuzz bundle and verify the contents of the archive.
-	shared.TestBundle(t, testdata, cifuzz, "//src/parser:parser_fuzz_test")
+	shared.TestBundle(t, testdata, cifuzz, "//src/parser:parser_fuzz_test", "//src/bundle:ubsan_function_ptr_fuzz_test")
 }
 
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

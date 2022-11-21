@@ -1,0 +1,15 @@
+load("@rules_fuzzing//fuzzing:cc_defs.bzl", "cc_fuzz_test")
+
+cc_fuzz_test(
+    name = "ubsan_function_ptr_fuzz_test",
+    srcs = [
+        "ubsan_function_ptr_fuzz_test.cpp",
+    ],
+    corpus = glob(
+        ["ubsan_function_ptr_fuzz_test_inputs/**"],
+        allow_empty = True,
+    ),
+    deps = [
+        "@cifuzz",
+    ],
+)
