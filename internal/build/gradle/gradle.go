@@ -89,7 +89,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	cmd, err := buildGradleCommand(b.ProjectDir, args)
 
 	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
+	_, err = cmd.Output()
 	if err != nil {
 		// It's expected that gradle might fail due to user configuration,
 		// so we print the error without the stack trace.
