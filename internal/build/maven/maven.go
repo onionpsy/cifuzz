@@ -67,29 +67,25 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 			flags = append(flags, "1C")
 		}
 	}
-
 	args := append(flags, "test-compile")
 
-	cmd := exec.Command("mvn", args...)
-
-	cmd.Stdout = b.Stderr
-	cmd.Stderr = b.Stderr
-	cmd.Dir = b.ProjectDir
-	log.Debugf("Working directory: %s", cmd.Dir)
-	log.Debugf("Command: %s", cmd.String())
-	err := cmd.Run()
-	if err != nil {
-		// It's expected that maven might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
-	}
-
-	deps, err := b.getDependencies()
+	err := b.runMaven(args, b.Stderr, b.Stderr)
 	if err != nil {
 		return nil, err
 	}
+
+	deps, err := b.getExternalDependencies()
+	if err != nil {
+		return nil, err
+	}
+
+	localDeps, err := b.getLocalDependencies()
+	if err != nil {
+		return nil, err
+	}
+
+	deps = append(deps, localDeps...)
+
 	seedCorpus := build.JazzerSeedCorpus(targetClass, b.ProjectDir)
 	generatedCorpus := build.JazzerGeneratedCorpus(targetClass, b.ProjectDir)
 	result := &build.Result{
@@ -101,7 +97,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	return result, nil
 }
 
-func (b *Builder) getDependencies() ([]string, error) {
+func (b *Builder) getExternalDependencies() ([]string, error) {
 	tempDir, err := os.MkdirTemp("", "cifuzz-maven-dependencies-*")
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -110,25 +106,15 @@ func (b *Builder) getDependencies() ([]string, error) {
 
 	outputPath := filepath.Join(tempDir, "cp")
 	outputFlag := "-Dmdep.outputFile=" + outputPath
-	cmd := exec.Command(
-		"mvn",
+
+	args := []string{
 		"dependency:build-classpath",
 		outputFlag,
-	)
-	// Redirect the command's stdout to stderr to only have
-	// reports printed to stdout
-	cmd.Stdout = b.Stderr
-	cmd.Stderr = b.Stderr
-	cmd.Dir = b.ProjectDir
-	log.Debugf("Working directory: %s", cmd.Dir)
-	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
+	}
+
+	err = b.runMaven(args, b.Stderr, b.Stderr)
 	if err != nil {
-		// It's expected that maven might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
+		return nil, err
 	}
 
 	bytes, err := os.ReadFile(outputPath)
@@ -137,12 +123,42 @@ func (b *Builder) getDependencies() ([]string, error) {
 	}
 
 	deps := strings.Split(string(bytes), string(os.PathListSeparator))
+	return deps, nil
+}
+
+func (b *Builder) getLocalDependencies() ([]string, error) {
 	// Append local dependencies which are not listed by "mvn dependency:build-classpath"
 	// These directories are configurable
 	localDeps := []string{"classes", "test-classes", "resource", "test-resource"}
+	deps := []string{}
 	for _, dep := range localDeps {
 		deps = append(deps, filepath.Join(b.ProjectDir, "target", dep))
 	}
-
 	return deps, nil
+}
+
+func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
+	// always run it with the cifuzz profile
+	args = append(args, "-Pcifuzz")
+	cmd := exec.Command(
+		"mvn",
+		args...,
+	)
+	// Redirect the command's stdout to stderr to only have
+	// reports printed to stdout
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	cmd.Dir = b.ProjectDir
+	log.Debugf("Working directory: %s", cmd.Dir)
+	log.Debugf("Command: %s", cmd.String())
+	err := cmd.Run()
+	if err != nil {
+		// It's expected that maven might fail due to user configuration,
+		// so we print the error without the stack trace.
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
+		log.Error(err)
+		return cmdutils.ErrSilent
+	}
+
+	return nil
 }
