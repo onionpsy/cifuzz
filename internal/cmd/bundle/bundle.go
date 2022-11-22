@@ -1,11 +1,11 @@
 package bundle
 
 import (
-	"github.com/pterm/pterm"
 	"os"
 	"runtime"
 
 	"github.com/pkg/errors"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
