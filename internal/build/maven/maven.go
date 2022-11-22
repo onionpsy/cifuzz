@@ -1,6 +1,7 @@
 package maven
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -127,14 +128,37 @@ func (b *Builder) getExternalDependencies() ([]string, error) {
 }
 
 func (b *Builder) getLocalDependencies() ([]string, error) {
+	args := []string{
+		"help:evaluate",
+		"-Dexpression=project",
+		"-DforceStdout",
+		"--quiet",
+	}
+	stdout := new(bytes.Buffer)
+	err := b.runMaven(args, stdout, stdout)
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := parseXML(stdout)
+	if err != nil {
+		return nil, err
+	}
 	// Append local dependencies which are not listed by "mvn dependency:build-classpath"
 	// These directories are configurable
-	localDeps := []string{"classes", "test-classes", "resource", "test-resource"}
-	deps := []string{}
-	for _, dep := range localDeps {
-		deps = append(deps, filepath.Join(b.ProjectDir, "target", dep))
+	localDeps := []string{
+		project.Build.OutputDirectory,
+		project.Build.TestOutputDirectory,
 	}
-	return deps, nil
+
+	for _, resource := range project.Build.Resources.Resource {
+		localDeps = append(localDeps, resource.Directory)
+	}
+	for _, resource := range project.Build.TestResources.TestResource {
+		localDeps = append(localDeps, resource.Directory)
+	}
+
+	return localDeps, nil
 }
 
 func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
