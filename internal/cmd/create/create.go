@@ -63,7 +63,7 @@ func newWithOptions(opts *createOpts) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("create [%s]", strings.Join(maps.Values(supportedTestTypes), "|")),
 		Short: "Create a new fuzz test",
-		Long: `Creates a new templated fuzz test source file in the current directory.
+		Long: `This command creates a new templated fuzz test source file in the current directory.
 After running this command, you should edit the created file in order to
 make it call the functions you want to fuzz. You can then execute the
 fuzz test via 'cifuzz run'.`,

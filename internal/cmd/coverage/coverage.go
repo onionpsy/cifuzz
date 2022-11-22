@@ -90,22 +90,19 @@ func New() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "coverage [flags] <fuzz test>",
-		Short: "Generate a coverage report for a fuzz test",
-		Long: `Generate a coverage report for a fuzz test
+		Short: "Generate coverage report for fuzz test",
+		Long: `This command generates a coverage report for a fuzz test.
+The output can be displayed in the browser or written as a HTML 
+or a lcov trace file.
 
-Open a browser displaying the source code with coverage information:
-
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Browser") + `
     cifuzz coverage <fuzz test>
 
-Write out an HTML file instead of launching a browser:
-
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("HTML") + `
     cifuzz coverage --output coverage.html <fuzz test>
 
-Write out an lcov trace file:
-
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("LCOV") + `
     cifuzz coverage --format=lcov <fuzz test>
-
-
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,
 		Args:              cobra.ExactArgs(1),
