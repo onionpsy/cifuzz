@@ -236,8 +236,8 @@ func setupVSCodeTasks(projectDir string, finder runfiles.RunfilesFinder) error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		log.Printf(`tasks.json has been created in .vscode to provide easy access to command
-line workflows. It enables you to launch coverage runs from within
+		log.Printf(`Created file .vscode/tasks.json. This file provides easy access to
+command-line workflows. It enables you to launch coverage runs from within
 VS Code. You can use the Coverage Gutters extension to visualize the
 generated coverage report. To learn more about tasks in VS Code, visit:
 
@@ -258,11 +258,13 @@ You can download the Coverage Gutters extension from:
 		log.Printf(`Add the following task to your tasks.json to provide easy access to
 cifuzz coverage runs from within VS Code. You can use the Coverage
 Gutters extension to visualize the generated coverage report.
+
 %s
 
 You can download the Coverage Gutters extension from:
 
 	https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters
+
 `, presetsSrc)
 	}
 
