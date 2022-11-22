@@ -39,7 +39,7 @@ var (
 		"cranky",
 
 		"dangerous",
-		"Daunting",
+		"daunting",
 		"dazzling",
 		"determined",
 		"distracted",
