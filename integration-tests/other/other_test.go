@@ -17,6 +17,8 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -41,14 +43,110 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	defer fileutil.Cleanup(dir)
 	t.Logf("executing other build system integration test in %s", dir)
 
-	// Run the fuzz test and verify that it crashes with the expected finding
-	expectedFinding := regexp.MustCompile(`undefined behavior in exploreMe`)
-	runFuzzer(t, cifuzz, dir, "my_fuzz_test", expectedFinding)
+	cifuzzRunner := shared.CIFuzzRunner{
+		CIFuzzPath:      cifuzz,
+		DefaultWorkDir:  dir,
+		DefaultFuzzTest: "my_fuzz_test",
+	}
 
-	// Run the fuzz test with --recover-ubsan and verify that it now
-	// also finds the heap buffer overflow
-	expectedFinding = regexp.MustCompile(`heap buffer overflow in exploreMe`)
-	runFuzzer(t, cifuzz, dir, "my_fuzz_test", expectedFinding, "--recover-ubsan")
+	expectedOutputs := []*regexp.Regexp{
+		regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-buffer-overflow`),
+	}
+	if runtime.GOOS != "windows" {
+		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
+	}
+
+	// Check that Minijail is used (if running on Linux, because Minijail
+	// is only supported on Linux)
+	if runtime.GOOS == "linux" {
+		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`bin/minijail0`))
+	}
+
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs: expectedOutputs,
+		Args:            []string{"--recover-ubsan"},
+	})
+
+	// Check that the findings command lists the findings
+	findings := shared.GetFindings(t, cifuzz, dir)
+	// On Windows, only the ASan finding is expected, on Linux and macOS
+	// both the ASan and the UBSan finding are expected.
+	if runtime.GOOS == "windows" {
+		require.Len(t, findings, 1)
+	} else {
+		require.Len(t, findings, 2)
+	}
+	var asanFinding *finding.Finding
+	var ubsanFinding *finding.Finding
+	for _, f := range findings {
+		if strings.HasPrefix(f.Details, "heap-buffer-overflow") {
+			asanFinding = f
+		} else if strings.HasPrefix(f.Details, "undefined behavior") {
+			ubsanFinding = f
+		} else {
+			t.Fatalf("unexpected finding: %q", f.Details)
+		}
+	}
+
+	// Verify that there is an ASan finding and that it has the correct details.
+	require.NotNil(t, asanFinding)
+	// TODO: This check currently fails on macOS because there
+	// llvm-symbolizer doesn't read debug info from object files.
+	// See https://github.com/google/sanitizers/issues/207#issuecomment-136495556
+	if runtime.GOOS != "darwin" {
+		expectedStackTrace := []*stacktrace.StackFrame{
+			{
+				SourceFile: "src/explore/explore_me.cpp",
+				Line:       14,
+				Column:     11,
+				// FIXME: Why 1 and not 0?
+				FrameNumber: 1,
+				Function:    "exploreMe",
+			},
+			{
+				SourceFile: "my_fuzz_test.cpp",
+				Line:       18,
+				Column:     3,
+				// FIXME: Why 2 and not 1?
+				FrameNumber: 2,
+				Function:    "LLVMFuzzerTestOneInputNoReturn",
+			},
+		}
+		if runtime.GOOS == "windows" {
+			// On Windows, the column is not printed
+			for i := range expectedStackTrace {
+				expectedStackTrace[i].Column = 0
+			}
+		}
+
+		require.Equal(t, expectedStackTrace, asanFinding.StackTrace)
+	}
+
+	// Verify that there is a UBSan finding and that it has the correct details.
+	if runtime.GOOS != "windows" {
+		require.NotNil(t, ubsanFinding)
+		// Verify that UBSan findings come with inputs.
+		require.NotEmpty(t, ubsanFinding.InputFile)
+		if runtime.GOOS != "darwin" {
+			expectedStackTrace := []*stacktrace.StackFrame{
+				{
+					SourceFile:  "src/explore/explore_me.cpp",
+					Line:        20,
+					Column:      11,
+					FrameNumber: 0,
+					Function:    "exploreMe",
+				},
+				{
+					SourceFile:  "my_fuzz_test.cpp",
+					Line:        18,
+					Column:      3,
+					FrameNumber: 1,
+					Function:    "LLVMFuzzerTestOneInputNoReturn",
+				},
+			}
+			require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
+		}
+	}
 
 	// Test the coverage command
 	createHtmlCoverageReport(t, cifuzz, dir, "my_fuzz_test")
@@ -102,49 +200,6 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 
 	// Execute the bundle command
 	shared.TestBundle(t, dir, cifuzz, args...)
-}
-
-func runFuzzer(t *testing.T, cifuzz string, dir string, fuzzTest string, expectedOutput *regexp.Regexp, args ...string) {
-	t.Helper()
-
-	args = append([]string{
-		"run", fuzzTest,
-		"--no-notifications",
-		// The crashes are expected to be found quickly.
-		"--engine-arg=-runs=1000000",
-		"--engine-arg=-seed=1",
-	}, args...)
-	cmd := executil.Command(cifuzz, args...)
-	cmd.Dir = dir
-	stdoutPipe, err := cmd.StdoutTeePipe(os.Stdout)
-	require.NoError(t, err)
-	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)
-	require.NoError(t, err)
-
-	t.Logf("Command: %s", cmd.String())
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Check that the output contains the expected output
-	var seenExpectedOutput bool
-	// cifuzz progress messages go to stdout.
-	scanner := bufio.NewScanner(stdoutPipe)
-	for scanner.Scan() {
-		if expectedOutput.MatchString(scanner.Text()) {
-			seenExpectedOutput = true
-		}
-	}
-	// Fuzzer output goes to stderr.
-	scanner = bufio.NewScanner(stderrPipe)
-	for scanner.Scan() {
-		if expectedOutput.MatchString(scanner.Text()) {
-			seenExpectedOutput = true
-		}
-		if filteredLine.MatchString(scanner.Text()) {
-			require.FailNow(t, "Found line in output which should have been filtered", scanner.Text())
-		}
-	}
-	require.True(t, seenExpectedOutput, "Did not see %q in fuzzer output", expectedOutput.String())
 }
 
 func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, fuzzTest string) {

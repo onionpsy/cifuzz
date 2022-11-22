@@ -348,13 +348,14 @@ func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	// The same applies to the C++ version of the launcher.
+	// The same applies to the C++ version of the launcher and the dumper.
 	launcherSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz", "src", "launcher.c")
-	err = os.MkdirAll(replayerDir, 0755)
+	err = copy.Copy(launcherSrc, filepath.Join(destDir, "src", "launcher.cpp"))
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	err = copy.Copy(launcherSrc, filepath.Join(destDir, "src", "launcher.cpp"))
+	dumperSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz", "src", "dumper.c")
+	err = copy.Copy(dumperSrc, filepath.Join(destDir, "src", "dumper.cpp"))
 	if err != nil {
 		return errors.WithStack(err)
 	}

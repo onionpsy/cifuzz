@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -104,6 +105,28 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	var err error
 	defer fileutil.Cleanup(b.buildDir)
+
+	if b.Engine == "libfuzzer" && !slices.Equal(b.Sanitizers, []string{"coverage"}) {
+		// We compile the dumper without any user-provided flags. This
+		// should be safe as it does not use any stdlib functions.
+		dumperSource, err := runfiles.Finder.DumperSourcePath()
+		if err != nil {
+			return nil, err
+		}
+		clang, err := runfiles.Finder.ClangPath()
+		if err != nil {
+			return nil, err
+		}
+		// Compile with -fPIC just in case the fuzz test is a PIE.
+		cmd := exec.Command(clang, "-fPIC", "-c", dumperSource, "-o", filepath.Join(b.buildDir, "dumper.o"))
+		cmd.Stdout = b.Stdout
+		cmd.Stderr = b.Stderr
+		log.Debugf("Command: %s", cmd.String())
+		err = cmd.Run()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
 
 	// Let the build command reference the fuzz test (base)name.
 	buildCommandEnv, err := envutil.Setenv(b.env, "FUZZ_TEST", fuzzTest)
@@ -208,7 +231,15 @@ func (b *Builder) setLibFuzzerEnv() error {
 	// Users should pass the environment variable FUZZ_TEST_LDFLAGS to
 	// the linker command building the fuzz test. For libfuzzer, we set
 	// it to "-fsanitize=fuzzer" to build a libfuzzer binary.
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_LDFLAGS", "-fsanitize=fuzzer")
+	// We also link in an additional object to ensure that non-fatal
+	// sanitizer findings still have an input attached.
+	// See tools/cmake/cifuzz/src/dumper.c for details.
+	var fuzzTestLdflags []string
+	if runtime.GOOS != "darwin" {
+		fuzzTestLdflags = append(fuzzTestLdflags, "-Wl,--wrap=__sanitizer_set_death_callback")
+	}
+	fuzzTestLdflags = append(fuzzTestLdflags, "-fsanitize=fuzzer", filepath.Join(b.buildDir, "dumper.o"))
+	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_LDFLAGS", strings.Join(fuzzTestLdflags, " "))
 	if err != nil {
 		return err
 	}

@@ -19,6 +19,7 @@ type RunfilesFinder interface {
 	Minijail0Path() (string, error)
 	ProcessWrapperPath() (string, error)
 	ReplayerSourcePath() (string, error)
+	DumperSourcePath() (string, error)
 	VSCodeTasksPath() (string, error)
 	LogoPath() (string, error)
 	MavenPath() (string, error)

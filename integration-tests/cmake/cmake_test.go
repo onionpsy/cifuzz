@@ -76,6 +76,7 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
 		TerminateAfterExpectedOutput: true,
+		Args:                         []string{"--recover-ubsan"},
 	})
 
 	// Make the fuzz test call a function. Before we do that, we sleep
@@ -91,17 +92,12 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 
 	// Run the fuzz test and check that it finds the undefined behavior
 	// (unless we're running on Windows, in which case UBSan is not
-	// supported)
-	if runtime.GOOS != "windows" {
-		expectedOutputs := []*regexp.Regexp{
-			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),
-		}
-		cifuzzRunner.Run(t, &shared.RunOptions{ExpectedOutputs: expectedOutputs})
-	}
-
+	// supported) and the use-after-free.
 	expectedOutputs := []*regexp.Regexp{
-		// Check that the use-after-free is found
 		regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
+	}
+	if runtime.GOOS != "windows" {
+		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
 	}
 
 	// Check that Minijail is used (if running on Linux, because Minijail
@@ -110,24 +106,33 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`bin/minijail0`))
 	}
 
-	// Run the fuzz test with --recover-ubsan and verify that it now
-	// also finds the heap buffer overflow
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		Args:            []string{"--recover-ubsan"},
 		ExpectedOutputs: expectedOutputs,
+		Args:            []string{"--recover-ubsan"},
 	})
 
 	// Check that the findings command lists the findings
 	findings = shared.GetFindings(t, cifuzz, dir)
 	// On Windows, only the ASan finding is expected, on Linux and macOS
-	// at least two findings are expected
-	require.GreaterOrEqual(t, len(findings), 1)
+	// both the ASan and the UBSan finding are expected.
+	if runtime.GOOS == "windows" {
+		require.Len(t, findings, 1)
+	} else {
+		require.Len(t, findings, 2)
+	}
 	var asanFinding *finding.Finding
+	var ubsanFinding *finding.Finding
 	for _, f := range findings {
 		if strings.HasPrefix(f.Details, "heap-use-after-free") {
 			asanFinding = f
+		} else if strings.HasPrefix(f.Details, "undefined behavior") {
+			ubsanFinding = f
+		} else {
+			t.Fatalf("unexpected finding: %q", f.Details)
 		}
 	}
+
+	// Verify that there is an ASan finding and that it has the correct details.
 	require.NotNil(t, asanFinding)
 	// TODO: This check currently fails on macOS because there
 	// llvm-symbolizer doesn't read debug info from object files.
@@ -136,7 +141,7 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 		expectedStackTrace := []*stacktrace.StackFrame{
 			{
 				SourceFile:  "src/parser/parser.cpp",
-				Line:        23,
+				Line:        19,
 				Column:      14,
 				FrameNumber: 0,
 				Function:    "parse",
@@ -157,6 +162,32 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 		}
 
 		require.Equal(t, expectedStackTrace, asanFinding.StackTrace)
+	}
+
+	// Verify that there is a UBSan finding and that it has the correct details.
+	if runtime.GOOS != "windows" {
+		require.NotNil(t, ubsanFinding)
+		// Verify that UBSan findings come with inputs.
+		require.NotEmpty(t, ubsanFinding.InputFile)
+		if runtime.GOOS != "darwin" {
+			expectedStackTrace := []*stacktrace.StackFrame{
+				{
+					SourceFile:  "src/parser/parser.cpp",
+					Line:        23,
+					Column:      9,
+					FrameNumber: 0,
+					Function:    "parse",
+				},
+				{
+					SourceFile:  "src/parser/parser_fuzz_test.cpp",
+					Line:        30,
+					Column:      3,
+					FrameNumber: 1,
+					Function:    "LLVMFuzzerTestOneInputNoReturn",
+				},
+			}
+			require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
+		}
 	}
 
 	// Check that options set via the config file are respected
@@ -187,10 +218,10 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	env, err := envutil.Setenv(os.Environ(), "ASAN_OPTIONS", "print_stats=1:atexit=1")
 	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		Args:                         []string{"--recover-ubsan"},
 		Env:                          env,
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,
+		Args:                         []string{"--recover-ubsan"},
 	})
 
 	// Building with coverage instrumentation doesn't work on Windows yet

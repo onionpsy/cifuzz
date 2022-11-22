@@ -81,6 +81,10 @@ func (f RunfilesFinderImpl) ReplayerSourcePath() (string, error) {
 	return f.findFollowSymlinks("share/cifuzz/src/replayer.c")
 }
 
+func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
+	return f.findFollowSymlinks("share/cifuzz/src/dumper.c")
+}
+
 func (f RunfilesFinderImpl) VSCodeTasksPath() (string, error) {
 	return f.findFollowSymlinks("share/cifuzz/share/tasks.json")
 }
