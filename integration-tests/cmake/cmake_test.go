@@ -76,7 +76,6 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
 		TerminateAfterExpectedOutput: true,
-		Args:                         []string{"--recover-ubsan"},
 	})
 
 	// Make the fuzz test call a function. Before we do that, we sleep
@@ -108,7 +107,6 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs: expectedOutputs,
-		Args:            []string{"--recover-ubsan"},
 	})
 
 	// Check that the findings command lists the findings
@@ -221,7 +219,6 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 		Env:                          env,
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,
-		Args:                         []string{"--recover-ubsan"},
 	})
 
 	// Building with coverage instrumentation doesn't work on Windows yet

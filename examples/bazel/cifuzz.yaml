@@ -39,9 +39,8 @@
 ## Only supported on Linux.
 #use-sandbox: false
 
-## Recover from findings of the UndefinedBehaviorSanitizer and continue
-## fuzzing.
-#recover-ubsan: true
+## Stop fuzzing after findings of the UndefinedBehaviorSanitizer.
+#recover-ubsan: false
 
 ## Set to true to print output of the `cifuzz run` command as JSON.
 #print-json: true

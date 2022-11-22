@@ -140,9 +140,8 @@ func AddProjectDirFlag(cmd *cobra.Command) func() {
 }
 
 func AddRecoverUBSanFlag(cmd *cobra.Command) func() {
-	cmd.Flags().Bool("recover-ubsan", false,
-		"Recover from findings of the UndefinedBehaviorSanitizer and continue fuzzing.\n"+
-			"Note that when using this flag, no crashing input is stored for those findings.")
+	cmd.Flags().Bool("recover-ubsan", true,
+		"Recover from findings of the UndefinedBehaviorSanitizer and continue fuzzing.")
 	return func() {
 		ViperMustBindPFlag("recover-ubsan", cmd.Flags().Lookup("recover-ubsan"))
 	}

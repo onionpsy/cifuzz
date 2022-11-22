@@ -64,7 +64,6 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs: expectedOutputs,
-		Args:            []string{"--recover-ubsan"},
 	})
 
 	// Check that the findings command lists the findings
