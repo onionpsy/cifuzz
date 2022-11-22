@@ -416,7 +416,7 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 
 	overrideOptions := map[string]string{
 		// Per default this is set to false, except for darwin.
-		// To have consistent behaviour on all supported operating systems
+		// To have consistent behavior on all supported operating systems
 		// we are setting this explicitly to false
 		"abort_on_error": "0",
 	}

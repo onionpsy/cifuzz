@@ -50,7 +50,7 @@ func parseAsRuntimeReport(log string) *finding.Finding {
 	}
 	return &finding.Finding{
 		Type:    finding.ErrorType_RUNTIME_ERROR,
-		Details: "undefined behaviour: " + result["error_type"],
+		Details: "undefined behavior: " + result["error_type"],
 		Logs:    []string{log},
 	}
 }

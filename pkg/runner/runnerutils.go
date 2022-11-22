@@ -132,7 +132,7 @@ func SetCommonUBSANOptions(env []string, recover bool) ([]string, error) {
 	maps.Copy(defaultOptions, map[string]string{
 		// Instruct UBSAN (enabled for all sanitizers) to print full stack traces
 		// instead of only the top stack frame with a relative file path.
-		// This allows us to set more breakpoints while debugging undefined behaviour
+		// This allows us to set more breakpoints while debugging undefined behavior
 		// findings and also ensures absolute file paths in the stack trace which can
 		// be mapped to the project build directory.
 		"print_stacktrace": "1",

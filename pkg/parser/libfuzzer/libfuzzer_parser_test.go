@@ -182,7 +182,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
 						Type:    finding.ErrorType_RUNTIME_ERROR,
-						Details: "undefined behaviour: signed integer overflow",
+						Details: "undefined behavior: signed integer overflow",
 						Logs: []string{
 							"fuzz_targets/manual.cpp:6:5: runtime error: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'",
 							"SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:6:5 in",

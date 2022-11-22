@@ -103,7 +103,7 @@ class BucketInputFiles(argparse.Action):
                         audit_logs.append(filename)
                         break
                 else:
-                    # Treat it as an strace log to retain legacy behaviour and
+                    # Treat it as an strace log to retain legacy behavior and
                     # also just in case the strace regex is imperfect.
                     traces.append(filename)
 

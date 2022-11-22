@@ -42,7 +42,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	t.Logf("executing other build system integration test in %s", dir)
 
 	// Run the fuzz test and verify that it crashes with the expected finding
-	expectedFinding := regexp.MustCompile(`undefined behaviour in exploreMe`)
+	expectedFinding := regexp.MustCompile(`undefined behavior in exploreMe`)
 	runFuzzer(t, cifuzz, dir, "my_fuzz_test", expectedFinding)
 
 	// Run the fuzz test with --recover-ubsan and verify that it now
