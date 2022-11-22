@@ -129,7 +129,7 @@ func TestSetupVSCodeTasks(t *testing.T) {
 	// Check that tasks are logged if tasks.json already exists
 	content, err := os.ReadFile(vscodeTasks)
 	require.NoError(t, err)
-	testutil.CheckOutput(t, logOutput, string(content))
+	testutil.CheckOutput(t, logOutput, strings.TrimSpace(string(content)))
 }
 
 func getNonEmptyLines(content []byte) []string {

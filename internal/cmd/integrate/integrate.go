@@ -236,16 +236,19 @@ func setupVSCodeTasks(projectDir string, finder runfiles.RunfilesFinder) error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		log.Printf(`Created file .vscode/tasks.json. This file provides easy access to
-command-line workflows. It enables you to launch coverage runs from within
-VS Code. You can use the Coverage Gutters extension to visualize the
-generated coverage report. To learn more about tasks in VS Code, visit:
+		log.Printf(`Created file .vscode/tasks.json. The 'cifuzz coverage (current test)'
+task allows you to generate a coverage report for the currently opened
+fuzz test source file in VS Code.
 
-	https://code.visualstudio.com/docs/editor/tasks
+To learn more about tasks in VS Code, visit:
 
-You can download the Coverage Gutters extension from:
+    https://code.visualstudio.com/docs/editor/tasks
 
-	https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters`)
+Use the Coverage Gutters extension to display the coverage in VS Code:
+
+    https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters
+
+`)
 	} else {
 		// Situation: The user does have a tasks.json file set up, so we
 		// assume them to know about the benefits. We suggest to the user
@@ -255,17 +258,17 @@ You can download the Coverage Gutters extension from:
 			return errors.WithStack(err)
 		}
 
-		log.Printf(`Add the following task to your tasks.json to provide easy access to
-cifuzz coverage runs from within VS Code. You can use the Coverage
-Gutters extension to visualize the generated coverage report.
+		log.Printf(`Add the following task to .vscode/tasks.json, which allows you to
+generate a coverage report for the currently opened fuzz test source
+file in VS Code:
 
 %s
 
-You can download the Coverage Gutters extension from:
+Use the Coverage Gutters extension to display the coverage in VS Code:
 
-	https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters
+    https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters
 
-`, presetsSrc)
+`, strings.TrimSpace(string(presetsSrc)))
 	}
 
 	return nil
