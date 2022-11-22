@@ -230,11 +230,11 @@ func (h *ReportHandler) PrintCrashingInputNote() {
 	}
 
 	log.Notef(`
-Note: The crashing input has been copied to the seed corpus at:
+Note: The reproducing inputs have been copied to the seed corpus at:
 
     %s
 
-It will now be used as a seed input for all runs of the fuzz test,
+They will now be used as a seed input for all runs of the fuzz test,
 including remote runs with artifacts created via 'cifuzz bundle' and
 regression tests. For more information on regression tests, see:
 
