@@ -75,13 +75,16 @@ func (c *Cmd) prepareProcessGroupTermination() error {
 		c.SysProcAttr = &syscall.SysProcAttr{}
 	}
 
-	// Set PGID so that we're able to terminate the process group on
-	// timeout.
+	// Make the child process use a new process group to be able to
+	// terminate that process group on timeout.
 	c.SysProcAttr.Setpgid = true
 
-	// To avoid that sending a SIGINT to the controlling terminal's
-	// foreground process group does not terminate the child process, we
-	// set the foreground process group to the child process group.
+	// By using a new process group for the child, the child is not
+	// a member of the controlling terminal's foreground process group
+	// anymore, which has the effect that keyboard interrupts are not
+	// sent to the child process. To avoid that, we set the controlling
+	// terminal's foreground process group to the new child process
+	// group.
 	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
 	var syscallErr syscall.Errno
 	if errors.As(err, &syscallErr) && syscallErr == syscall.ENXIO {
