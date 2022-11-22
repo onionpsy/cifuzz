@@ -288,9 +288,9 @@ func setupCMakePresets(projectDir string, finder runfiles.RunfilesFinder) error 
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		log.Printf(`CMakeUserPresets.json has been created. Those presets simplify
-the execution of regression tests from the command line and provide
-integration with IDEs such as CLion and VS Code.
+		log.Printf(`Created file CMakeUserPresets.json. This file contains presets which
+simplify the execution of regression tests from the command line and
+provide integration with IDEs such as CLion and VS Code.
 This file should not be checked in to version control systems.
 To learn more about CMake presets, visit:
 
