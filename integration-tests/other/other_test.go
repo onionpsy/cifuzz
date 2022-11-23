@@ -95,18 +95,16 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		expectedStackTrace := []*stacktrace.StackFrame{
 			{
-				SourceFile: "src/explore/explore_me.cpp",
-				Line:       14,
-				Column:     11,
-				// FIXME: Why 1 and not 0?
+				SourceFile:  "src/explore/explore_me.cpp",
+				Line:        14,
+				Column:      11,
 				FrameNumber: 1,
 				Function:    "exploreMe",
 			},
 			{
-				SourceFile: "my_fuzz_test.cpp",
-				Line:       18,
-				Column:     3,
-				// FIXME: Why 2 and not 1?
+				SourceFile:  "my_fuzz_test.cpp",
+				Line:        18,
+				Column:      3,
 				FrameNumber: 2,
 				Function:    "LLVMFuzzerTestOneInputNoReturn",
 			},
