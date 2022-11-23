@@ -47,8 +47,8 @@ runs:
           echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
           # use below opts to fix compilation issues on macOS, e.g. that "assert.h" is missing, etc.
           # at some point we would like to remove these lines but we haven't found a way to fix this otherwise
-          echo "common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" >> ~/.bazelrc
-          echo 'common --repo_env="BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fuse-ld=lld"' >> ~/.bazelrc
+          echo 'common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk' >> ~/.bazelrc
+          echo 'common --repo_env=BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk:-fuse-ld=lld' >> ~/.bazelrc
           # change bazel version to stable release as soon as version 6 is released
           echo "USE_BAZEL_VERSION=8349c95fc98beb4008085942a67a57f0c4da074b" >> $GITHUB_ENV
         shell: bash
