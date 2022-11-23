@@ -98,9 +98,6 @@ void __sanitizer_report_error_summary(const char *error_summary) {
   /*
    * Do not emit the input twice for ASan, which is always fatal.
    * TODO: This will change if we introduce --recover-asan.
-   * TODO: Since we do not take the state of --recover-ubsan into account, we
-   *  dump the input twice with --recover-ubsan=false. This is harmless as it
-   *  only pollutes the verbose flags, but should still be fixed.
    */
   if (strncmp(UBSAN_SUMMARY_PREFIX, error_summary, strlen(UBSAN_SUMMARY_PREFIX)) == 0) {
     sanitizer_death_callback();

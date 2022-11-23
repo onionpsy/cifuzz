@@ -194,7 +194,6 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	env, err := envutil.Setenv(os.Environ(), "ASAN_OPTIONS", "print_stats=1:atexit=1")
 	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		Args:                         []string{"--recover-ubsan"},
 		Env:                          env,
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,

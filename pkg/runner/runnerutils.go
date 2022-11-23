@@ -127,7 +127,7 @@ func SetCommonASANOptions(env []string) ([]string, error) {
 	return SetASANOptions(env, defaultOptions, overrideOptions)
 }
 
-func SetCommonUBSANOptions(env []string, recover bool) ([]string, error) {
+func SetCommonUBSANOptions(env []string) ([]string, error) {
 	defaultOptions := maps.Clone(defaultSanitizerOptions)
 	maps.Copy(defaultOptions, map[string]string{
 		// Instruct UBSAN (enabled for all sanitizers) to print full stack traces
@@ -138,16 +138,9 @@ func SetCommonUBSANOptions(env []string, recover bool) ([]string, error) {
 		"print_stacktrace": "1",
 	})
 
-	var haltOnError string
-	if recover {
-		haltOnError = "0"
-	} else {
-		haltOnError = "1"
-	}
 	overrideOptions := map[string]string{
 		// Logs must be written to stderr for us to parse them.
-		"log_path":      "stderr",
-		"halt_on_error": haltOnError,
+		"log_path": "stderr",
 	}
 
 	options := envutil.Getenv(env, "UBSAN_OPTIONS")
