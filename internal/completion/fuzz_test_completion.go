@@ -229,7 +229,7 @@ func findBazelBuildFiles(toComplete string, dir string) ([]string, error) {
 			return errors.WithStack(err)
 		}
 
-		if d.IsDir() {
+		if d.IsDir() && path != "." {
 			// Skip walking the directory if it doesn't start with the
 			// toComplete string
 			if !strings.HasPrefix(path, strings.TrimPrefix(toComplete, "//")) {
