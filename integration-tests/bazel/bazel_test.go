@@ -82,6 +82,10 @@ func TestIntegration_Bazel(t *testing.T) {
 	err := cmd.Run()
 	require.NoError(t, err)
 
+	t.Run("noCIFuzz", func(t *testing.T) {
+		testNoCIFuzz(t, cifuzzRunner)
+	})
+
 	t.Run("run", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
 	})
@@ -253,4 +257,12 @@ func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	report := string(reportBytes)
 	require.Contains(t, report, "parser.cpp")
 	require.NotContains(t, report, "include/cifuzz")
+}
+
+func testNoCIFuzz(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cmd := exec.Command("bazel", "test", "//...")
+	cmd.Dir = cifuzzRunner.DefaultWorkDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	require.NoError(t, cmd.Run())
 }
