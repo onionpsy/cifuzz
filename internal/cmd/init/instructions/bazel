@@ -21,7 +21,6 @@ Add the following to your WORKSPACE file:
 
     git_repository(
         name = "cifuzz",
-        branch = "bazel-support",
-        remote = "https://github.com/CodeIntelligenceTesting/cifuzz",
-        strip_prefix = "tools/cmake/cifuzz/include/cifuzz",
+        commit = "1ccb0bb7f27864626f668cca6d6e87776e6f87bd",
+        remote = "https://github.com/CodeIntelligenceTesting/cifuzz-bazel",
     )

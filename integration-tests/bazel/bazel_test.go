@@ -167,6 +167,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 	// Verify that there is a UBSan finding and that it has the correct details.
 	require.NotNil(t, ubsanFinding)
+	require.NotEmpty(t, ubsanFinding.InputFile)
 	// Verify that UBSan findings come with inputs.
 	// TODO: Use when we also dump the input of UBSan findings with bazel
 	//require.NotEmpty(t, ubsanFinding.InputFile)

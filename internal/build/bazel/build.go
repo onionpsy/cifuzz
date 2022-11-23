@@ -151,6 +151,8 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan",
 		// Build with UBSan instrumentation
 		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan",
+		// Link in our additional libFuzzer logic that dumps inputs for non-fatal crashes.
+		"--@cifuzz//:__internal_has_libfuzzer",
 		"--verbose_failures",
 		"--script_path=" + fuzzScript,
 	}
