@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -118,11 +120,22 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 	// Check that the findings command lists the findings
 	findings := shared.GetFindings(t, cifuzz, testdata)
-	// On Windows, only the ASan finding is expected, on Linux and macOS
-	// at least two findings are expected
-	require.Equal(t, len(findings), 1)
-	asanFinding := findings[0]
+	require.Len(t, findings, 2)
 
+	var asanFinding *finding.Finding
+	var ubsanFinding *finding.Finding
+	for _, f := range findings {
+		if strings.HasPrefix(f.Details, "heap-use-after-free") {
+			asanFinding = f
+		} else if strings.HasPrefix(f.Details, "undefined behavior") {
+			ubsanFinding = f
+		} else {
+			t.Fatalf("unexpected finding: %q", f.Details)
+		}
+	}
+
+	// Verify that there is an ASan finding and that it has the correct details.
+	require.NotNil(t, asanFinding)
 	// TODO: This check currently fails on macOS because there
 	// llvm-symbolizer doesn't read debug info from object files.
 	// See https://github.com/google/sanitizers/issues/207#issuecomment-136495556
@@ -130,7 +143,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 		expectedStackTrace := []*stacktrace.StackFrame{
 			{
 				SourceFile:  "src/parser/parser.cpp",
-				Line:        23,
+				Line:        19,
 				Column:      14,
 				FrameNumber: 0,
 				Function:    "parse",
@@ -150,6 +163,31 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			}
 		}
 		require.Equal(t, expectedStackTrace, asanFinding.StackTrace)
+	}
+
+	// Verify that there is a UBSan finding and that it has the correct details.
+	require.NotNil(t, ubsanFinding)
+	// Verify that UBSan findings come with inputs.
+	// TODO: Use when we also dump the input of UBSan findings with bazel
+	//require.NotEmpty(t, ubsanFinding.InputFile)
+	if runtime.GOOS != "darwin" {
+		expectedStackTrace := []*stacktrace.StackFrame{
+			{
+				SourceFile:  "src/parser/parser.cpp",
+				Line:        23,
+				Column:      9,
+				FrameNumber: 0,
+				Function:    "parse",
+			},
+			{
+				SourceFile:  "src/parser/parser_fuzz_test.cpp",
+				Line:        30,
+				Column:      3,
+				FrameNumber: 1,
+				Function:    "LLVMFuzzerTestOneInputNoReturn",
+			},
+		}
+		require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
 	}
 
 	// Check that ASAN_OPTIONS can be set

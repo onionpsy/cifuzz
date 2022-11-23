@@ -149,6 +149,8 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 		"--@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer",
 		// Build with ASan instrumentation
 		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan",
+		// Build with UBSan instrumentation
+		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan",
 		"--verbose_failures",
 		"--script_path=" + fuzzScript,
 	}
