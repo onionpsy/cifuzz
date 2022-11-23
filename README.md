@@ -123,7 +123,7 @@ sudo pacman -S cmake clang llvm
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 
 ```bash
-brew install cmake llvm
+brew install cmake llvm lcov
 ```
 
 **Windows**
