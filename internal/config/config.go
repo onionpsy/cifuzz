@@ -192,10 +192,5 @@ func FindConfigDir() (string, error) {
 		}
 	}
 
-	dir, err = fileutil.CanonicalPath(dir)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
 	return dir, nil
 }

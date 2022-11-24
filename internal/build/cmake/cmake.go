@@ -154,13 +154,8 @@ func (b *Builder) Configure() error {
 // Build builds the specified fuzz tests with CMake. The fuzz tests must
 // not contain duplicates.
 func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
-	buildDir, err := fileutil.CanonicalPath(b.BuildDir())
-	if err != nil {
-		return nil, err
-	}
-
 	flags := append([]string{
-		"--build", buildDir,
+		"--build", b.BuildDir(),
 		"--config", cmakeBuildConfiguration,
 		"--target"}, fuzzTests...)
 
@@ -178,7 +173,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 	cmd.Stderr = b.Stderr
 	cmd.Env = b.env
 	log.Debugf("Command: %s", cmd.String())
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		// It's expected that cmake might fail due to user configuration,
 		// so we print the error without the stack trace.
@@ -210,7 +205,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 			Executable:      executable,
 			GeneratedCorpus: generatedCorpus,
 			SeedCorpus:      seedCorpus,
-			BuildDir:        buildDir,
+			BuildDir:        b.BuildDir(),
 			ProjectDir:      b.ProjectDir,
 			Engine:          b.Engine,
 			Sanitizers:      b.Sanitizers,
@@ -300,10 +295,6 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 		}
 		status := statusAndDep[:endOfStatus]
 		dep := statusAndDep[endOfStatus+1:]
-		dep, err = fileutil.CanonicalPath(dep)
-		if err != nil {
-			return nil, err
-		}
 
 		switch status {
 		case "UNRESOLVED":
@@ -352,7 +343,7 @@ func (b *Builder) readInfoFileAsPath(fuzzTest string, kind string) (string, erro
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	return fileutil.CanonicalPath(string(content))
+	return string(content), nil
 }
 
 func (b *Builder) fuzzTestsInfoDir() (string, error) {

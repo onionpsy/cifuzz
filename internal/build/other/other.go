@@ -163,19 +163,12 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 
 	// For the build system type "other", we expect the default seed corpus next
 	// to the fuzzer executable.
-	seedCorpus, err := fileutil.CanonicalPath(executable + "_inputs")
-	if err != nil {
-		return nil, err
-	}
+	seedCorpus := executable + "_inputs"
 	runtimeDeps, err := b.findSharedLibraries(fuzzTest)
 	if err != nil {
 		return nil, err
 	}
 	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	buildDir, err := fileutil.CanonicalPath(wd)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +178,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		Executable:      executable,
 		GeneratedCorpus: generatedCorpus,
 		SeedCorpus:      seedCorpus,
-		BuildDir:        buildDir,
+		BuildDir:        wd,
 		ProjectDir:      b.ProjectDir,
 		Engine:          b.Engine,
 		Sanitizers:      b.Sanitizers,
@@ -313,7 +306,11 @@ func (b *Builder) setCoverageEnv() error {
 
 func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 	if exists, _ := fileutil.Exists(fuzzTest); exists {
-		return fileutil.CanonicalPath(fuzzTest)
+		absPath, err := filepath.Abs(fuzzTest)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		return absPath, nil
 	}
 
 	var executable string
@@ -345,7 +342,11 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 	if executable == "" {
 		return "", nil
 	}
-	return fileutil.CanonicalPath(executable)
+	absPath, err := filepath.Abs(fuzzTest)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return absPath, nil
 }
 
 var sharedLibraryRegex = regexp.MustCompile(`^.+\.((so)|(dylib))(\.\d\w*)*$`)
@@ -372,11 +373,11 @@ func (b *Builder) findSharedLibraries(fuzzTest string) ([]string, error) {
 			return nil
 		}
 		if sharedLibraryRegex.MatchString(info.Name()) {
-			canonicalPath, err := fileutil.CanonicalPath(path)
+			absPath, err := filepath.Abs(path)
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
-			sharedObjects = append(sharedObjects, canonicalPath)
+			sharedObjects = append(sharedObjects, absPath)
 		}
 		return nil
 	})
