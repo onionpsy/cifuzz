@@ -88,6 +88,6 @@ runs:
         cd examples/cmake
         echo "--old--" && cat findings.old
         echo "--new--" && cat findings.new
-        cmp findings.old findings.new
+        test -z $(comm -23 <(sort -u findings.old) <(sort -u findings.new))
       shell: bash
 
