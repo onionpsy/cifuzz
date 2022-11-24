@@ -5,8 +5,8 @@
   <a href="https://github.com/CodeIntelligenceTesting/cifuzz/releases">
     <img src="https://img.shields.io/github/v/release/CodeIntelligenceTesting/cifuzz">
   </a>
-  <a href="https://github.com/CodeIntelligenceTesting/cifuzz/actions/workflows/pipeline_pr.yml">
-    <img src="https://img.shields.io/github/workflow/status/CodeIntelligenceTesting/cifuzz/PR%20Pipeline?logo=github" />
+  <a href="https://github.com/CodeIntelligenceTesting/cifuzz/actions/workflows/pipeline_tests.yml">
+    <img src="https://img.shields.io/github/workflow/status/CodeIntelligenceTesting/cifuzz/Tests%20and%20Linting?logo=github" />
   </a>
   <a href="https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/CONTRIBUTING.md">
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" />
