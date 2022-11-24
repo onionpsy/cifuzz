@@ -12,6 +12,7 @@ import (
 
 	"code-intelligence.com/cifuzz/pkg/minijail"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
+	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -185,8 +186,10 @@ func (r *Runner) Run(ctx context.Context) error {
 }
 
 func (r *Runner) FuzzerEnvironment() ([]string, error) {
-	// Get fuzzer environment from the libfuzzer runner
-	env, err := r.Runner.FuzzerEnvironment()
+	var env []string
+	var err error
+
+	env, err = fuzzer_runner.AddEnvFlags(env, r.EnvVars)
 	if err != nil {
 		return nil, err
 	}
