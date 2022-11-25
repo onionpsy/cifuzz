@@ -1,14 +1,18 @@
 package bazel
 
 import (
+	"bufio"
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
@@ -86,8 +90,10 @@ func TestIntegration_Bazel(t *testing.T) {
 		testNoCIFuzz(t, cifuzzRunner)
 	})
 
-	t.Run("run", func(t *testing.T) {
+	t.Run("runAndLCOV", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
+		// Requires the generated corpus to be populated by run.
+		testLCOVCoverage(t, cifuzzRunner)
 	})
 
 	t.Run("bundle", func(t *testing.T) {
@@ -270,4 +276,72 @@ func testNoCIFuzz(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	require.NoError(t, cmd.Run())
+}
+
+func testLCOVCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// TODO: fix coverage on macOS CI
+	if runtime.GOOS == "darwin" {
+		t.Skip("Coverage is currently not working on our macOS CI")
+	}
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+
+	// Temporarily rename the crashing inputs to verify that the following
+	// coverage command operates on the generated corpus only.
+	fuzzTestInputs := filepath.Join(testdata, "src", "parser", "parser_fuzz_test_inputs")
+	backupFuzzTestInputs := filepath.Join(testdata, "src", "parser", "parser_fuzz_test_inputs.backup")
+	err := os.Rename(fuzzTestInputs, backupFuzzTestInputs)
+	require.NoError(t, err)
+	t.Cleanup(func() { os.Rename(backupFuzzTestInputs, fuzzTestInputs) }) //nolint:errcheck
+
+	cmd := executil.Command(cifuzz, "coverage",
+		"--verbose",
+		"--format=lcov",
+		"--output", "report.lcov",
+		"//src/parser:parser_fuzz_test")
+	cmd.Dir = testdata
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(testdata, "report.lcov")
+	require.FileExists(t, reportPath)
+
+	// Read the report and extract all uncovered lines in the fuzz test source file.
+	reportBytes, err := os.ReadFile(reportPath)
+	require.NoError(t, err)
+	lcov := bufio.NewScanner(bytes.NewBuffer(reportBytes))
+	isParserSource := false
+	var uncoveredLines []uint
+	for lcov.Scan() {
+		line := lcov.Text()
+
+		if strings.HasPrefix(line, "SF:") {
+			if strings.HasSuffix(line, "/parser/parser.cpp") {
+				isParserSource = true
+			} else {
+				isParserSource = false
+			}
+		}
+
+		if !isParserSource || !strings.HasPrefix(line, "DA:") {
+			continue
+		}
+		split := strings.Split(strings.TrimPrefix(line, "DA:"), ",")
+		require.Len(t, split, 2)
+		if split[1] == "0" {
+			lineNo, err := strconv.Atoi(split[0])
+			require.NoError(t, err)
+			uncoveredLines = append(uncoveredLines, uint(lineNo))
+		}
+	}
+
+	assert.Subset(t, []uint{
+		// The generated corpus never contains the empty input.
+		11, 12,
+		// The generated corpus does not contain the crashing inputs.
+		15, 16, 19},
+		uncoveredLines)
 }
