@@ -57,6 +57,12 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 		return nil, nil, err
 	}
 
+	var archiveDictDir string
+	if b.opts.Dictionary != "" {
+		archiveDictDir = filepath.Join(workDirPath, filepath.Base(b.opts.Dictionary))
+		archiveFileMap[archiveDictDir] = b.opts.Dictionary
+	}
+
 	// Iterate over build results to fill archive file map and create fuzzers
 	for _, buildResult := range buildResults {
 
@@ -111,7 +117,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 			Name:         buildResult.Name,
 			Engine:       "JAVA_LIBFUZZER",
 			ProjectDir:   buildResult.ProjectDir,
-			Dictionary:   b.opts.Dictionary,
+			Dictionary:   archiveDictDir,
 			Seeds:        archiveSeedDir,
 			RuntimePaths: runtimePaths,
 			EngineOptions: artifact.EngineOptions{
@@ -120,6 +126,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 			},
 			MaxRunTime: uint(b.opts.Timeout.Seconds()),
 		}
+
 		fuzzers = append(fuzzers, fuzzer)
 	}
 	return fuzzers, archiveFileMap, nil
