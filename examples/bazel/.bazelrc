@@ -2,10 +2,13 @@
 build --repo_env=CC=clang
 build --repo_env=CXX=clang++
 
-# --config=asan-replay
-build:asan-replay --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:replay
-build:asan-replay --@rules_fuzzing//fuzzing:cc_engine_instrumentation=none
-build:asan-replay --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+# Replay cifuzz findings (C/C++ only)
+build:cifuzz-replay --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+build:cifuzz-replay --@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan
+build:cifuzz-replay --compilation_mode=opt
+build:cifuzz-replay --copt=-g
+build:cifuzz-replay --copt=-U_FORTIFY_SOURCE
+build:cifuzz-replay --test_env=UBSAN_OPTIONS=halt_on_error=1
 
 # Coverage with Replay (C/C++ only)
 coverage --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:replay
