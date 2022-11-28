@@ -118,9 +118,13 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	// To avoid part of the loading and/or analysis phase to rerun, we
 	// use the same flags for all bazel commands (except for those which
 	// are not supported by all bazel commands we use).
+	buildEnv, err := build.CommonBuildEnv()
+	if err != nil {
+		return nil, err
+	}
 	commonFlags := []string{
-		"--repo_env=CC",
-		"--repo_env=CXX",
+		"--repo_env=CC=" + envutil.Getenv(buildEnv, "CC"),
+		"--repo_env=CXX=" + envutil.Getenv(buildEnv, "CXX"),
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 	}
@@ -171,7 +175,6 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	// reports printed to stdout
 	cmd.Stdout = b.Stderr
 	cmd.Stderr = b.Stderr
-	cmd.Env, err = build.CommonBuildEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -234,10 +237,10 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 	// use the same flags for all bazel commands (except for those which
 	// are not supported by all bazel commands we use).
 	commonFlags := []string{
-		"--repo_env=CC",
-		"--repo_env=CXX",
-		"--repo_env=FUZZING_CFLAGS",
-		"--repo_env=FUZZING_CXXFLAGS",
+		"--repo_env=CC=" + envutil.Getenv(env, "CC"),
+		"--repo_env=CXX=" + envutil.Getenv(env, "CXX"),
+		"--repo_env=FUZZING_CFLAGS=" + envutil.Getenv(env, "FUZZING_CFLAGS"),
+		"--repo_env=FUZZING_CXXFLAGS=" + envutil.Getenv(env, "FUZZING_CXXFLAGS"),
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 		// rules_fuzzing only links in the UBSan C++ runtime when the
@@ -316,7 +319,6 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 	// reports printed to stdout
 	cmd.Stdout = b.Stderr
 	cmd.Stderr = b.Stderr
-	cmd.Env = env
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {

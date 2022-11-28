@@ -16,6 +16,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
+	"code-intelligence.com/cifuzz/util/envutil"
 )
 
 type CoverageOptions struct {
@@ -49,12 +50,17 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 		}
 	}
 
+	env, err := build.CommonBuildEnv()
+	if err != nil {
+		return "", err
+	}
+
 	// To avoid part of the loading and/or analysis phase to rerun, we
 	// use the same flags for all bazel commands (except for those which
 	// are not supported by all bazel commands we use).
 	commonFlags := []string{
-		"--repo_env=CC",
-		"--repo_env=CXX",
+		"--repo_env=CC=" + envutil.Getenv(env, "CC"),
+		"--repo_env=CXX" + envutil.Getenv(env, "CXX"),
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 	}
@@ -109,10 +115,6 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	// reports printed to stdout
 	cmd.Stdout = opts.Stderr
 	cmd.Stderr = opts.Stderr
-	cmd.Env, err = build.CommonBuildEnv()
-	if err != nil {
-		return "", err
-	}
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
