@@ -258,7 +258,6 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 		// mode which strips debug symbols).
 		"--compilation_mode=opt",
 		"--@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing_oss_fuzz//:oss_fuzz_engine",
-		"--@rules_fuzzing//fuzzing:cc_engine_instrumentation=oss-fuzz",
 		"--verbose_failures",
 	}
 
@@ -282,20 +281,22 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 			"--repo_env=BAZEL_LLVM_COV="+llvmCov,
 		)
 		buildAndCQueryFlags = append(buildAndCQueryFlags,
-			"--@rules_fuzzing//fuzzing:cc_engine_instrumentation=none",
-			"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=none",
 			"--instrument_test_targets",
 			"--experimental_use_llvm_covmap",
 			"--experimental_generate_llvm_lcov",
 			"--collect_code_coverage",
 		)
 	} else {
+		buildAndCQueryFlags = append(buildAndCQueryFlags,
+			"--@rules_fuzzing//fuzzing:cc_engine_instrumentation=oss-fuzz")
 		for _, sanitizer := range sanitizers {
 			switch sanitizer {
 			case "address", "undefined":
 				// ASan and UBSan are already enabled above by the call
 				// to b.setLibFuzzerEnv, which sets the respective flags
-				// via the FUZZING_CFLAGS environment variable.
+				// via the FUZZING_CFLAGS environment variable. These
+				// variables are then picked up by the OSS-Fuzz engine
+				// instrumentation.
 			default:
 				panic(fmt.Sprintf("Invalid sanitizer for engine %q: %q", b.Engine, sanitizer))
 			}
