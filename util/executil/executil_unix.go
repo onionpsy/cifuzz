@@ -3,7 +3,6 @@
 package executil
 
 import (
-	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -70,7 +69,7 @@ func (c *Cmd) TerminateProcessGroup() error {
 	return nil
 }
 
-func (c *Cmd) prepareProcessGroupTermination() error {
+func (c *Cmd) prepareProcessGroupTermination() {
 	if c.SysProcAttr == nil {
 		c.SysProcAttr = &syscall.SysProcAttr{}
 	}
@@ -78,25 +77,6 @@ func (c *Cmd) prepareProcessGroupTermination() error {
 	// Make the child process use a new process group to be able to
 	// terminate that process group on timeout.
 	c.SysProcAttr.Setpgid = true
-
-	// By using a new process group for the child, the child is not
-	// a member of the controlling terminal's foreground process group
-	// anymore, which has the effect that keyboard interrupts are not
-	// sent to the child process. To avoid that, we set the controlling
-	// terminal's foreground process group to the new child process
-	// group.
-	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
-	var syscallErr syscall.Errno
-	if errors.As(err, &syscallErr) && syscallErr == syscall.ENXIO {
-		// There is no controlling terminal
-		return nil
-	}
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	c.SysProcAttr.Ctty = int(tty.Fd())
-	c.SysProcAttr.Foreground = true
-	return nil
 }
 
 func (c *Cmd) getpgid() (int, error) {

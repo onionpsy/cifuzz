@@ -53,6 +53,11 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	TerminateOnSignal(t, cmd)
+
 	t.Logf("Command: %s", cmd.String())
 	err = cmd.Run()
 	require.NoError(t, err)

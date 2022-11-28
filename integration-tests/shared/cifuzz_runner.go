@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"context"
 	"os"
-	"os/signal"
 	"regexp"
 	"strings"
 	"sync"
-	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -116,17 +114,8 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	require.NoError(t, err)
 
 	// Terminate the cifuzz process when we receive a termination signal
-	// (else the test won't stop). An alternative would be to run the
-	// command in the foreground, via syscall.SysProcAttr.Foreground,
-	// but that's not supported on Windows.
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	go func() {
-		s := <-sigs
-		t.Logf("Received %s", s.String())
-		err = cmd.TerminateProcessGroup()
-		require.NoError(t, err)
-	}()
+	// (else the test won't stop).
+	TerminateOnSignal(t, cmd)
 
 	t.Logf("Command: %s", cmd.String())
 	err = cmd.Start()

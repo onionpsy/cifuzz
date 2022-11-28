@@ -47,9 +47,8 @@ func (c *Cmd) TerminateProcessGroup() error {
 	return errors.WithStack(err)
 }
 
-func (c *Cmd) prepareProcessGroupTermination() error {
+func (c *Cmd) prepareProcessGroupTermination() {
 	// Nothing to prepare on Windows
-	return nil
 }
 
 func (c *Cmd) getpgid() (int, error) {

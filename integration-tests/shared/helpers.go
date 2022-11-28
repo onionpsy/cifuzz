@@ -7,9 +7,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 
 	"github.com/alexflint/go-filemutex"
@@ -184,4 +186,24 @@ func ModifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	require.NoError(t, err)
 	_, err = f.WriteString(strings.Join(lines, "\n"))
 	require.NoError(t, err)
+}
+
+func TerminateOnSignal(t *testing.T, cmd *executil.Cmd) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	go func() {
+		s := <-sigs
+		t.Logf("Received %s", s.String())
+
+		// Re-raise the signal for other handlers
+		signal.Stop(sigs)
+		p, err := os.FindProcess(os.Getpid())
+		require.NoError(t, err)
+		err = p.Signal(s)
+		require.NoError(t, err)
+
+		// Terminate the command's process group
+		err = cmd.TerminateProcessGroup()
+		require.NoError(t, err)
+	}()
 }

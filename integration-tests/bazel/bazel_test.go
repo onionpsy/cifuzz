@@ -243,6 +243,11 @@ func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cmd.Dir = testdata
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
 	err := cmd.Run()
 	require.NoError(t, err)
 
