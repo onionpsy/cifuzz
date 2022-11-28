@@ -230,7 +230,7 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	}
 
 	// Run cifuzz bundle and verify the contents of the archive.
-	shared.TestBundle(t, dir, cifuzz, "parser_fuzz_test")
+	shared.TestBundleLibFuzzer(t, dir, cifuzz, "parser_fuzz_test")
 
 	// The remote-run command is currently only supported on Linux
 	if runtime.GOOS == "linux" {

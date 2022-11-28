@@ -18,7 +18,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
+func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string) {
 	t.Helper()
 
 	// Make the bundle command not fail on unsupported platforms to be
@@ -30,7 +30,7 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(tempDir)
 	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
-	defer fileutil.Cleanup(bundlePath)
+	t.Logf("creating test bundle in %s", tempDir)
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
@@ -65,57 +65,7 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 		"--verbose",
 	}
 	args = append(defaultArgs, args...)
-	cmd := executil.Command(cifuzz, args...)
-	cmd.Dir = dir
-	env, err := envutil.Setenv(os.Environ(), "BAR", "bar")
-	require.NoError(t, err)
-	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	// Terminate the cifuzz process when we receive a termination signal
-	// (else the test won't stop).
-	TerminateOnSignal(t, cmd)
-
-	err = cmd.Run()
-	require.NoError(t, err)
-	require.FileExists(t, bundlePath)
-
-	// Extract the archive into a new temporary directory.
-	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(archiveDir) })
-	err = artifact.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
-	require.NoError(t, err)
-
-	// List the files in the archive for easier debugging
-	msg := fmt.Sprintf("Extracted archive at %s:\n", archiveDir)
-	err = filepath.Walk(archiveDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.IsDir() {
-				relPath, err := filepath.Rel(archiveDir, path)
-				if err != nil {
-					return err
-				}
-				msg += relPath + "\n"
-			}
-			return nil
-		})
-	t.Log(msg)
-	require.NoError(t, err)
-
-	// Read the fuzzer path from the YAML.
-	metadataPath := filepath.Join(archiveDir, "bundle.yaml")
-	require.FileExists(t, metadataPath)
-	metadataYaml, err := os.ReadFile(metadataPath)
-	require.NoError(t, err)
-
-	metadata := &artifact.Metadata{}
-	err = yaml.Unmarshal(metadataYaml, metadata)
-	require.NoError(t, err)
+	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
 	assert.Equal(t, "my-branch", metadata.CodeRevision.Git.Branch)
@@ -145,7 +95,7 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.FileExists(t, fuzzerPath)
 
 	// Run the fuzzer on the empty input to verify that it finds all its runtime dependencies.
-	cmd = executil.Command(fuzzerPath, fuzzerMetadata.EngineOptions.Flags...)
+	cmd := executil.Command(fuzzerPath, fuzzerMetadata.EngineOptions.Flags...)
 	cmd.Dir = filepath.Join(archiveDir, "work_dir")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -192,6 +142,7 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), "LLVM_PROFILE_FILE="+coverageProfile)
 	cmd.Env = append(cmd.Env, coverageMetadata.EngineOptions.Env...)
+	t.Logf("Command: %s", cmd.String())
 	err = cmd.Run()
 	assert.NoError(t, err)
 	assert.FileExists(t, coverageProfile)
@@ -219,4 +170,246 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 		require.True(t, server.ArtifactsUploaded)
 		require.True(t, server.RunStarted)
 	}
+}
+
+func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
+	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(tempDir)
+	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
+	t.Logf("creating test bundle in %s", tempDir)
+
+	// Create a dictionary
+	dictPath := filepath.Join(tempDir, "some_dict")
+	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0600)
+	require.NoError(t, err)
+
+	// Create a seed corpus directory with an empty seed
+	seedCorpusDir, err := os.MkdirTemp(tempDir, "seeds-")
+	require.NoError(t, err)
+	err = fileutil.Touch(filepath.Join(seedCorpusDir, "empty"))
+	require.NoError(t, err)
+
+	defaultArgs := []string{
+		"bundle",
+		"-o", bundlePath,
+		"--dict", dictPath,
+		"--seed-corpus", seedCorpusDir,
+		"--timeout", "100m",
+		"--branch", "my-branch",
+		"--commit", "123456abcdef",
+		"--docker-image", "my-image",
+		"--env", "FOO=foo",
+		// This should be set to the value from the local environment,
+		// which we set to "bar" below
+		"--env", "BAR",
+		// This should be ignored because it's not set in the local
+		// environment
+		"--env", "NO_SUCH_VARIABLE",
+		"--verbose",
+	}
+
+	args = append(defaultArgs, args...)
+	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+
+	// Verify code revision given by `--branch` and `--commit-sha` flags
+	assert.Equal(t, "my-branch", metadata.CodeRevision.Git.Branch)
+	assert.Equal(t, "123456abcdef", metadata.CodeRevision.Git.Commit)
+
+	// Verify that the metadata contains the Docker image
+	assert.Equal(t, "my-image", metadata.RunEnvironment.Docker)
+
+	// Verify the metadata contains the env vars
+	require.Equal(t, []string{"FOO=foo", "BAR=bar"}, metadata.Fuzzers[0].EngineOptions.Env)
+
+	// Verify that the metadata contains one fuzzer
+	require.Equal(t, 1, len(metadata.Fuzzers))
+	fuzzerMetadata := metadata.Fuzzers[0]
+
+	// Verify that name is set
+	assert.Equal(t, fuzzerMetadata.Name, "com.example.FuzzTestCase")
+
+	// Verify that the dictionary has been packaged with the fuzzer
+	dictPath = filepath.Join(archiveDir, fuzzerMetadata.Dictionary)
+	require.FileExists(t, dictPath)
+	content, err := os.ReadFile(dictPath)
+	require.NoError(t, err)
+	assert.Equal(t, "test-dictionary-content", string(content))
+
+	// Verify that the seed corpus has been packaged with the fuzzer
+	seedCorpusPath := filepath.Join(archiveDir, fuzzerMetadata.Seeds)
+	require.DirExists(t, seedCorpusPath)
+
+	// Verify that runtime dependencies have been packed
+	jarPattern := filepath.Join(archiveDir, "work_dir", "*.jar")
+	jarMatches, err := zglob.Glob(jarPattern)
+	require.NoError(t, err)
+	assert.Equal(t, 10, len(jarMatches))
+
+	classPattern := filepath.Join(archiveDir, "**", "*.class")
+	classMatches, err := zglob.Glob(classPattern)
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(classMatches))
+
+	// Verify that the manifest.jar has been created
+	manifestJARPath := filepath.Join(archiveDir, "com.example.FuzzTestCase", "manifest.jar")
+	require.FileExists(t, manifestJARPath)
+
+	// Verify contents of manifest.jar
+	extractedManifestPath := filepath.Join(archiveDir, "manifest")
+	unzip := exec.Command("unzip", manifestJARPath, "-d", extractedManifestPath)
+	err = unzip.Run()
+	require.NoError(t, err)
+	manifestFilePath := filepath.Join(extractedManifestPath, "META-INF", "MANIFEST.MF")
+	require.FileExists(t, manifestFilePath)
+	content, err = os.ReadFile(manifestFilePath)
+	require.NoError(t, err)
+	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase", string(content))
+}
+
+func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
+	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(tempDir)
+	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
+	t.Logf("creating test bundle in %s", tempDir)
+
+	// Create a dictionary
+	dictPath := filepath.Join(tempDir, "some_dict")
+	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0600)
+	require.NoError(t, err)
+
+	// Create a seed corpus directory with an empty seed
+	seedCorpusDir, err := os.MkdirTemp(tempDir, "seeds-")
+	require.NoError(t, err)
+	err = fileutil.Touch(filepath.Join(seedCorpusDir, "empty"))
+	require.NoError(t, err)
+
+	defaultArgs := []string{
+		"bundle",
+		"-o", bundlePath,
+		"--dict", dictPath,
+		"--seed-corpus", seedCorpusDir,
+		"--timeout", "100m",
+		"--branch", "my-branch",
+		"--commit", "123456abcdef",
+		"--docker-image", "my-image",
+		"--env", "FOO=foo",
+		// This should be set to the value from the local environment,
+		// which we set to "bar" below
+		"--env", "BAR",
+		// This should be ignored because it's not set in the local
+		// environment
+		"--env", "NO_SUCH_VARIABLE",
+		"--verbose",
+	}
+
+	args = append(defaultArgs, args...)
+	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+
+	// Verify code revision given by `--branch` and `--commit-sha` flags
+	assert.Equal(t, "my-branch", metadata.CodeRevision.Git.Branch)
+	assert.Equal(t, "123456abcdef", metadata.CodeRevision.Git.Commit)
+
+	// Verify that the metadata contains the Docker image
+	assert.Equal(t, "my-image", metadata.RunEnvironment.Docker)
+
+	// Verify the metadata contains the env vars
+	require.Equal(t, []string{"FOO=foo", "BAR=bar"}, metadata.Fuzzers[0].EngineOptions.Env)
+
+	// Verify that the metadata contains one fuzzer
+	require.Equal(t, 1, len(metadata.Fuzzers))
+	fuzzerMetadata := metadata.Fuzzers[0]
+
+	// Verify that name is set
+	assert.Equal(t, fuzzerMetadata.Name, "com.example.FuzzTestCase")
+
+	// Verify that the dictionary has been packaged with the fuzzer
+	dictPath = filepath.Join(archiveDir, fuzzerMetadata.Dictionary)
+	require.FileExists(t, dictPath)
+	content, err := os.ReadFile(dictPath)
+	require.NoError(t, err)
+	assert.Equal(t, "test-dictionary-content", string(content))
+
+	// Verify that the seed corpus has been packaged with the fuzzer
+	seedCorpusPath := filepath.Join(archiveDir, fuzzerMetadata.Seeds)
+	require.DirExists(t, seedCorpusPath)
+
+	// Verify that runtime dependencies have been packed
+	jarPattern := filepath.Join(archiveDir, "work_dir", "*.jar")
+	jarMatches, err := zglob.Glob(jarPattern)
+	require.NoError(t, err)
+	assert.Equal(t, 17, len(jarMatches))
+
+	classPattern := filepath.Join(archiveDir, "**", "*.class")
+	classMatches, err := zglob.Glob(classPattern)
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(classMatches))
+
+	// Verify that the manifest.jar has been created
+	manifestJARPath := filepath.Join(archiveDir, "com.example.FuzzTestCase", "manifest.jar")
+	require.FileExists(t, manifestJARPath)
+
+	// Verify contents of manifest.jar
+	extractedManifestPath := filepath.Join(archiveDir, "manifest")
+	unzip := exec.Command("unzip", manifestJARPath, "-d", extractedManifestPath)
+	err = unzip.Run()
+	require.NoError(t, err)
+	manifestFilePath := filepath.Join(extractedManifestPath, "META-INF", "MANIFEST.MF")
+	require.FileExists(t, manifestFilePath)
+	content, err = os.ReadFile(manifestFilePath)
+	require.NoError(t, err)
+	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase", string(content))
+}
+
+func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, args ...string) (*artifact.Metadata, string) {
+	// Bundle all fuzz tests into an archive.
+	cmd := executil.Command(cifuzz, args...)
+	cmd.Dir = dir
+	env, err := envutil.Setenv(os.Environ(), "BAR", "bar")
+	require.NoError(t, err)
+	cmd.Env = env
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	t.Logf("Command: %s", cmd.String())
+	err = cmd.Run()
+	require.NoError(t, err)
+	require.FileExists(t, bundlePath)
+
+	// Extract the archive into a new temporary directory.
+	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
+	require.NoError(t, err)
+	err = artifact.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
+	require.NoError(t, err)
+
+	// List the files in the archive for easier debugging
+	msg := fmt.Sprintf("Extracted archive at %s:\n", archiveDir)
+	err = filepath.Walk(archiveDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				relPath, err := filepath.Rel(archiveDir, path)
+				if err != nil {
+					return err
+				}
+				msg += relPath + "\n"
+			}
+			return nil
+		})
+	t.Log(msg)
+	require.NoError(t, err)
+
+	// Read the bundle.yaml
+	metadataPath := filepath.Join(archiveDir, "bundle.yaml")
+	require.FileExists(t, metadataPath)
+	metadataYaml, err := os.ReadFile(metadataPath)
+	require.NoError(t, err)
+
+	metadata := &artifact.Metadata{}
+	err = yaml.Unmarshal(metadataYaml, metadata)
+	require.NoError(t, err)
+
+	return metadata, archiveDir
 }

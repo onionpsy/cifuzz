@@ -196,7 +196,7 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	args = append(args, "my_fuzz_test")
 
 	// Execute the bundle command
-	shared.TestBundle(t, dir, cifuzz, args...)
+	shared.TestBundleLibFuzzer(t, dir, cifuzz, args...)
 }
 
 func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, fuzzTest string) {

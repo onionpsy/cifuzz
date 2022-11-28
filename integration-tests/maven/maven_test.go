@@ -145,6 +145,9 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 
 	// Produce a jacoco xml coverage report
 	createJacocoXMLCoverageReport(t, cifuzz, projectDir)
+
+	// Run cifuzz bundle and verify the contents of the archive.
+	shared.TestBundleMaven(t, projectDir, cifuzz, "com.example.FuzzTestCase")
 }
 
 func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
