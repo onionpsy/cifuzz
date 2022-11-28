@@ -88,4 +88,5 @@ jobs:
           cd examples/bazel
           cifuzz run --use-sandbox=false src:explore_me_fuzz_test 2>&1 | tee fuzzing.log
           cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep -E "Findings:\s+1"  
+          cat fuzzing.log | grep "undefined behavior"
+          cat fuzzing.log | grep -E "Findings:\s+2"
