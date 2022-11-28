@@ -93,7 +93,7 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	}
 
 	fuzzer := &artifact.Fuzzer{
-		Target:       buildResult.Name,
+		Name:         buildResult.Name,
 		Engine:       "JAVA_LIBFUZZER",
 		ProjectDir:   buildResult.ProjectDir,
 		Seeds:        "seeds",

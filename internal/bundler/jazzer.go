@@ -121,7 +121,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 		}
 
 		fuzzer := &artifact.Fuzzer{
-			Target:       buildResult.Name,
+			Name:         buildResult.Name,
 			Engine:       "JAVA_LIBFUZZER",
 			ProjectDir:   buildResult.ProjectDir,
 			Dictionary:   b.opts.Dictionary,

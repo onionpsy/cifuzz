@@ -17,7 +17,7 @@ type Metadata struct {
 
 // Fuzzer specifies the type and locations of fuzzers contained in the archive.
 type Fuzzer struct {
-	Target    string `yaml:"target"`
+	Target    string `yaml:"target,omitempty"`
 	Name      string `yaml:"name,omitempty"`
 	Path      string `yaml:"path"`
 	Engine    string `yaml:"engine"`
