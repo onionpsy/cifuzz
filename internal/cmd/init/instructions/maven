@@ -35,7 +35,7 @@ Also, please add the following profile in your profiles:
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
             <configuration>
-              <formats>HTML,XML</formats>
+              <formats>${cifuzz.report.format}</formats>
               <outputDirectory>${cifuzz.report.output}</outputDirectory>
             </configuration>
           </plugin>

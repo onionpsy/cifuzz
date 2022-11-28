@@ -14,6 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -100,16 +101,32 @@ func (cov *GradleCoverageGenerator) Generate() (string, error) {
 		}
 		cov.OutputPath = filepath.Join(buildDir, "reports", "cifuzz")
 	}
+
+	// Make sure that directory exists, otherwise the command for --format=jacocoxml will fail
+	err = os.MkdirAll(cov.OutputPath, 0700)
+	if err != nil {
+		return "", err
+	}
+
 	gradleReportArgs := []string{
 		"cifuzzReport",
 		fmt.Sprintf("-Pcifuzz.report.output=%s", cov.OutputPath),
 	}
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		gradleReportArgs = append(gradleReportArgs, fmt.Sprintf("-Pcifuzz.report.format=%s", coverage.FormatJacocoXML))
+	}
+
 	err = cov.runGradleCommand(gradleReportArgs)
 	if err != nil {
 		return "", err
 	}
 
 	summary.ParseJacocoXML(filepath.Join(cov.OutputPath, "jacoco.xml")).PrintTable(cov.StdErr)
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	}
 
 	return filepath.Join(cov.OutputPath, "html", "index.html"), nil
 }

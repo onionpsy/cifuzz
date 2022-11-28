@@ -14,6 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/maven"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -109,12 +110,23 @@ func (cov *MavenCoverageGenerator) Generate() (string, error) {
 		"jacoco:report",
 		fmt.Sprintf("-Dcifuzz.report.output=%s", cov.OutputPath),
 	}
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML")
+	} else {
+		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML,HTML")
+	}
+
 	err = cov.runMavenCommand(mavenReportArgs)
 	if err != nil {
 		return "", err
 	}
 
 	summary.ParseJacocoXML(filepath.Join(cov.OutputPath, "jacoco.xml")).PrintTable(cov.StdErr)
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	}
 
 	return filepath.Join(cov.OutputPath, "index.html"), nil
 }

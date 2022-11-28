@@ -102,6 +102,9 @@ or a lcov trace file.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("LCOV") + `
     cifuzz coverage --format=lcov <fuzz test>
+
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("XML (Jacoco Report)") + `
+    cifuzz coverage --format=jacocoxml <fuzz test>
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,
 		Args:              cobra.ExactArgs(1),
@@ -223,10 +226,13 @@ func (c *coverageCmd) run() error {
 	}
 
 	switch c.opts.OutputFormat {
-	case "html":
+	case coverage.FormatHTML:
 		return c.handleHTMLReport(reportPath)
-	case "lcov":
+	case coverage.FormatLCOV:
 		log.Successf("Created coverage lcov report: %s", reportPath)
+		return nil
+	case coverage.FormatJacocoXML:
+		log.Successf("Created jacoco.xml coverage report: %s", reportPath)
 		return nil
 	default:
 		return errors.Errorf("Unsupported output format")

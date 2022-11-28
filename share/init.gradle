@@ -46,10 +46,12 @@ allprojects {
         sourceDirectories.from files(project.sourceSets.main.java.srcDirs)
 
         def output = project.findProperty("cifuzz.report.output") ?: layout.buildDirectory.dir("reports/cifuzz").get().toString()
+        def format = project.findProperty("cifuzz.report.format")
         reports {
-          xml.required = true
-          xml.outputLocation = file("$output/jacoco.xml")
-          html.outputLocation = file("$output/html")
+            html.enabled = format != "jacocoxml"
+            html.outputLocation = file("$output/html")
+            xml.required = true
+            xml.outputLocation = file("$output/jacoco.xml")
         }
 
         generate()
