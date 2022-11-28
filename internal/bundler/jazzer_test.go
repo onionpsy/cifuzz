@@ -85,6 +85,8 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	require.Equal(t, 2, len(fuzzers))
 
 	expectedDeps := []string{
+		// manifest.jar should always be first element in runtime paths
+		filepath.Join(fuzzTest, "manifest.jar"),
 		"mylib.jar",
 		filepath.Join("..", "classes"),
 		filepath.Join("..", "test-classes"),

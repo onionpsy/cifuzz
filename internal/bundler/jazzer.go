@@ -1,6 +1,10 @@
 package bundler
 
 import (
+	"archive/zip"
+	"bytes"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -13,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/artifact"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
 
@@ -54,7 +59,20 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 
 	// Iterate over build results to fill manifest and create fuzzers
 	for _, buildResult := range buildResults {
-		runtimePaths := []string{}
+
+		// creating a manifest.jar for every fuzz test to configure
+		// jazzer via MANIFEST.MF
+		manifestJar, err := b.createManifestJar(buildResult.Name)
+		if err != nil {
+			return nil, nil, err
+		}
+		archiveManifestPath := filepath.Join(buildResult.Name, "manifest.jar")
+		manifest[archiveManifestPath] = manifestJar
+		// making sure the manifest jar is the first entry in the class path
+		runtimePaths := []string{
+			archiveManifestPath,
+		}
+
 		for _, runtimeDep := range buildResult.RuntimeDeps {
 			// check if the file exists
 			entry, err := os.Stat(runtimeDep)
@@ -101,6 +119,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 				runtimePaths = append(runtimePaths, archivePath)
 			}
 		}
+
 		fuzzer := &artifact.Fuzzer{
 			Target:       buildResult.Name,
 			Engine:       "JAVA_LIBFUZZER",
@@ -187,4 +206,50 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 	}
 
 	return buildResults, nil
+}
+
+// create a manifest.jar to configure jazzer
+func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
+	// create directory for fuzzer specific files
+	fuzzerPath := filepath.Join(b.opts.tempDir, targetClass)
+	err := os.MkdirAll(fuzzerPath, 0755)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	// create jar archive
+	jarPath := filepath.Join(fuzzerPath, "manifest.jar")
+	jarFile, err := os.Create(jarPath)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	jarWriter := zip.NewWriter(jarFile)
+
+	// create explicit parent directory in zip file
+	_, err = jarWriter.Create("META-INF")
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	// add manifest file
+	manifestFile, err := jarWriter.Create(filepath.Join("META-INF", "MANIFEST.MF"))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	// create & write content to manifest file
+	manifest := fmt.Sprintf("Jazzer-Fuzz-Target-Class: %s", targetClass)
+
+	_, err = io.Copy(manifestFile, bytes.NewBufferString(manifest))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	err = jarWriter.Close()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	log.Debugf("Created manifest.jar at %s", jarPath)
+	return jarPath, nil
 }
