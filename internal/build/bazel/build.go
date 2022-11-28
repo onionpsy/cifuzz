@@ -241,6 +241,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 		"--repo_env=CXX=" + envutil.Getenv(env, "CXX"),
 		"--repo_env=FUZZING_CFLAGS=" + envutil.Getenv(env, "FUZZING_CFLAGS"),
 		"--repo_env=FUZZING_CXXFLAGS=" + envutil.Getenv(env, "FUZZING_CXXFLAGS"),
+		"--repo_env=LIB_FUZZING_ENGINE=" + envutil.Getenv(env, "LIB_FUZZING_ENGINE"),
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 		// rules_fuzzing only links in the UBSan C++ runtime when the
@@ -424,12 +425,6 @@ func (b *Builder) setLibFuzzerEnv(env []string) ([]string, error) {
 
 	// Set FUZZING_CFLAGS and FUZZING_CXXFLAGS.
 	cflags := build.LibFuzzerCFlags()
-
-	// This is only required when linking but rules_fuzzing doesn't
-	// support specifying linker flags, so we pass it as a compiler flag
-	// instead
-	cflags = append(cflags, "-fsanitize=fuzzer")
-
 	env, err = envutil.Setenv(env, "FUZZING_CFLAGS", strings.Join(cflags, " "))
 	if err != nil {
 		return nil, err
@@ -438,6 +433,14 @@ func (b *Builder) setLibFuzzerEnv(env []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Set LIB_FUZZING_ENGINE, which is added as a linkopt to the fuzz
+	// test itself.
+	env, err = envutil.Setenv(env, "LIB_FUZZING_ENGINE", "-fsanitize=fuzzer")
+	if err != nil {
+		return nil, err
+	}
+
 	return env, nil
 }
 
