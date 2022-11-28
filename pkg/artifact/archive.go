@@ -15,22 +15,28 @@ import (
 	"code-intelligence.com/cifuzz/util/archiveutil"
 )
 
-// WriteArchive writes a GZip-compressed TAR to out containing the files and directories given in manifest.
-// The keys in manifest correspond to the path within the archive, the corresponding value is expected to be the
+// This struct is used to list all files that should be included in the
+// archive.
+// - Key:   the desired relative path inside the archive
+// - Value: real path to the file in the filesystem.
+type FileMap map[string]string
+
+// WriteArchive writes a GZip-compressed TAR to out containing the files and directories given in file map.
+// The keys in file map correspond to the path within the archive, the corresponding value is expected to be the
 // absolute path of the file or directory on disk.
 // Note: WriteArchive *does not* (recursively) traverse directories to add their contents to the archive. If this is
-// desired, use AddDirToManifest to explicitly add the contents to the manifest before calling WriteArchive.
-func WriteArchive(out io.Writer, manifest map[string]string) error {
+// desired, use AddDirToFileMap to explicitly add the contents to the file map before calling WriteArchive.
+func WriteArchive(out io.Writer, fileMap FileMap) error {
 	gw := gzip.NewWriter(out)
 	defer gw.Close()
 	tw := tar.NewWriter(gw)
 	defer tw.Close()
 
 	// Sort the archive paths first so that the generated archive is deterministic - map traversals aren't.
-	archivePaths := maps.Keys(manifest)
+	archivePaths := maps.Keys(fileMap)
 	sort.Strings(archivePaths)
 	for _, archivePath := range archivePaths {
-		absPath := manifest[archivePath]
+		absPath := fileMap[archivePath]
 		err := addToArchive(tw, archivePath, absPath)
 		if err != nil {
 			return err
@@ -40,9 +46,9 @@ func WriteArchive(out io.Writer, manifest map[string]string) error {
 	return nil
 }
 
-// AddDirToManifest traverses the directory dir recursively and adds its contents to the manifest under the base path
+// AddDirToFileMap traverses the directory dir recursively and adds its contents to the file map under the base path
 // archiveBasePath.
-func AddDirToManifest(manifest map[string]string, archiveBasePath string, dir string) error {
+func AddDirToFileMap(fileMap FileMap, archiveBasePath string, dir string) error {
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -54,7 +60,7 @@ func AddDirToManifest(manifest map[string]string, archiveBasePath string, dir st
 		}
 		archivePath := filepath.Join(archiveBasePath, relPath)
 		// There is no harm in creating tar entries for non-empty directories, even though they are not necessary.
-		manifest[archivePath] = path
+		fileMap[archivePath] = path
 		return nil
 	})
 }

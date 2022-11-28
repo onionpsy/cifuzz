@@ -29,7 +29,7 @@ func newJazzerBundler(opts *Opts) *jazzerBundler {
 	return &jazzerBundler{opts}
 }
 
-func (b *jazzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error) {
+func (b *jazzerBundler) bundle() ([]*artifact.Fuzzer, artifact.FileMap, error) {
 	depsOk, err := b.checkDependencies()
 	if err != nil {
 		return nil, nil, err
@@ -46,18 +46,18 @@ func (b *jazzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error) {
 	return b.assembleArtifacts(buildResults)
 }
 
-func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*artifact.Fuzzer, archiveManifest, error) {
+func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*artifact.Fuzzer, artifact.FileMap, error) {
 	var fuzzers []*artifact.Fuzzer
 
-	// create archive manifest
-	manifest := archiveManifest{}
+	// create the filemap for the archive
+	archiveFileMap := artifact.FileMap{}
 
-	archiveSeedDir, err := b.copySeeds(manifest)
+	archiveSeedDir, err := b.copySeeds(archiveFileMap)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Iterate over build results to fill manifest and create fuzzers
+	// Iterate over build results to fill archive file map and create fuzzers
 	for _, buildResult := range buildResults {
 
 		// creating a manifest.jar for every fuzz test to configure
@@ -67,7 +67,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 			return nil, nil, err
 		}
 		archiveManifestPath := filepath.Join(buildResult.Name, "manifest.jar")
-		manifest[archiveManifestPath] = manifestJar
+		archiveFileMap[archiveManifestPath] = manifestJar
 		// making sure the manifest jar is the first entry in the class path
 		runtimePaths := []string{
 			archiveManifestPath,
@@ -87,7 +87,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 				// if the current runtime dep is a directory, add all files to
 				// the archive but add just the directory path to the runtime
 				// paths. Hence, there will be a single entry for the runtime
-				// path but multiple entries for the archive manifest.
+				// path but multiple entries for the archive file map.
 				relPath, err := filepath.Rel(buildResult.BuildDir, runtimeDep)
 				if err != nil {
 					return nil, nil, errors.WithStack(err)
@@ -105,7 +105,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 					if err != nil {
 						return err
 					}
-					manifest[relPath] = path
+					archiveFileMap[relPath] = path
 					return nil
 				})
 				if err != nil {
@@ -113,9 +113,9 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 				}
 			} else {
 				// if the current runtime dependency is a file we add it to the
-				// manifest and add the runtime paths of the metadata
+				// file map and add the runtime paths of the metadata
 				archivePath := filepath.Base(runtimeDep)
-				manifest[archivePath] = runtimeDep
+				archiveFileMap[archivePath] = runtimeDep
 				runtimePaths = append(runtimePaths, archivePath)
 			}
 		}
@@ -135,12 +135,12 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 		}
 		fuzzers = append(fuzzers, fuzzer)
 	}
-	return fuzzers, manifest, nil
+	return fuzzers, archiveFileMap, nil
 }
 
-func (b *jazzerBundler) copySeeds(manifest archiveManifest) (string, error) {
+func (b *jazzerBundler) copySeeds(archiveFileMap artifact.FileMap) (string, error) {
 	archiveSeedDir := "seeds"
-	err := prepareSeeds(b.opts.SeedCorpusDirs, archiveSeedDir, manifest)
+	err := prepareSeeds(b.opts.SeedCorpusDirs, archiveSeedDir, archiveFileMap)
 	if err != nil {
 		return "", err
 	}

@@ -79,7 +79,7 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 		Env: []string{"FOO=foo"},
 	})
 	b.opts.tempDir = tempDir
-	fuzzers, manifest, err := b.assembleArtifacts(buildResults)
+	fuzzers, fileMap, err := b.assembleArtifacts(buildResults)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, len(fuzzers))
@@ -105,10 +105,12 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	}
 	require.Equal(t, *fuzzer, *fuzzers[0])
 
-	m := archiveManifest{
+	m := artifact.FileMap{
 		"mylib.jar": filepath.Join(libraryPath, "mylib.jar"),
+		filepath.Join(anotherBuildResult.Name, "manifest.jar"):                filepath.Join(tempDir, anotherBuildResult.Name, "manifest.jar"),
+		filepath.Join(buildResult.Name, "manifest.jar"):                       filepath.Join(tempDir, buildResult.Name, "manifest.jar"),
 		filepath.Join("..", "classes", "com", "example", "MyClass.class"):     filepath.Join(projectDir, "classes", "com", "example", "MyClass.class"),
 		filepath.Join("..", "test-classes", "com", "example", "MyTest.class"): filepath.Join(projectDir, "test-classes", "com", "example", "MyTest.class"),
 	}
-	require.Equal(t, m, manifest)
+	require.Equal(t, m, fileMap)
 }

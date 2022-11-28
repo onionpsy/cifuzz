@@ -67,7 +67,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		Env: []string{"FOO=foo"},
 	})
 	b.opts.tempDir = tempDir
-	fuzzers, manifest, systemDeps, err := b.assembleArtifacts(buildResult)
+	fuzzers, archiveFileMap, systemDeps, err := b.assembleArtifacts(buildResult)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(fuzzers))
@@ -82,13 +82,13 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		EngineOptions: artifact.EngineOptions{Env: []string{"FOO=foo", "NO_CIFUZZ=1"}},
 	}, *fuzzers[0])
 
-	require.Equal(t, archiveManifest{
+	require.Equal(t, artifact.FileMap{
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "bin", "pkg", "some_fuzz_test"):             filepath.Join(buildDir, "pkg", "some_fuzz_test"),
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "bin", "lib", "helper.so"):                  filepath.Join(buildDir, "lib", "helper.so"),
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "external_libs", "libfoo.so"):               externalDep,
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "seeds", filepath.Base(seedCorpus)):         seedCorpus,
 		filepath.Join("libfuzzer", "address", "some_fuzz_test", "seeds", filepath.Base(seedCorpus), "seed"): filepath.Join(seedCorpus, "seed"),
-	}, manifest)
+	}, archiveFileMap)
 
 	if runtime.GOOS != "windows" {
 		require.Equal(t, []string{uncommonSystemDepUnix}, systemDeps)
@@ -132,7 +132,7 @@ func TestAssembleArtifacts_Coverage(t *testing.T) {
 
 	b := newLibfuzzerBundler(&Opts{})
 	b.opts.tempDir = tempDir
-	fuzzers, manifest, systemDeps, err := b.assembleArtifacts(buildResult)
+	fuzzers, archiveFileMap, systemDeps, err := b.assembleArtifacts(buildResult)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(fuzzers))
@@ -149,13 +149,13 @@ func TestAssembleArtifacts_Coverage(t *testing.T) {
 		},
 	}, *fuzzers[0])
 
-	assert.Equal(t, archiveManifest{
+	assert.Equal(t, artifact.FileMap{
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "bin", "pkg", "some_fuzz_test"):             filepath.Join(buildDir, "pkg", "some_fuzz_test"),
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "bin", "lib", "helper.so"):                  filepath.Join(buildDir, "lib", "helper.so"),
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "external_libs", "libfoo.so"):               externalDep,
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "seeds", filepath.Base(seedCorpus)):         seedCorpus,
 		filepath.Join("replayer", "coverage", "some_fuzz_test", "seeds", filepath.Base(seedCorpus), "seed"): filepath.Join(seedCorpus, "seed"),
-	}, manifest)
+	}, archiveFileMap)
 
 	if runtime.GOOS != "windows" {
 		assert.Equal(t, []string{uncommonSystemDepUnix}, systemDeps)

@@ -15,12 +15,6 @@ import (
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
-// This struct is used to list all files that should be included in the
-// archive.
-// - Key:   the desired relative path inside the archive
-// - Value: real path to the file in the filesystem.
-type archiveManifest map[string]string
-
 type Opts struct {
 	Branch         string        `mapstructure:"branch"`
 	BuildCommand   string        `mapstructure:"build-command"`

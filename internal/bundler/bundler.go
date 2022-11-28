@@ -37,30 +37,30 @@ func (b *Bundler) Bundle() error {
 	}
 	defer fileutil.Cleanup(b.opts.tempDir)
 
-	var manifest archiveManifest
+	var archiveFileMap artifact.FileMap
 	var fuzzers []*artifact.Fuzzer
 
 	switch b.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
-		fuzzers, manifest, err = newLibfuzzerBundler(b.opts).bundle()
+		fuzzers, archiveFileMap, err = newLibfuzzerBundler(b.opts).bundle()
 	case config.BuildSystemMaven, config.BuildSystemGradle:
-		fuzzers, manifest, err = newJazzerBundler(b.opts).bundle()
+		fuzzers, archiveFileMap, err = newJazzerBundler(b.opts).bundle()
 	}
 	if err != nil {
 		return err
 	}
 
-	err = b.createWorkDir(manifest)
+	err = b.createWorkDir(archiveFileMap)
 	if err != nil {
 		return err
 	}
 
-	err = b.createMetadataFile(fuzzers, manifest)
+	err = b.createMetadataFile(fuzzers, archiveFileMap)
 	if err != nil {
 		return err
 	}
 
-	err = b.store(manifest)
+	err = b.store(archiveFileMap)
 	if err != nil {
 		return err
 	}
@@ -68,19 +68,19 @@ func (b *Bundler) Bundle() error {
 	return nil
 }
 
-func (b *Bundler) createWorkDir(archiveManifest archiveManifest) error {
+func (b *Bundler) createWorkDir(archiveFileMap artifact.FileMap) error {
 	// The fuzzing artifact archive spec requires this directory even if it is empty.
 	tmpWorkDirPath := filepath.Join(b.opts.tempDir, workDirPath)
 	err := os.MkdirAll(tmpWorkDirPath, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	archiveManifest[workDirPath] = tmpWorkDirPath
+	archiveFileMap[workDirPath] = tmpWorkDirPath
 	return nil
 }
 
 // Create and add the top-level metadata file.
-func (b *Bundler) createMetadataFile(fuzzers []*artifact.Fuzzer, archiveManifest archiveManifest) error {
+func (b *Bundler) createMetadataFile(fuzzers []*artifact.Fuzzer, archiveFileMap artifact.FileMap) error {
 	metadata := &artifact.Metadata{
 		Fuzzers: fuzzers,
 		RunEnvironment: &artifact.RunEnvironment{
@@ -97,13 +97,13 @@ func (b *Bundler) createMetadataFile(fuzzers []*artifact.Fuzzer, archiveManifest
 	if err != nil {
 		return errors.Wrapf(err, "failed to write %s", artifact.MetadataFileName)
 	}
-	archiveManifest[artifact.MetadataFileName] = metadataYamlPath
+	archiveFileMap[artifact.MetadataFileName] = metadataYamlPath
 
 	return nil
 }
 
 // Store to archive
-func (b *Bundler) store(archiveManifest archiveManifest) error {
+func (b *Bundler) store(archiveFileMap artifact.FileMap) error {
 	if b.opts.OutputPath == "" {
 		if len(b.opts.FuzzTests) == 1 {
 			b.opts.OutputPath = filepath.Base(b.opts.FuzzTests[0]) + ".tar.gz"
@@ -118,7 +118,7 @@ func (b *Bundler) store(archiveManifest archiveManifest) error {
 	}
 	archiveWriter := bufio.NewWriter(archive)
 	defer archiveWriter.Flush()
-	err = artifact.WriteArchive(archiveWriter, archiveManifest)
+	err = artifact.WriteArchive(archiveWriter, archiveFileMap)
 	if err != nil {
 		return errors.Wrap(err, "failed to write fuzzing artifact archive")
 	}
@@ -164,7 +164,7 @@ func (b *Bundler) getCodeRevision() *artifact.CodeRevision {
 	}
 }
 
-func prepareSeeds(seedCorpusDirs []string, archiveSeedsDir string, manifest archiveManifest) error {
+func prepareSeeds(seedCorpusDirs []string, archiveSeedsDir string, archiveFileMap artifact.FileMap) error {
 	var targetDirs []string
 	for _, sourceDir := range seedCorpusDirs {
 		// Put the seeds into subdirectories of the "seeds" directory
@@ -182,7 +182,7 @@ func prepareSeeds(seedCorpusDirs []string, archiveSeedsDir string, manifest arch
 		targetDirs = append(targetDirs, targetDir)
 
 		// Add the seeds of the seed corpus directory to the target directory
-		err := artifact.AddDirToManifest(manifest, targetDir, sourceDir)
+		err := artifact.AddDirToFileMap(archiveFileMap, targetDir, sourceDir)
 		if err != nil {
 			return err
 		}

@@ -68,7 +68,7 @@ func newLibfuzzerBundler(opts *Opts) *libfuzzerBundler {
 	return &libfuzzerBundler{opts}
 }
 
-func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error) {
+func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, artifact.FileMap, error) {
 	depsOk, err := b.checkDependencies()
 	if err != nil {
 		return nil, nil, err
@@ -95,10 +95,10 @@ func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error)
 	// Add all fuzz test artifacts to the archive. There will be one "Fuzzer" metadata object for each pair of fuzz test
 	// and Builder instance.
 	var fuzzers []*artifact.Fuzzer
-	manifest := archiveManifest{}
+	archiveFileMap := artifact.FileMap{}
 	deduplicatedSystemDeps := make(map[string]struct{})
 	for _, buildResult := range buildResults {
-		fuzzTestFuzzers, fuzzTestArchiveManifest, systemDeps, err := b.assembleArtifacts(buildResult)
+		fuzzTestFuzzers, fuzzTestArchiveFileMap, systemDeps, err := b.assembleArtifacts(buildResult)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -108,12 +108,12 @@ func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error)
 		}
 		// Produce an error when artifacts for different fuzzers conflict - this should never happen as
 		// assembleArtifacts is expected to add a unique prefix for each fuzz test.
-		for archivePath, absPath := range fuzzTestArchiveManifest {
-			existingAbsPath, conflict := manifest[archivePath]
+		for archivePath, absPath := range fuzzTestArchiveFileMap {
+			existingAbsPath, conflict := archiveFileMap[archivePath]
 			if conflict {
 				return nil, nil, errors.Errorf("conflict for archive path %q: %q and %q", archivePath, existingAbsPath, absPath)
 			}
-			manifest[archivePath] = absPath
+			archiveFileMap[archivePath] = absPath
 		}
 	}
 
@@ -124,7 +124,7 @@ func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, archiveManifest, error)
       %s`, b.opts.DockerImage, strings.Join(systemDeps, "\n  "))
 	}
 
-	return fuzzers, manifest, nil
+	return fuzzers, archiveFileMap, nil
 }
 
 func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
@@ -374,11 +374,11 @@ func (b *libfuzzerBundler) checkDependencies() (bool, error) {
 //nolint:nonamedreturns
 func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 	fuzzers []*artifact.Fuzzer,
-	manifest archiveManifest,
+	archiveFileMap artifact.FileMap,
 	systemDeps []string,
 	err error,
 ) {
-	manifest = archiveManifest{}
+	archiveFileMap = artifact.FileMap{}
 	fuzzTestExecutableAbsPath := buildResult.Executable
 
 	// Add all build artifacts under a subdirectory of the fuzz test base path so that these files don't clash with
@@ -400,7 +400,7 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 		return
 	}
 	fuzzTestArchivePath := filepath.Join(buildArtifactsPrefix, fuzzTestExecutableRelPath)
-	manifest[fuzzTestArchivePath] = fuzzTestExecutableAbsPath
+	archiveFileMap[fuzzTestArchivePath] = fuzzTestExecutableAbsPath
 
 	// On macOS, debug information is collected in a separate .dSYM file. We bundle it in to get source locations
 	// resolved in stack traces.
@@ -412,7 +412,7 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 	}
 	if dsymExists {
 		fuzzTestDsymArchivePath := fuzzTestArchivePath + ".dSYM"
-		manifest[fuzzTestDsymArchivePath] = fuzzTestDsymAbsPath
+		archiveFileMap[fuzzTestDsymArchivePath] = fuzzTestDsymAbsPath
 	}
 
 	// Add the runtime dependencies of the fuzz test executable.
@@ -431,7 +431,7 @@ depsLoop:
 				err = errors.WithStack(err)
 				return
 			}
-			manifest[filepath.Join(buildArtifactsPrefix, buildDirRelPath)] = dep
+			archiveFileMap[filepath.Join(buildArtifactsPrefix, buildDirRelPath)] = dep
 			continue
 		}
 
@@ -471,7 +471,7 @@ depsLoop:
 		// libraries are unique. If they aren't, we report a conflict.
 		externalLibrariesPrefix = filepath.Join(fuzzTestPrefix(buildResult), "external_libs")
 		archivePath := filepath.Join(externalLibrariesPrefix, filepath.Base(dep))
-		if conflictingDep, hasConflict := manifest[archivePath]; hasConflict {
+		if conflictingDep, hasConflict := archiveFileMap[archivePath]; hasConflict {
 			err = errors.Errorf(
 				"fuzz test %q has conflicting runtime dependencies: %s and %s",
 				buildResult.Name,
@@ -480,14 +480,14 @@ depsLoop:
 			)
 			return
 		}
-		manifest[archivePath] = dep
+		archiveFileMap[archivePath] = dep
 	}
 
 	// Add dictionary to archive
 	var archiveDict string
 	if b.opts.Dictionary != "" {
 		archiveDict = filepath.Join(fuzzTestPrefix(buildResult), "dict")
-		manifest[archiveDict] = b.opts.Dictionary
+		archiveFileMap[archiveDict] = b.opts.Dictionary
 	}
 
 	// Add seeds from user-specified seed corpus dirs (if any) and the
@@ -505,7 +505,7 @@ depsLoop:
 	if len(seedCorpusDirs) > 0 {
 		archiveSeedsDir = filepath.Join(fuzzTestPrefix(buildResult), "seeds")
 
-		err = prepareSeeds(seedCorpusDirs, archiveSeedsDir, manifest)
+		err = prepareSeeds(seedCorpusDirs, archiveSeedsDir, archiveFileMap)
 		if err != nil {
 			return
 		}

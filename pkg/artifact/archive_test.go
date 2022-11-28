@@ -32,15 +32,15 @@ func TestWriteArchive(t *testing.T) {
 	err = os.MkdirAll(filepath.Join(dir, "empty_dir"), 0755)
 	require.NoError(t, err)
 
-	// Walk the testdata dir and add all contents to a manifest for WriteArchive.
-	manifest := make(map[string]string)
-	err = artifact.AddDirToManifest(manifest, "", dir)
+	// Walk the testdata dir and add all contents to a fileMap for WriteArchive.
+	fileMap := make(artifact.FileMap)
+	err = artifact.AddDirToFileMap(fileMap, "", dir)
 	require.NoError(t, err)
 
 	archive, err := os.CreateTemp("", "artifact-*.tar.gz")
 	require.NoError(t, err)
 	defer archive.Close()
-	err = artifact.WriteArchive(archive, manifest)
+	err = artifact.WriteArchive(archive, fileMap)
 	require.NoError(t, err)
 	err = archive.Sync()
 	require.NoError(t, err)
