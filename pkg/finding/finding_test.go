@@ -68,7 +68,7 @@ func TestFinding_MoveInputFile(t *testing.T) {
 	finding.Logs = append(finding.Logs, fmt.Sprintf("some surrounding text, %s more text", testfile))
 	findingDir := filepath.Join(projectDir, nameFindingsDir, finding.Name)
 
-	err = finding.MoveInputFile(projectDir, seedCorpusDir)
+	err = finding.CopyInputFile(projectDir, seedCorpusDir)
 	require.NoError(t, err)
 
 	// Check that the input file in the finding dir was created

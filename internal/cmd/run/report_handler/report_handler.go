@@ -192,7 +192,7 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	}
 
 	if f.InputFile != "" {
-		err = f.MoveInputFile(h.ProjectDir, h.SeedCorpusDir)
+		err = f.CopyInputFile(h.ProjectDir, h.SeedCorpusDir)
 		if err != nil {
 			return err
 		}

@@ -125,9 +125,9 @@ func (f *Finding) saveJson(jsonPath string) error {
 	return nil
 }
 
-// MoveInputFile copies the input file to the finding directory and
+// CopyInputFile copies the input file to the finding directory and
 // the seed corpus directory and adjusts the finding logs accordingly.
-func (f *Finding) MoveInputFile(projectDir, seedCorpusDir string) error {
+func (f *Finding) CopyInputFile(projectDir, seedCorpusDir string) error {
 	// Acquire a file lock to avoid races with other cifuzz processes
 	// running in parallel
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
@@ -145,8 +145,8 @@ func (f *Finding) MoveInputFile(projectDir, seedCorpusDir string) error {
 		return errors.WithStack(err)
 	}
 
-	// Actually move the input file
-	err = f.moveInputFile(projectDir, seedCorpusDir)
+	// Actually copy the input file
+	err = f.copyInputFile(projectDir, seedCorpusDir)
 
 	// Release the file lock
 	unlockErr := mutex.Unlock()
@@ -159,7 +159,7 @@ func (f *Finding) MoveInputFile(projectDir, seedCorpusDir string) error {
 	return err
 }
 
-func (f *Finding) moveInputFile(projectDir, seedCorpusDir string) error {
+func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
 	path := filepath.Join(findingDir, nameCrashingInput)
 
@@ -182,12 +182,6 @@ func (f *Finding) moveInputFile(projectDir, seedCorpusDir string) error {
 		return errors.WithStack(err)
 	}
 
-	// Remove the source which was now copied.
-	err = os.Remove(f.InputFile)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	// Replace the old filename in the finding logs. Replace it with the
 	// relative path to not leak the directory structure of the current
 	// user in the finding logs (which might be shared with others).
@@ -202,7 +196,7 @@ func (f *Finding) moveInputFile(projectDir, seedCorpusDir string) error {
 	for i, line := range f.Logs {
 		f.Logs[i] = strings.ReplaceAll(line, f.InputFile, relPath)
 	}
-	log.Debugf("moved input file from %s to %s", f.InputFile, path)
+	log.Debugf("Copied input file from %s to %s", f.InputFile, path)
 
 	// The path in the InputFile field is expected to be relative to the
 	// project directory
