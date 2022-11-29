@@ -23,7 +23,15 @@ func TestDataDir(t *testing.T) string {
 		srcDir := filepath.Join(filepath.Dir(filename), "testdata")
 		testDataDir, err = os.MkdirTemp(baseTempDir, "testdata-")
 		require.NoError(t, err)
-		err = copy.Copy(srcDir, testDataDir)
+		opts := copy.Options{
+			// The testdata directory contains a symlink to our dumper
+			// source directory, which we need to create a hard copy of
+			// because the relative symlink would be broken when copied
+			OnSymlink: func(string) copy.SymlinkAction {
+				return copy.Deep
+			},
+		}
+		err = copy.Copy(srcDir, testDataDir, opts)
 		require.NoError(t, err)
 
 		// chdir into the temporary test data dir to keep the current

@@ -16,10 +16,13 @@ CXXFLAGS = -fsanitize=fuzzer,address,undefined \
 		-std=c++17 \
 		-g
 
+LDFLAGS =
+
 BUILD_DIR = build
 FUZZ_TARGET_DIR = fuzz-targets
 # get all c/cpp files and remove file extension
 EXT :=
+DEPS :=
 OUT_OPTION := -o 
 INCLUDE_OPTION := -I 
 NOLINK_OPTION := -c
@@ -46,6 +49,12 @@ ifeq ($(OS),Windows_NT)
 	OUT_OBJ_OPTION = /Fo
 
 	DISABLE_UBSAN = 1
+else
+	DEPS := dumper.o
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		LDFLAGS = -Wl,--wrap=__sanitizer_set_death_callback
+	endif
 endif
 
 ALL_PREREQUISITES = clean prepare $(FUZZ_TARGETS)
@@ -60,27 +69,33 @@ endif
 clean:
 	-rm -rf $(BUILD_DIR)/*
 
-prepare:
-	mkdir -p $(BUILD_DIR)
-
 all: $(ALL_PREREQUISITES)
 
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+dumper.o:
+	$(CC) -fPIC -c $(ROOT_DIR)/src/dumper.c -o $@
+
 $(FUZZ_TARGET_DIR)/trigger_asan_with_file_accesses: OUT=$(BUILD_DIR)/$(notdir $@)$(EXT)
-$(FUZZ_TARGET_DIR)/trigger_asan_with_file_accesses: ${FUZZ_TARGET_DIR}/trigger_asan_with_file_accesses.c
-	$(CC) $? $(CFLAGS) $(OUT_OPTION)$(OUT)
+$(FUZZ_TARGET_DIR)/trigger_asan_with_file_accesses: ${FUZZ_TARGET_DIR}/trigger_asan_with_file_accesses.c ${DEPS}
+	mkdir -p $(BUILD_DIR)
+	$(CC) $^ $(CFLAGS) $(OUT_OPTION)$(OUT) $(LDFLAGS)
 	@echo "--> done: $(OUT)"
 
 $(FUZZ_TARGET_DIR)/trigger_ubsan_non_recoverable: OUT=$(BUILD_DIR)/$(notdir $@)$(EXT)
-$(FUZZ_TARGET_DIR)/trigger_ubsan_non_recoverable: $(FUZZ_TARGET_DIR)/trigger_ubsan.cpp
-	$(CXX) $? $(CXXFLAGS) -fno-sanitize-recover=undefined $(OUT_OPTION)$(OUT) 
+$(FUZZ_TARGET_DIR)/trigger_ubsan_non_recoverable: $(FUZZ_TARGET_DIR)/trigger_ubsan.cpp ${DEPS}
+	mkdir -p $(BUILD_DIR)
+	$(CXX) $^ $(CXXFLAGS) -fno-sanitize-recover=undefined $(OUT_OPTION)$(OUT) $(LDFLAGS)
 	@echo "--> done: $(OUT)"
 
 $(FUZZ_TARGET_DIR)/%: OUT=$(BUILD_DIR)/$(notdir $@)$(EXT)
-$(FUZZ_TARGET_DIR)/%: $(FUZZ_TARGET_DIR)/%.c prepare
-	$(CC) $< $(CFLAGS) $(OUT_OPTION)$(OUT)
+$(FUZZ_TARGET_DIR)/%: $(FUZZ_TARGET_DIR)/%.c ${DEPS}
+	mkdir -p $(BUILD_DIR)
+	$(CC) $^ $(CFLAGS) $(OUT_OPTION)$(OUT) $(LDFLAGS)
 	@echo "--> done: $(OUT)"
 
 $(FUZZ_TARGET_DIR)/%: OUT=$(BUILD_DIR)/$(notdir $@)$(EXT)
-$(FUZZ_TARGET_DIR)/%: $(FUZZ_TARGET_DIR)/%.cpp prepare
-	$(CXX) $< $(CXXFLAGS) $(OUT_OPTION)$(OUT)
+$(FUZZ_TARGET_DIR)/%: $(FUZZ_TARGET_DIR)/%.cpp ${DEPS}
+	mkdir -p $(BUILD_DIR)
+	$(CXX) $^ $(CXXFLAGS) $(OUT_OPTION)$(OUT) $(LDFLAGS)
 	@echo "--> done: $(OUT)"

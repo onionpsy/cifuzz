@@ -25,7 +25,7 @@ func TestIntegration_UBSANRecoverable(t *testing.T) {
 			ErrorType:           finding.ErrorType_RUNTIME_ERROR,
 			Details:             "undefined behavior",
 			SourceFile:          "trigger_ubsan.cpp",
-			AllowEmptyInputData: true,
+			AllowEmptyInputData: runtime.GOOS == "windows",
 			NumFindings:         1,
 		})
 
