@@ -22,6 +22,9 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 )
 
+// TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
+replace github.com/otiai10/copy v1.9.0 => github.com/adombeck/copy v0.0.0-20221129184714-7b5f9872f143
+
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
