@@ -94,20 +94,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 				}
 				runtimePaths = append(runtimePaths, relPath)
 
-				err = filepath.WalkDir(runtimeDep, func(path string, d os.DirEntry, err error) error {
-					if err != nil {
-						return err
-					}
-					if d.IsDir() {
-						return nil
-					}
-					relPath, err := filepath.Rel(buildResult.BuildDir, path)
-					if err != nil {
-						return err
-					}
-					archiveFileMap[relPath] = path
-					return nil
-				})
+				err = artifact.AddDirToFileMap(archiveFileMap, relPath, runtimeDep)
 				if err != nil {
 					return nil, nil, errors.WithStack(err)
 				}
@@ -212,7 +199,7 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
 	// create directory for fuzzer specific files
 	fuzzerPath := filepath.Join(b.opts.tempDir, targetClass)
-	err := os.MkdirAll(fuzzerPath, 0755)
+	err := os.MkdirAll(fuzzerPath, 0o755)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
