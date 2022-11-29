@@ -1,14 +1,18 @@
 package build
 
 import (
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
 )
 
@@ -152,4 +156,47 @@ func JazzerSeedCorpus(targetClass string, projectDir string) string {
 
 func JazzerGeneratedCorpus(targetClass string, projectDir string) string {
 	return filepath.Join(projectDir, ".cifuzz-corpus", targetClass)
+}
+
+func ListJazzerFuzzTests(projectDir string) ([]string, error) {
+	testDir := filepath.Join(projectDir, "src", "test", "java")
+
+	var fuzzTests []string
+	err := filepath.WalkDir(testDir, func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() {
+			if filepath.Ext(path) != ".java" {
+				return nil
+			}
+
+			bytes, err := os.ReadFile(path)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			match, err := regexp.MatchString(`@FuzzTest|fuzzerTestOneInput\(`, string(bytes))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if match == true {
+				classPath, err := filepath.Rel(testDir, path)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+
+				className := strings.TrimSuffix(filepath.Base(path), ".java")
+				classPath = filepath.Join(filepath.Dir(classPath), className)
+				classPath = strings.ReplaceAll(classPath, string(os.PathSeparator), ".")
+
+				fuzzTests = append(fuzzTests, classPath)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Error(err, err.Error())
+		return nil, err
+	}
+
+	return fuzzTests, nil
 }
