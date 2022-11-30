@@ -14,12 +14,15 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/build/maven"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/artifact"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
+
+// The directory inside the fuzzing artifact used to store runtime dependencies
+const runtimeDepsPath = "runtime_deps"
 
 type jazzerBundler struct {
 	opts *Opts
@@ -30,12 +33,9 @@ func newJazzerBundler(opts *Opts) *jazzerBundler {
 }
 
 func (b *jazzerBundler) bundle() ([]*artifact.Fuzzer, artifact.FileMap, error) {
-	depsOk, err := b.checkDependencies()
+	err := b.checkDependencies()
 	if err != nil {
 		return nil, nil, err
-	}
-	if !depsOk {
-		return nil, nil, dependencies.Error()
 	}
 
 	buildResults, err := b.runBuild()
@@ -52,19 +52,20 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 	// create the filemap for the archive
 	archiveFileMap := artifact.FileMap{}
 
-	archiveSeedDir, err := b.copySeeds(archiveFileMap)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var archiveDictDir string
+	var archiveDict string
 	if b.opts.Dictionary != "" {
-		archiveDictDir = filepath.Join(workDirPath, filepath.Base(b.opts.Dictionary))
-		archiveFileMap[archiveDictDir] = b.opts.Dictionary
+		archiveDict = "dict"
+		archiveFileMap[archiveDict] = b.opts.Dictionary
 	}
 
 	// Iterate over build results to fill archive file map and create fuzzers
 	for _, buildResult := range buildResults {
+		log.Printf("build dir: %s\n", buildResult.BuildDir)
+		// copy seeds for every fuzz test
+		archiveSeedsDir, err := b.copySeeds(buildResult, archiveFileMap)
+		if err != nil {
+			return nil, nil, err
+		}
 
 		// creating a manifest.jar for every fuzz test to configure
 		// jazzer via MANIFEST.MF
@@ -80,6 +81,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 		}
 
 		for _, runtimeDep := range buildResult.RuntimeDeps {
+			log.Printf("runtime dept: %s\n", runtimeDep)
 			// check if the file exists
 			entry, err := os.Stat(runtimeDep)
 			if os.IsNotExist(err) {
@@ -94,10 +96,11 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 				// the archive but add just the directory path to the runtime
 				// paths. Hence, there will be a single entry for the runtime
 				// path but multiple entries for the archive file map.
-				relPath, err := filepath.Rel(buildResult.BuildDir, runtimeDep)
+				relPath, err := filepath.Rel(buildResult.ProjectDir, runtimeDep)
 				if err != nil {
 					return nil, nil, errors.WithStack(err)
 				}
+				relPath = filepath.Join(runtimeDepsPath, relPath)
 				runtimePaths = append(runtimePaths, relPath)
 
 				err = artifact.AddDirToFileMap(archiveFileMap, relPath, runtimeDep)
@@ -107,7 +110,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 			} else {
 				// if the current runtime dependency is a file we add it to the
 				// file map and add the runtime paths of the metadata
-				archivePath := filepath.Base(runtimeDep)
+				archivePath := filepath.Join(runtimeDepsPath, filepath.Base(runtimeDep))
 				archiveFileMap[archivePath] = runtimeDep
 				runtimePaths = append(runtimePaths, archivePath)
 			}
@@ -117,8 +120,8 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 			Name:         buildResult.Name,
 			Engine:       "JAVA_LIBFUZZER",
 			ProjectDir:   buildResult.ProjectDir,
-			Dictionary:   archiveDictDir,
-			Seeds:        archiveSeedDir,
+			Dictionary:   archiveDict,
+			Seeds:        archiveSeedsDir,
 			RuntimePaths: runtimePaths,
 			EngineOptions: artifact.EngineOptions{
 				Env:   b.opts.Env,
@@ -132,29 +135,50 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arti
 	return fuzzers, archiveFileMap, nil
 }
 
-func (b *jazzerBundler) copySeeds(archiveFileMap artifact.FileMap) (string, error) {
-	archiveSeedDir := "seeds"
-	err := prepareSeeds(b.opts.SeedCorpusDirs, archiveSeedDir, archiveFileMap)
-	if err != nil {
-		return "", err
+func (b *jazzerBundler) copySeeds(buildResult *build.Result, archiveFileMap artifact.FileMap) (string, error) {
+	// Add seeds from user-specified seed corpus dirs (if any)
+	// to the seeds directory in the archive
+	var archiveSeedsDir string
+	if len(b.opts.SeedCorpusDirs) > 0 {
+		archiveSeedsDir = "seeds"
+		err := prepareSeeds(b.opts.SeedCorpusDirs, archiveSeedsDir, archiveFileMap)
+		if err != nil {
+			return "", err
+		}
 	}
-	return archiveSeedDir, nil
+
+	return archiveSeedsDir, nil
 }
 
-func (b *jazzerBundler) checkDependencies() (bool, error) {
+func (b *jazzerBundler) checkDependencies() error {
 	var deps []dependencies.Key
 	switch b.opts.BuildSystem {
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{dependencies.JAVA, dependencies.MAVEN}
-		return dependencies.Check(deps, dependencies.MavenDeps, runfiles.Finder)
 	case config.BuildSystemGradle:
 		deps = []dependencies.Key{dependencies.JAVA, dependencies.GRADLE}
-		return dependencies.Check(deps, dependencies.GradleDeps, runfiles.Finder)
 	}
-	return false, errors.New("invalid build system")
+	err := dependencies.Check(deps)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+	return nil
 }
 
 func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
+	var fuzzTests []string
+	var err error
+
+	if len(b.opts.FuzzTests) == 0 {
+		fuzzTests, err = build.ListJazzerFuzzTests(b.opts.ProjectDir)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fuzzTests = b.opts.FuzzTests
+	}
+
 	var buildResults []*build.Result
 	switch b.opts.BuildSystem {
 	case config.BuildSystemMaven:
@@ -170,7 +194,8 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, test := range b.opts.FuzzTests {
+
+		for _, test := range fuzzTests {
 			buildResult, err := builder.Build(test)
 			if err != nil {
 				return nil, err
@@ -190,7 +215,7 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, test := range b.opts.FuzzTests {
+		for _, test := range fuzzTests {
 			buildResult, err := builder.Build(test)
 			if err != nil {
 				return nil, err
@@ -217,16 +242,26 @@ func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+	defer jarFile.Close()
 	jarWriter := zip.NewWriter(jarFile)
+	defer jarWriter.Close()
 
 	// create explicit parent directory in zip file
-	_, err = jarWriter.Create("META-INF")
+	fh := &zip.FileHeader{
+		Name: "META-INF/",
+	}
+	fh.SetMode(0o755)
+	_, err = jarWriter.CreateHeader(fh)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
 	// add manifest file
-	manifestFile, err := jarWriter.Create(filepath.Join("META-INF", "MANIFEST.MF"))
+	fh = &zip.FileHeader{
+		Name: filepath.Join("META-INF", "MANIFEST.MF"),
+	}
+	fh.SetMode(0o644)
+	manifestFile, err := jarWriter.CreateHeader(fh)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

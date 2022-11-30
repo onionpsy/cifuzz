@@ -16,6 +16,8 @@ import (
 	"code-intelligence.com/cifuzz/util/envutil"
 )
 
+var JazzerFuzzTestRegex = regexp.MustCompile(`@FuzzTest|\sfuzzerTestOneInput\(`)
+
 type Result struct {
 	// A name which uniquely identifies the fuzz test and is a valid path
 	Name string
@@ -173,18 +175,17 @@ func ListJazzerFuzzTests(projectDir string) ([]string, error) {
 				return errors.WithStack(err)
 			}
 
-			match, err := regexp.MatchString(`@FuzzTest|fuzzerTestOneInput\(`, string(bytes))
-			if err != nil {
-				return errors.WithStack(err)
-			}
+			match := JazzerFuzzTestRegex.MatchString(string(bytes))
 			if match == true {
 				classPath, err := filepath.Rel(testDir, path)
 				if err != nil {
 					return errors.WithStack(err)
 				}
 
-				className := strings.TrimSuffix(filepath.Base(path), ".java")
-				classPath = filepath.Join(filepath.Dir(classPath), className)
+				classPath = filepath.Join(
+					filepath.Dir(classPath),
+					strings.TrimSuffix(filepath.Base(path), ".java"),
+				)
 				classPath = strings.ReplaceAll(classPath, string(os.PathSeparator), ".")
 
 				fuzzTests = append(fuzzTests, classPath)

@@ -17,11 +17,11 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/bazel"
 	"code-intelligence.com/cifuzz/internal/build/cmake"
 	"code-intelligence.com/cifuzz/internal/build/other"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/artifact"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -69,12 +69,9 @@ func newLibfuzzerBundler(opts *Opts) *libfuzzerBundler {
 }
 
 func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, artifact.FileMap, error) {
-	depsOk, err := b.checkDependencies()
+	err := b.checkDependencies()
 	if err != nil {
 		return nil, nil, err
-	}
-	if !depsOk {
-		return nil, nil, dependencies.Error()
 	}
 
 	// TODO: Do not hardcode these values.
@@ -360,7 +357,7 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 	return nil
 }
 
-func (b *libfuzzerBundler) checkDependencies() (bool, error) {
+func (b *libfuzzerBundler) checkDependencies() error {
 	var deps []dependencies.Key
 	switch b.opts.BuildSystem {
 	case config.BuildSystemCMake:
@@ -368,7 +365,12 @@ func (b *libfuzzerBundler) checkDependencies() (bool, error) {
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.CLANG}
 	}
-	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	err := dependencies.Check(deps)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+	return nil
 }
 
 //nolint:nonamedreturns

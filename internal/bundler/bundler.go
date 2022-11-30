@@ -116,6 +116,7 @@ func (b *Bundler) store(archiveFileMap artifact.FileMap) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create fuzzing artifact archive")
 	}
+	defer archive.Close()
 	archiveWriter := bufio.NewWriter(archive)
 	defer archiveWriter.Flush()
 	err = artifact.WriteArchive(archiveWriter, archiveFileMap)

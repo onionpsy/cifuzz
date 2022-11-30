@@ -89,6 +89,9 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 
 	args := append([]string{"testClasses"}, flags...)
 	cmd, err := buildGradleCommand(b.ProjectDir, args)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debugf("Command: %s", cmd.String())
 	_, err = cmd.Output()
@@ -114,6 +117,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	result := &build.Result{
 		Name:            targetClass,
 		BuildDir:        buildDir,
+		ProjectDir:      b.ProjectDir,
 		GeneratedCorpus: generatedCorpus,
 		SeedCorpus:      seedCorpus,
 		RuntimeDeps:     deps,
@@ -137,7 +141,7 @@ func (b *Builder) getDependencies() ([]string, error) {
 		return nil, cmdutils.ErrSilent
 	}
 	classpath := classpathRegex.FindStringSubmatch(string(output))
-	deps := strings.Split(classpath[1], string(os.PathListSeparator))
+	deps := strings.Split(strings.TrimSpace(classpath[1]), string(os.PathListSeparator))
 
 	return deps, nil
 }

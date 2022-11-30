@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"code-intelligence.com/cifuzz/pkg/artifact"
+	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -66,6 +67,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string
 	}
 	args = append(defaultArgs, args...)
 	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+	defer fileutil.Cleanup(archiveDir)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
 	assert.Equal(t, "my-branch", metadata.CodeRevision.Git.Branch)
@@ -211,6 +213,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	args = append(defaultArgs, args...)
 	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+	defer fileutil.Cleanup(archiveDir)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
 	assert.Equal(t, "my-branch", metadata.CodeRevision.Git.Branch)
@@ -241,12 +244,12 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.DirExists(t, seedCorpusPath)
 
 	// Verify that runtime dependencies have been packed
-	jarPattern := filepath.Join(archiveDir, "work_dir", "*.jar")
+	jarPattern := filepath.Join(archiveDir, "runtime_deps", "*.jar")
 	jarMatches, err := zglob.Glob(jarPattern)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(jarMatches))
 
-	classPattern := filepath.Join(archiveDir, "**", "*.class")
+	classPattern := filepath.Join(archiveDir, "runtime_deps", "**", "*.class")
 	classMatches, err := zglob.Glob(classPattern)
 	require.NoError(t, err)
 	assert.Equal(t, 3, len(classMatches))
@@ -257,8 +260,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	// Verify contents of manifest.jar
 	extractedManifestPath := filepath.Join(archiveDir, "manifest")
-	unzip := exec.Command("unzip", manifestJARPath, "-d", extractedManifestPath)
-	err = unzip.Run()
+	err = archiveutil.Unzip(manifestJARPath, extractedManifestPath)
 	require.NoError(t, err)
 	manifestFilePath := filepath.Join(extractedManifestPath, "META-INF", "MANIFEST.MF")
 	require.FileExists(t, manifestFilePath)
@@ -306,6 +308,7 @@ func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	args = append(defaultArgs, args...)
 	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+	defer fileutil.Cleanup(archiveDir)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
 	assert.Equal(t, "my-branch", metadata.CodeRevision.Git.Branch)
@@ -336,12 +339,12 @@ func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.DirExists(t, seedCorpusPath)
 
 	// Verify that runtime dependencies have been packed
-	jarPattern := filepath.Join(archiveDir, "work_dir", "*.jar")
+	jarPattern := filepath.Join(archiveDir, "runtime_deps", "*.jar")
 	jarMatches, err := zglob.Glob(jarPattern)
 	require.NoError(t, err)
 	assert.Equal(t, 17, len(jarMatches))
 
-	classPattern := filepath.Join(archiveDir, "**", "*.class")
+	classPattern := filepath.Join(archiveDir, "runtime_deps", "**", "*.class")
 	classMatches, err := zglob.Glob(classPattern)
 	require.NoError(t, err)
 	assert.Equal(t, 3, len(classMatches))
@@ -352,8 +355,7 @@ func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	// Verify contents of manifest.jar
 	extractedManifestPath := filepath.Join(archiveDir, "manifest")
-	unzip := exec.Command("unzip", manifestJARPath, "-d", extractedManifestPath)
-	err = unzip.Run()
+	err = archiveutil.Unzip(manifestJARPath, extractedManifestPath)
 	require.NoError(t, err)
 	manifestFilePath := filepath.Join(extractedManifestPath, "META-INF", "MANIFEST.MF")
 	require.FileExists(t, manifestFilePath)
@@ -372,6 +374,11 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, a
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	t.Logf("Command: %s", cmd.String())
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	TerminateOnSignal(t, cmd)
+
 	err = cmd.Run()
 	require.NoError(t, err)
 	require.FileExists(t, bundlePath)
@@ -379,6 +386,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, a
 	// Extract the archive into a new temporary directory.
 	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
 	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(archiveDir) })
 	err = artifact.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
 	require.NoError(t, err)
 

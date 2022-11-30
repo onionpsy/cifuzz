@@ -96,6 +96,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	result := &build.Result{
 		Name:            targetClass,
 		BuildDir:        buildDir,
+		ProjectDir:      b.ProjectDir,
 		GeneratedCorpus: generatedCorpus,
 		SeedCorpus:      seedCorpus,
 		RuntimeDeps:     deps,
@@ -124,12 +125,12 @@ func (b *Builder) getExternalDependencies() ([]string, error) {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(outputPath)
+	output, err := os.ReadFile(outputPath)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	deps := strings.Split(string(bytes), string(os.PathListSeparator))
+	deps := strings.Split(strings.TrimSpace(string(output)), string(os.PathListSeparator))
 	return deps, nil
 }
 
