@@ -5,7 +5,7 @@
       "label": "cifuzz coverage (current test)",
       "type": "shell",
       "command": "cifuzz",
-      "args": ["coverage", "-f", "lcov", "-o", "lcov.info", "${fileBasenameNoExtension}"],
+      "args": ["coverage", "--preset=vscode", "${fileBasenameNoExtension}"],
       "problemMatcher": []
     }
   ]

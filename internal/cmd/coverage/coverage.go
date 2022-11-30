@@ -37,6 +37,7 @@ type coverageOptions struct {
 	NumBuildJobs   uint     `mapstructure:"build-jobs"`
 	SeedCorpusDirs []string `mapstructure:"seed-corpus-dirs"`
 	UseSandbox     bool     `mapstructure:"use-sandbox"`
+	Preset         string
 
 	ProjectDir string
 	fuzzTest   string
@@ -139,10 +140,16 @@ or a lcov trace file.
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddUseSandboxFlag,
+		cmdutils.AddPresetFlag,
 	)
+	// This flag is not supposed to be called by a user
+	err := cmd.Flags().MarkHidden("preset")
+	if err != nil {
+		panic(err)
+	}
 	cmd.Flags().StringP("format", "f", "html", "Output format of the coverage report (html/lcov).")
 	cmd.Flags().StringP("output", "o", "", "Output path of the coverage report.")
-	err := cmd.RegisterFlagCompletionFunc("format", completion.ValidCoverageOutputFormat)
+	err = cmd.RegisterFlagCompletionFunc("format", completion.ValidCoverageOutputFormat)
 	if err != nil {
 		panic(err)
 	}
@@ -157,6 +164,29 @@ func (c *coverageCmd) run() error {
 	}
 
 	log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
+
+	if c.opts.Preset == "vscode" {
+		var format string
+		var output string
+		switch c.opts.BuildSystem {
+		case config.BuildSystemCMake, config.BuildSystemBazel:
+			format = coverage.FormatLCOV
+			output = "lcov.info"
+		case config.BuildSystemMaven, config.BuildSystemGradle:
+			format = coverage.FormatHTML
+			output = "coverage.html"
+		default:
+			log.Info("The --vscode flag only supports the following build systems: CMake, Bazel, Maven, Gradle")
+			return nil
+		}
+		
+		if c.opts.OutputFormat == "" {
+			c.opts.OutputFormat = format
+		}
+		if c.opts.OutputPath == "" {
+			c.opts.OutputPath = output
+		}
+	}
 
 	var reportPath string
 

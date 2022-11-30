@@ -130,6 +130,16 @@ func AddInteractiveFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddPresetFlag(cmd *cobra.Command) func() {
+	cmd.Flags().String("preset", "", "Preset for a given environment to execute coverage with necessary flags.\n"+
+		"We recommend not using this flag with '--format' or '--output' because the preset will set these accordingly.\n"+
+		"If '--format' or '--output' are set, they will overwrite the preset.")
+	return func() {
+		ViperMustBindPFlag("preset", cmd.Flags().Lookup("preset"))
+	}
+}
+
+
 func AddPrintJSONFlag(cmd *cobra.Command) func() {
 	cmd.Flags().Bool("json", false, "Print output as JSON")
 	return func() {
@@ -176,3 +186,4 @@ func AddUseSandboxFlag(cmd *cobra.Command) func() {
 		ViperMustBindPFlag("use-sandbox", cmd.Flags().Lookup("use-sandbox"))
 	}
 }
+
