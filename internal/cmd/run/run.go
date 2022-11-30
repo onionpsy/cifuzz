@@ -46,6 +46,7 @@ type runOptions struct {
 	Timeout        time.Duration `mapstructure:"timeout"`
 	UseSandbox     bool          `mapstructure:"use-sandbox"`
 	PrintJSON      bool          `mapstructure:"print-json"`
+	BuildOnly      bool          `mapstructure:"build-only"`
 
 	ProjectDir string
 	fuzzTest   string
@@ -205,6 +206,7 @@ depends on the build system configured for the project.
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddBuildCommandFlag,
 		cmdutils.AddBuildJobsFlag,
+		cmdutils.AddBuildOnlyFlag,
 		cmdutils.AddDictFlag,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddPrintJSONFlag,
@@ -237,6 +239,10 @@ func (c *runCmd) run() error {
 	buildResult, err := c.buildFuzzTest()
 	if err != nil {
 		return err
+	}
+
+	if c.opts.BuildOnly {
+		return nil
 	}
 
 	// Initialize the report handler. Only do this right before we start

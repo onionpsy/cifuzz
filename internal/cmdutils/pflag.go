@@ -66,6 +66,14 @@ func AddBuildJobsFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddBuildOnlyFlag(cmd *cobra.Command) func() {
+	cmd.Flags().Bool("build-only", false,
+		"Only build the fuzz test and don't execute it.")
+	return func() {
+		ViperMustBindPFlag("build-only", cmd.Flags().Lookup("build-only"))
+	}
+}
+
 func AddCommitFlag(cmd *cobra.Command) func() {
 	cmd.Flags().String("commit", "",
 		"Commit to use in the bundle config.\n"+

@@ -90,6 +90,10 @@ func TestIntegration_Bazel(t *testing.T) {
 		testNoCIFuzz(t, cifuzzRunner)
 	})
 
+	t.Run("runBuildOnly", func(t *testing.T) {
+		cifuzzRunner.Run(t, &shared.RunOptions{Args: []string{"--build-only"}})
+	})
+
 	t.Run("runWithAdditionalArgs", func(t *testing.T) {
 		testRunWithAdditionalArgs(t, cifuzzRunner)
 	})
