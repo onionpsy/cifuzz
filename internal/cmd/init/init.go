@@ -2,6 +2,7 @@ package init
 
 import (
 	_ "embed"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -9,6 +10,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -93,7 +95,7 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 
 	switch buildSystem {
 	case config.BuildSystemBazel:
-		log.Print(bazelSetup)
+		log.Print(fmt.Sprintf(bazelSetup, dependencies.CIFuzzBazelCommit))
 	case config.BuildSystemCMake:
 		// Note: We set NO_SYSTEM_ENVIRONMENT_PATH to avoid that the
 		// system-wide cmake package takes precedence over a package

@@ -7,12 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/archiveutil"
@@ -79,6 +81,11 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 // support for combining sanitizers.
 func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	var err error
+
+	err = b.checkCIFuzzBazelRepoCommit()
+	if err != nil {
+		return nil, err
+	}
 
 	var binLabels []string
 	for i := range fuzzTests {
@@ -218,6 +225,11 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 
 func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests []string) ([]*build.Result, error) {
 	var err error
+
+	err = b.checkCIFuzzBazelRepoCommit()
+	if err != nil {
+		return nil, err
+	}
 
 	env, err := build.CommonBuildEnv()
 	if err != nil {
@@ -476,4 +488,57 @@ func PathFromLabel(label string, flags []string) (string, error) {
 	res = strings.ReplaceAll(res, "/", string(filepath.Separator))
 
 	return res, nil
+}
+
+// Parses formatted bazel query --output=build output such as:
+//
+// git_repository(
+//  name = "cifuzz",
+//  remote = "https://github.com/CodeIntelligenceTesting/cifuzz-bazel",
+//  commit = "ccb0bb7f27864626f668cca6d6e87776e6f87bd",
+//)
+//
+// For backwards compatibility, this regex also matches a branch that
+// was used in cifuzz v0.9.0 and earlier. The branch will never be equal
+// to a commit hash.
+var cifuzzCommitRegex = regexp.MustCompile(`(?m)^\s*(?:commit|branch)\s*=\s*"([^"]*)"`)
+
+func (b *Builder) checkCIFuzzBazelRepoCommit() error {
+	cmd := exec.Command("bazel", "query", "--output=build", "//external:cifuzz")
+	out, err := cmd.Output()
+	if err != nil {
+		// It's expected that bazel might fail due to user configuration,
+		// so we print the error without the stack trace.
+		// If the reason for the error is that the cifuzz repository is
+		// missing, produce a more helpful error message.
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
+		if strings.Contains(err.Error(), "target 'cifuzz' not declared in package") {
+			log.Error(errors.New(`The "cifuzz" repository is not defined in the WORKSPACE file, run
+'cifuzz init' to see setup instructions.`))
+		} else {
+			log.Error(err)
+		}
+		return cmdutils.ErrSilent
+	}
+	matches := cifuzzCommitRegex.FindSubmatch(out)
+	if matches == nil {
+		log.Error(errors.Errorf(`Failed to parse the definition of the "cifuzz" repository in the
+WORKSPACE file, run 'cifuzz init' to see setup instructions.
+bazel query output:
+%s`, string(out)))
+		return cmdutils.ErrSilent
+	}
+	cifuzzRepoCommit := string(matches[1])
+	if cifuzzRepoCommit != dependencies.CIFuzzBazelCommit {
+		log.Error(errors.Errorf(
+			`Please update the commit specified for the "cifuzz" repository in the
+WORKSPACE file.
+Required: %[1]s
+Current : %[2]s`,
+			fmt.Sprintf(`commit = %q`, dependencies.CIFuzzBazelCommit),
+			strings.TrimSpace(string(matches[0])),
+		))
+		return cmdutils.ErrSilent
+	}
+	return nil
 }

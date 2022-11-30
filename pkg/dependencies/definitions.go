@@ -187,3 +187,10 @@ var All = Dependencies{
 		},
 	},
 }
+
+// CIFuzzBazelCommit is the commit of the
+// https://github.com/CodeIntelligenceTesting/cifuzz-bazel
+// repository that is required by this version of cifuzz.
+//
+// Keep in sync with examples/bazel/WORKSPACE.
+const CIFuzzBazelCommit = "b013aa0f90fe8ac60adfc6d9640a9cfa451dda9e"
