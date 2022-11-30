@@ -1,5 +1,11 @@
 ## How to create a new cifuzz release
 
+___
+> **IMPORTANT:** Before publishing a new release, please make sure that there
+are no [open tickets with the `RELEASE_BLOCKER` tag in
+Jira](https://code-intelligence.atlassian.net/issues/?jql=labels%20%3D%20%22RELEASE_BLOCKER%22).
+___
+
 The process for creating a new cifuzz release is semi-automated.
 
 ### Step 1: Create a version tag
