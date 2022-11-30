@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://code-intelligence.com"><img src="/docs/assets/logo.png" alt="Code Intelligence" /></a>
+  <a href="https://code-intelligence.com"><img src="/docs/assets/header.png" alt="cifuzz by Code Intelligence" /></a>
   <h1>cifuzz</h1>
   <p>makes fuzz tests as easy as unit tests</p>
   <a href="https://github.com/CodeIntelligenceTesting/cifuzz/releases">
@@ -42,7 +42,7 @@
 **cifuzz** is a CLI tool that helps you to integrate and run fuzzing
 based tests into your project.
 
-### Features
+## Features
 
 * Easily set up, create and run fuzz tests
 * Generate coverage reports that [can be integrated in your
@@ -60,6 +60,16 @@ based tests into your project.
 ![Bazel](/docs/assets/tools/bazel.png)
 
 ## Getting started
+
+All you need to get started with fuzzing are these three simple commands:
+
+```elixir
+$ cifuzz init            # initialize your project
+$ cifuzz create          # create a simple fuzz test to start from
+$ cifuzz run myfuzztest  # run the fuzz test
+```
+
+![CLI showcase](/docs/assets/showcase.gif)
 
 If you are new to the world of fuzzing, we recommend you to take a
 look at our [Glossary](docs/Glossary.md) and our

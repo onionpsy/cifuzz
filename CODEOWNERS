@@ -18,6 +18,7 @@
 
 /.github @jochil
 /docs @jochil 
+/docs/assets/tapes @MarkusZoppelt
 /examples @jochil
 /pkg/coverage @jochil
 /pkg/dependencies @jochil
