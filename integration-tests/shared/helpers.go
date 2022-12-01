@@ -21,6 +21,7 @@ import (
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/util/executil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 var installOnce sync.Once
@@ -77,6 +78,8 @@ func AppendLines(t *testing.T, filePath string, linesToAdd []string) {
 // CopyTestdataDir copies the "testdata" folder in the current working directory
 // to a temporary directory called "cifuzz-<name>-testdata" and returns the path.
 func CopyTestdataDir(t *testing.T, name string) string {
+	fileutil.ForceLongPathTempDir()
+
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 

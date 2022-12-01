@@ -3,6 +3,7 @@ package fileutil
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -136,4 +137,34 @@ func ForceSymlink(oldname, newname string) error {
 		return errors.WithStack(err)
 	}
 	return nil
+}
+
+// ForceLongPathTempDir ensures that os.TempDir() creates temporary directories
+// with long paths on Windows, resolving all "8.3" style short names. This is
+// necessary because some external tools automatically resolve short paths to
+// long paths, which can cause problems when trying to relativize paths.
+//
+// We prevent this issue by forcing long paths in os.TempDir() rather than
+// normalizing paths whenever we relativize them for the following reasons:
+// * Go does not provide a function that normalizes paths without following
+//   symlinks, so we would have to implement it ourselves.
+// * The temporary directories we create in cifuzz appear to be the only common
+//   source of 8.3 paths and users are very unlikely to launch cifuzz from an
+//   8.3 path.
+func ForceLongPathTempDir() {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	tempDirLongPath, err := filepath.EvalSymlinks(os.TempDir())
+	if err != nil {
+		log.Error(err, "failed to get long path for temp dir")
+		return
+	}
+	// os.TempDir() calls GetTempPath on Windows, which first inspects
+	// the TMP environment variable.
+	// https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppatha
+	err = os.Setenv("TMP", tempDirLongPath)
+	if err != nil {
+		log.Error(err, "failed to set TMP to long path for temp dir")
+	}
 }
