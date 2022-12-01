@@ -1,4 +1,3 @@
-
 Add the following to your WORKSPACE file:
 
     load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
@@ -24,3 +23,4 @@ Add the following to your WORKSPACE file:
         commit = "%s",
         remote = "https://github.com/CodeIntelligenceTesting/cifuzz-bazel",
     )
+

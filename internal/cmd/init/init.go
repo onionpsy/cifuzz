@@ -63,6 +63,8 @@ func NewWithOptions(opts *Options) *cobra.Command {
 }
 
 func run(opts *Options) error {
+	setUpAndMentionBuildSystemIntegrations(opts.Dir)
+
 	log.Debugf("Creating config file in directory: %s", opts.Dir)
 	configpath, err := config.CreateProjectConfig(opts.Dir)
 	if err != nil {
@@ -75,8 +77,6 @@ func run(opts *Options) error {
 		return err
 	}
 	log.Successf("Configuration saved in %s", fileutil.PrettifyPath(configpath))
-
-	setUpAndMentionBuildSystemIntegrations(opts.Dir)
 
 	log.Print(`
 Use 'cifuzz create' to create your first fuzz test.`)

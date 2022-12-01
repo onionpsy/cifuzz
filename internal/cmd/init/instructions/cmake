@@ -5,3 +5,4 @@ add_library(...) or add_executable(...) calls:
 
     find_package(cifuzz NO_SYSTEM_ENVIRONMENT_PATH)
     enable_fuzz_testing()
+

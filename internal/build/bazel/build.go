@@ -492,11 +492,11 @@ func PathFromLabel(label string, flags []string) (string, error) {
 
 // Parses formatted bazel query --output=build output such as:
 //
-// git_repository(
-//  name = "cifuzz",
-//  remote = "https://github.com/CodeIntelligenceTesting/cifuzz-bazel",
-//  commit = "ccb0bb7f27864626f668cca6d6e87776e6f87bd",
-//)
+//	git_repository(
+//	  name = "cifuzz",
+//	  remote = "https://github.com/CodeIntelligenceTesting/cifuzz-bazel",
+//	  commit = "ccb0bb7f27864626f668cca6d6e87776e6f87bd",
+//	)
 //
 // For backwards compatibility, this regex also matches a branch that
 // was used in cifuzz v0.9.0 and earlier. The branch will never be equal
