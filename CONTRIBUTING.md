@@ -7,24 +7,41 @@ For more information, see [how to create and publish a new release](./docs/RELEA
 ## Building from Source (Linux / macOS)
 
 ### Prerequisites
+
+#### Build dependencies:
 * [git](https://git-scm.com/)
-* [make](https://www.gnu.org/software/make/)
-* [CMake >= 3.21](https://cmake.org/)
-* [LLVM >= 14](https://clang.llvm.org/get_started.html)
 * [go >= 1.18](https://go.dev/doc/install)
 * [libcap](https://man7.org/linux/man-pages/man3/libcap.3.html)
+
+#### Test dependencies:
+* [LLVM >= 14](https://clang.llvm.org/get_started.html)
+* [make](https://www.gnu.org/software/make/)
+* [CMake >= 3.21](https://cmake.org/)
+* [Bazel >= 5.3.1](https://bazel.build/install)
+* Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
+  [Zulu](https://www.azul.com/downloads/zulu-community/))
+* [Maven](https://maven.apache.org/install.html)
+* [Gradle](https://gradle.org/install/) >= 4.9
 
 
 ### Ubuntu / Debian
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo apt install git make cmake clang llvm golang-go libcap-dev
+sudo apt install git make cmake clang llvm golang-go libcap-dev default-jdk maven gradle
+
+# install bazelisk
+sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 ```
 
 ### Arch
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo pacman -S git make cmake clang llvm go
+sudo pacman -S git make cmake clang llvm go jdk-openjdk maven gradle
+
+# install bazelisk
+sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 ```
 Unfortunately, the Arch `libcap` package does not include the static
 libcap library, which is needed to build cifuzz. You have to build it from
@@ -41,10 +58,19 @@ make install
 ### macOS
 <!-- when changing this, please make sure it`is in sync with the E2E pipeline -->
 ```bash
-brew install git cmake llvm go
+brew install git cmake llvm lcov go openjdk maven gradle bazelisk
 ```
 
-Add the following to your `~/.zshrc` or `~/.bashrc` to use the correct version of
+> Unfortunately, there is a bug in Bazel < 6 on macOS. However, if you set the
+`USE_BAZEL_VERSION` environment variable, bazelisk will pick that up and use
+the correct version accordingly. E.g., put this in your .zshrc:
+
+```zsh
+export USE_BAZEL_VERSION=6.0.0-pre.20221020.1
+```
+
+
+Finally, add the following to your `~/.zshrc` or `~/.bashrc` to use the correct version of
 LLVM:
 ```bash
 export PATH=$(brew --prefix)/opt/llvm/bin:$PATH
@@ -60,8 +86,6 @@ cd cifuzz
 make test
 make install
 ```
-If everything went fine, you will find the newly created directory
-`~/cifuzz`. Do not forget to add `~/cifuzz/bin` to your `$PATH`.
 
 To verify the installation we recommend you to start a fuzzing run
 in one of our example projects:
