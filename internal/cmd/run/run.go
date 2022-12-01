@@ -49,6 +49,7 @@ type runOptions struct {
 
 	ProjectDir string
 	fuzzTest   string
+	argsToPass []string
 }
 
 func (opts *runOptions) validate() error {
@@ -114,7 +115,7 @@ func New() *cobra.Command {
 	var bindFlags func()
 
 	cmd := &cobra.Command{
-		Use:   "run [flags] <fuzz test>",
+		Use:   "run [flags] <fuzz test> [--] [<build system arg>...] ",
 		Short: "Build and run a fuzz test",
 		Long: `This command builds and executes a fuzz test. The usage of this command
 depends on the build system configured for the project.
@@ -135,6 +136,10 @@ depends on the build system configured for the project.
   Command completion for the <fuzz test> argument is supported.
 
   The --build-command flag is ignored.
+
+  Additional Bazel arguments can be passed after a "--". For example:
+
+    cifuzz run my_fuzz_test -- --sandbox_debug
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Maven/Gradle") + `
   <fuzz test> is the name of the class containing the fuzz test.
@@ -159,8 +164,21 @@ depends on the build system configured for the project.
 
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,
-		Args:              cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Check correct number of fuzz test args (exactly one)
+			var lenFuzzTestArgs int
+			var argsToPass []string
+			if cmd.ArgsLenAtDash() != -1 {
+				lenFuzzTestArgs = cmd.ArgsLenAtDash()
+				argsToPass = args[cmd.ArgsLenAtDash():]
+			} else {
+				lenFuzzTestArgs = len(args)
+			}
+			if lenFuzzTestArgs != 1 {
+				msg := fmt.Sprintf("Exactly one <fuzz test> argument must be provided, got %d", lenFuzzTestArgs)
+				return cmdutils.WrapIncorrectUsageError(errors.New(msg))
+			}
+
 			// Bind viper keys to flags. We can't do this in the New
 			// function, because that would re-bind viper keys which
 			// were bound to the flags of other commands before.
@@ -173,6 +191,7 @@ depends on the build system configured for the project.
 			}
 
 			opts.fuzzTest = args[0]
+			opts.argsToPass = argsToPass
 			return opts.validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -286,6 +305,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
+			Args:       c.opts.argsToPass,
 			Engine:     "libfuzzer",
 			NumJobs:    c.opts.NumBuildJobs,
 			Stdout:     c.OutOrStdout(),
@@ -302,6 +322,11 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 		return buildResults[0], nil
 	case config.BuildSystemCMake:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for CMake.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			// TODO: Do not hardcode this value.
@@ -327,6 +352,11 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 		return buildResults[0], nil
 	case config.BuildSystemMaven:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
 		builder, err := maven.NewBuilder(&maven.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Parallel: maven.ParallelOptions{
@@ -345,6 +375,11 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 		return buildResult, err
 	case config.BuildSystemGradle:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
 		builder, err := gradle.NewBuilder(&gradle.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Parallel: gradle.ParallelOptions{
@@ -363,6 +398,11 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 		return buildResult, err
 	case config.BuildSystemOther:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for other build systems.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   c.opts.ProjectDir,
 			BuildCommand: c.opts.BuildCommand,

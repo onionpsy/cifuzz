@@ -24,6 +24,7 @@ import (
 
 type BuilderOptions struct {
 	ProjectDir string
+	Args       []string
 	Engine     string
 	NumJobs    uint
 	Stdout     io.Writer
@@ -175,6 +176,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	args := []string{"run"}
 	args = append(args, commonFlags...)
 	args = append(args, runFlags...)
+	args = append(args, b.Args...)
 	args = append(args, binLabels...)
 
 	cmd = exec.Command("bazel", args...)

@@ -90,6 +90,10 @@ func TestIntegration_Bazel(t *testing.T) {
 		testNoCIFuzz(t, cifuzzRunner)
 	})
 
+	t.Run("runWithAdditionalArgs", func(t *testing.T) {
+		testRunWithAdditionalArgs(t, cifuzzRunner)
+	})
+
 	t.Run("runAndLCOV", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
 		// Requires the generated corpus to be populated by run.
@@ -106,6 +110,17 @@ func TestIntegration_Bazel(t *testing.T) {
 
 	t.Run("coverage", func(t *testing.T) {
 		testCoverage(t, cifuzzRunner)
+	})
+}
+
+func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run bazel and expect it to fail because we passed it a non-existent flag
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Args: []string{"--", "--non-existent-flag"},
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`Unrecognized option: --non-existent-flag`),
+		},
+		ExpectError: true,
 	})
 }
 

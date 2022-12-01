@@ -77,6 +77,7 @@ type RunOptions struct {
 
 	ExpectedOutputs              []*regexp.Regexp
 	TerminateAfterExpectedOutput bool
+	ExpectError                  bool
 }
 
 func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
@@ -194,7 +195,11 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		if seen && opts.TerminateAfterExpectedOutput && executil.IsTerminatedExitErr(waitErr) {
 			return
 		}
-		require.NoError(t, waitErr)
+		if opts.ExpectError {
+			require.Error(t, waitErr)
+		} else {
+			require.NoError(t, waitErr)
+		}
 	case <-runCtx.Done():
 		require.NoError(t, runCtx.Err())
 	}
