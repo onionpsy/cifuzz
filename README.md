@@ -150,15 +150,19 @@ choco install cmake llvm
 **Ubuntu / Debian**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
+sudo apt install clang llvm lcov default-jdk
+
+# install bazelisk
 sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
 sudo chmod +x /usr/local/bin/bazel
-sudo apt install clang llvm lcov default-jdk
 ```
 
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
 sudo pacman -S clang llvm lcov python jdk-openjdk
+
+# install bazelisk
 sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
 sudo chmod +x /usr/local/bin/bazel
 ```
