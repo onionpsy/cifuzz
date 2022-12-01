@@ -17,7 +17,7 @@ For more information, see [how to create and publish a new release](./docs/RELEA
 * [LLVM >= 14](https://clang.llvm.org/get_started.html)
 * [make](https://www.gnu.org/software/make/)
 * [CMake >= 3.21](https://cmake.org/)
-* [Bazel >= 5.3.1](https://bazel.build/install)
+* [Bazel >= 5.3.2](https://bazel.build/install)
 * Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
 * [Maven](https://maven.apache.org/install.html)
