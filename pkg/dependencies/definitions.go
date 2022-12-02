@@ -1,6 +1,11 @@
 package dependencies
 
 import (
+	"os"
+	"os/exec"
+	"path"
+	"strings"
+
 	"github.com/Masterminds/semver"
 
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -17,6 +22,26 @@ var deps = Dependencies{
 			return clangVersion(dep, clangCheck)
 		},
 		Installed: func(dep *Dependency) bool {
+			var clang string
+			cc := os.Getenv("CC")
+			if cc != "" && strings.Contains(path.Base(cc), "clang") {
+				clang = cc
+			}
+
+			if clang == "" {
+				cxx := os.Getenv("CXX")
+				if cxx != "" && strings.Contains(path.Base(cxx), "clang") {
+					clang = cxx
+				}
+			}
+
+			if clang != "" {
+				_, err := exec.LookPath(clang)
+				if err == nil {
+					return true
+				}
+			}
+
 			return dep.checkFinder(dep.finder.ClangPath)
 		},
 	},
