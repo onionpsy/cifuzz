@@ -33,6 +33,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -479,10 +480,16 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		readOnlyBindings = append(readOnlyBindings, installBase)
 	}
 
+	env := os.Environ()
+	env, err = envutil.Setenv(env, "NO_CIFUZZ", "1")
+	if err != nil {
+		return err
+	}
+
 	runnerOpts := &libfuzzer.RunnerOptions{
 		Dictionary:         c.opts.Dictionary,
 		EngineArgs:         c.opts.EngineArgs,
-		EnvVars:            []string{"NO_CIFUZZ=1"},
+		EnvVars:            env,
 		FuzzTarget:         buildResult.Executable,
 		GeneratedCorpusDir: buildResult.GeneratedCorpus,
 		KeepColor:          !c.opts.PrintJSON,
