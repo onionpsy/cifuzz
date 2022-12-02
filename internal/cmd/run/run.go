@@ -399,7 +399,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		return buildResult, err
 	case config.BuildSystemOther:
 		if len(c.opts.argsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for other build systems.\n"+
+			log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
