@@ -12,6 +12,9 @@ if(MSVC)
   add_library(parser parser.cpp)
 else()
   add_library(parser SHARED parser.cpp)
+  set_target_properties(parser PROPERTIES
+                        VERSION 4.2
+                        SOVERSION 4)
 endif()
 target_sources(parser PUBLIC
                parser.h)
