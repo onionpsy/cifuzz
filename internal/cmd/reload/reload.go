@@ -8,7 +8,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
 
 type options struct {
@@ -108,7 +107,7 @@ func (c *reloadCmd) checkDependencies() error {
 	if c.opts.BuildSystem == config.BuildSystemCMake {
 		deps = append(deps, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}...)
 	}
-	err := dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	err := dependencies.Check(deps)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

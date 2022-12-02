@@ -26,7 +26,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/artifact"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/pkg/vcs"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -540,7 +539,7 @@ func (b *Bundler) checkDependencies() error {
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.CLANG}
 	}
-	err := dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	err := dependencies.Check(deps)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

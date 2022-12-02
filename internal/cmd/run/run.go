@@ -30,7 +30,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -537,13 +536,13 @@ func (c *runCmd) checkDependencies() error {
 			dependencies.LLVM_SYMBOLIZER,
 			dependencies.CMAKE,
 		}
-		depsErr = dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps)
 	case config.BuildSystemMaven:
 		deps := []dependencies.Key{
 			dependencies.JAVA,
 			dependencies.MAVEN,
 		}
-		depsErr = dependencies.Check(deps, dependencies.MavenDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps)
 	case config.BuildSystemGradle:
 		// First check if gradle wrapper exists and check for gradle in path otherwise
 		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
@@ -560,13 +559,13 @@ func (c *runCmd) checkDependencies() error {
 			dependencies.JAVA,
 			dependencies.GRADLE,
 		}
-		depsErr = dependencies.Check(deps, dependencies.GradleDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps)
 	case config.BuildSystemOther:
 		deps := []dependencies.Key{
 			dependencies.CLANG,
 			dependencies.LLVM_SYMBOLIZER,
 		}
-		depsErr = dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps)
 	case config.BuildSystemBazel:
 		// When bazel is used, all dependencies are managed via bazel
 		return nil

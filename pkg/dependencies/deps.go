@@ -74,7 +74,11 @@ func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 }
 
 // Check iterates of a list of dependencies and checks if they are fulfilled
-func Check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error {
+func Check(keys []Key) error {
+	return check(keys, All, runfiles.Finder)
+}
+
+func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error {
 	allFine := true
 	for _, key := range keys {
 		dep, found := deps[key]

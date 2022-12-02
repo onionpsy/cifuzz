@@ -25,7 +25,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -328,7 +327,7 @@ func (c *coverageCmd) checkDependencies() error {
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
-	err := dependencies.Check(deps, dependencies.All, runfiles.Finder)
+	err := dependencies.Check(deps)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)
