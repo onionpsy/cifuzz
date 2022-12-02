@@ -1,8 +1,9 @@
 package dependencies
 
 import (
+	"fmt"
+
 	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -83,7 +84,7 @@ func Check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) (bool,
 	for _, key := range keys {
 		dep, found := deps[key]
 		if !found {
-			return false, errors.Errorf("Undefined dependency %s", key)
+			panic(fmt.Sprintf("Undefined dependency %s", key))
 		}
 
 		dep.finder = finder
