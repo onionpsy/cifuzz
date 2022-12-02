@@ -12,8 +12,7 @@ import (
 
 func TestCheck(t *testing.T) {
 	keys := []Key{CLANG}
-	deps, err := Define(keys)
-	require.NoError(t, err)
+	deps := getDeps(keys)
 
 	dep := deps[CLANG]
 	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
@@ -23,26 +22,24 @@ func TestCheck(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	err = check(keys, deps, finder)
+	err := check(keys, deps, finder)
 	require.NoError(t, err)
 }
 
 func TestCheck_NotInstalled(t *testing.T) {
 	keys := []Key{CLANG}
-	deps, err := Define(keys)
-	require.NoError(t, err)
+	deps := getDeps(keys)
 
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("", errors.New("missing-error"))
 
-	err = check(keys, deps, finder)
+	err := check(keys, deps, finder)
 	require.Error(t, err)
 }
 
 func TestCheck_WrongVersion(t *testing.T) {
 	keys := []Key{CLANG}
-	deps, err := Define(keys)
-	require.NoError(t, err)
+	deps := getDeps(keys)
 
 	// overwrite GetVersion for clang
 	dep := deps[CLANG]
@@ -53,14 +50,13 @@ func TestCheck_WrongVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	err = check(keys, deps, finder)
+	err := check(keys, deps, finder)
 	require.Error(t, err)
 }
 
 func TestCheck_ShortVersion(t *testing.T) {
 	keys := []Key{CLANG}
-	deps, err := Define(keys)
-	require.NoError(t, err)
+	deps := getDeps(keys)
 
 	// overwrite GetVersion for clang
 	dep := deps[CLANG]
@@ -71,14 +67,13 @@ func TestCheck_ShortVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	err = check(keys, deps, finder)
+	err := check(keys, deps, finder)
 	require.NoError(t, err)
 }
 
 func TestCheck_UnableToGetVersion(t *testing.T) {
 	keys := []Key{CLANG}
-	deps, err := Define(keys)
-	require.NoError(t, err)
+	deps := getDeps(keys)
 
 	// overwrite GetVersion for clang
 	dep := deps[CLANG]
@@ -89,6 +84,6 @@ func TestCheck_UnableToGetVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	err = check(keys, deps, finder)
+	err := check(keys, deps, finder)
 	require.NoError(t, err)
 }

@@ -30,7 +30,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 
 	log.Output = oldOut
-	dependencies.ResetDefaultsForTestsOnly()
 }
 
 func TestFail(t *testing.T) {
@@ -39,10 +38,8 @@ func TestFail(t *testing.T) {
 }
 
 func TestClangMissing(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{
-		dependencies.CLANG, dependencies.LLVM_SYMBOLIZER, dependencies.LLVM_COV, dependencies.LLVM_PROFDATA, dependencies.CMAKE,
-	})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CLANG])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
 
 	// clone the example project because this command needs to parse an actual
 	// project config... if there is none it will fail before the dependency check
@@ -58,10 +55,8 @@ func TestClangMissing(t *testing.T) {
 }
 
 func TestCMakeMissing(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{
-		dependencies.CLANG, dependencies.LLVM_SYMBOLIZER, dependencies.LLVM_COV, dependencies.LLVM_PROFDATA, dependencies.CMAKE,
-	})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CMAKE])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
 
 	// clone the example project because this command needs to parse an actual
 	// project config... if there is none it will fail before the dependency check
@@ -78,11 +73,9 @@ func TestCMakeMissing(t *testing.T) {
 }
 
 func TestLlvmCovVersion(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{
-		dependencies.CLANG, dependencies.LLVM_SYMBOLIZER, dependencies.LLVM_COV, dependencies.LLVM_PROFDATA, dependencies.CMAKE,
-	})
+	dependencies.MockAllDeps(t)
 
-	dep := deps[dependencies.LLVM_COV]
+	dep := dependencies.GetDep(dependencies.LLVM_COV)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	// clone the example project because this command needs to parse an actual

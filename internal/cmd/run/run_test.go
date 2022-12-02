@@ -30,7 +30,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 
 	log.Output = oldOut
-	dependencies.ResetDefaultsForTestsOnly()
 }
 
 func TestFail(t *testing.T) {
@@ -39,9 +38,9 @@ func TestFail(t *testing.T) {
 }
 
 func TestClangMissing(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE, dependencies.LLVM_SYMBOLIZER})
+	dependencies.MockAllDeps(t)
 	// let the clang dep fail
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CLANG])
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
 
 	// clone the example project because this command needs to parse an actual
 	// project config... if there is none it will fail before the dependency check
@@ -53,13 +52,13 @@ func TestClangMissing(t *testing.T) {
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
+	fmt.Fprintf(os.Stderr, string(output))
 	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "clang"))
 }
 
 func TestLlvmSymbolizerVersion(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE, dependencies.LLVM_SYMBOLIZER})
-
-	dep := deps[dependencies.LLVM_SYMBOLIZER]
+	dependencies.MockAllDeps(t)
+	dep := dependencies.GetDep(dependencies.LLVM_SYMBOLIZER)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	// clone the example project because this command needs to parse an actual
@@ -72,6 +71,7 @@ func TestLlvmSymbolizerVersion(t *testing.T) {
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
+	fmt.Fprintf(os.Stderr, string(output))
 	assert.Contains(t, string(output),
 		fmt.Sprintf(dependencies.MESSAGE_VERSION, "llvm-symbolizer", dep.MinVersion.String(), version))
 }

@@ -1,19 +1,32 @@
 package dependencies
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Masterminds/semver"
-	"github.com/stretchr/testify/require"
 )
 
-// Creates a set of dependency mocks
-// all dependcies are marked as "installed" and
-// are present in just the right version by default
-func CreateTestDeps(t *testing.T, keys []Key) Dependencies {
+func GetDep(key Key) *Dependency {
+	dep, found := deps[key]
+	if found {
+		return dep
+	}
+	panic(fmt.Sprintf("Unknown dependency %s", key))
+}
+
+func getDeps(keys []Key) Dependencies {
+	deps := Dependencies{}
+	for _, key := range keys {
+		deps[key] = GetDep(key)
+	}
+	return deps
+}
+
+// MockAllDeps marks all the dependencies of this package as installed
+// in the right version
+func MockAllDeps(t *testing.T) {
 	t.Helper()
-	deps, err := Define(keys)
-	require.NoError(t, err)
 
 	// mock functions
 	versionFunc := func(dep *Dependency) (*semver.Version, error) {
@@ -29,12 +42,10 @@ func CreateTestDeps(t *testing.T, keys []Key) Dependencies {
 		dep.GetVersion = versionFunc
 		dep.Installed = installedFunc
 	}
-
-	CMakeDeps = deps
-	return deps
 }
 
-// Replaces the `GetVersion` function with one that returns version 0.0.0
+// OverwriteGetVersionWith0 marks the specified dependency as installed
+// in version 0.0.0
 func OverwriteGetVersionWith0(dep *Dependency) *semver.Version {
 	version := semver.MustParse("0.0.0")
 	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
@@ -43,8 +54,8 @@ func OverwriteGetVersionWith0(dep *Dependency) *semver.Version {
 	return version
 }
 
-// Replaces the `Installed` function with one that returns false
-func OverwriteInstalledWithFalse(dep *Dependency) {
+// OverwriteUninstalled marks the specified dependency as uninstalled
+func OverwriteUninstalled(dep *Dependency) {
 	dep.Installed = func(d *Dependency) bool {
 		return false
 	}

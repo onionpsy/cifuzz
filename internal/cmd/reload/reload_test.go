@@ -31,7 +31,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 
 	log.Output = oldOut
-	dependencies.ResetDefaultsForTestsOnly()
 }
 
 func TestReloadCmd_FailsIfNoCIFuzzProject(t *testing.T) {
@@ -60,8 +59,8 @@ func TestClangMissing(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CLANG])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
@@ -79,8 +78,8 @@ func TestCMakeMissing(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CMAKE])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
@@ -98,8 +97,8 @@ func TestWrongCMakeVersion(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE})
-	dep := deps[dependencies.CMAKE]
+	dependencies.MockAllDeps(t)
+	dep := dependencies.GetDep(dependencies.CMAKE)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)

@@ -2,75 +2,14 @@ package dependencies
 
 import (
 	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 type Dependencies map[Key]*Dependency
 
-var CMakeDeps Dependencies
-var MavenDeps Dependencies
-var GradleDeps Dependencies
-
-func init() {
-	setDefaults()
-}
-
-func setDefaults() {
-	cmakeDeps, err := Define([]Key{
-		CLANG,
-		CMAKE,
-		LLVM_COV,
-		LLVM_PROFDATA,
-		LLVM_SYMBOLIZER,
-	})
-	if err != nil {
-		panic("Unable to define cmake dependencies")
-	}
-	CMakeDeps = cmakeDeps
-
-	mavenDeps, err := Define([]Key{
-		JAVA,
-		MAVEN,
-	})
-	if err != nil {
-		panic("Unable to define maven dependencies")
-	}
-	MavenDeps = mavenDeps
-
-	gradleDeps, err := Define([]Key{
-		JAVA,
-		GRADLE,
-	})
-	if err != nil {
-		panic("Unable to define gradle dependencies")
-	}
-	GradleDeps = gradleDeps
-}
-
-func ResetDefaultsForTestsOnly() {
-	setDefaults()
-}
-
-// Defines a set of dependencies
-func Define(keys []Key) (Dependencies, error) {
-	deps := Dependencies{}
-	for _, key := range keys {
-		if dep, found := All[key]; found {
-			// make a copy of the dependency to be able to modify it
-			// without side effects, for example in tests
-			newDep := dep
-			deps[key] = newDep
-			continue
-		}
-		return nil, errors.Errorf("Unknown dependency %s", key)
-	}
-	return deps, nil
-}
-
-// List of All known dependencies
-var All = Dependencies{
+// List of all known dependencies
+var deps = Dependencies{
 	CLANG: {
 		Key:        CLANG,
 		MinVersion: *semver.MustParse("11.0.0"),

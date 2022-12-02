@@ -50,7 +50,7 @@ type Dependency struct {
 }
 
 // Compares MinVersion against GetVersion
-func (dep *Dependency) CheckVersion() bool {
+func (dep *Dependency) checkVersion() bool {
 	currentVersion, err := dep.GetVersion(dep)
 	if err != nil {
 		log.Warnf("Unable to get current version for %s, message: %v", dep.Key, err)
@@ -75,7 +75,7 @@ func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 
 // Check iterates of a list of dependencies and checks if they are fulfilled
 func Check(keys []Key) error {
-	return check(keys, All, runfiles.Finder)
+	return check(keys, deps, runfiles.Finder)
 }
 
 func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error {
@@ -99,7 +99,7 @@ func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error 
 			allFine = false
 		}
 
-		if !dep.CheckVersion() {
+		if !dep.checkVersion() {
 			allFine = false
 		}
 

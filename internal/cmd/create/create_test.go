@@ -31,7 +31,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 
 	log.Output = oldOut
-	dependencies.ResetDefaultsForTestsOnly()
 }
 
 func TestOk(t *testing.T) {
@@ -88,8 +87,8 @@ func TestCreateCmd_OutDir(t *testing.T) {
 }
 
 func TestCMakeMissing(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CMAKE])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
@@ -113,9 +112,8 @@ func TestCMakeMissing(t *testing.T) {
 }
 
 func TestClangVersion(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE})
-
-	dep := deps[dependencies.CLANG]
+	dependencies.MockAllDeps(t)
+	dep := dependencies.GetDep(dependencies.CLANG)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)

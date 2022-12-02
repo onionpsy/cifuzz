@@ -39,7 +39,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 
 	log.Output = oldOut
-	dependencies.ResetDefaultsForTestsOnly()
 }
 
 func TestUnknownBuildSystem(t *testing.T) {
@@ -48,10 +47,8 @@ func TestUnknownBuildSystem(t *testing.T) {
 }
 
 func TestClangMissing(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{
-		dependencies.CLANG, dependencies.CMAKE,
-	})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CLANG])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
 
 	opts := &options{}
 	opts.BuildSystem = config.BuildSystemCMake
@@ -70,11 +67,9 @@ func TestClangMissing(t *testing.T) {
 }
 
 func TestClangVersion(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{
-		dependencies.CLANG, dependencies.CMAKE,
-	})
+	dependencies.MockAllDeps(t)
 
-	dep := deps[dependencies.CLANG]
+	dep := dependencies.GetDep(dependencies.CLANG)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	opts := &options{}
@@ -95,10 +90,8 @@ func TestClangVersion(t *testing.T) {
 }
 
 func TestCMakeMissing(t *testing.T) {
-	deps := dependencies.CreateTestDeps(t, []dependencies.Key{
-		dependencies.CLANG, dependencies.CMAKE,
-	})
-	dependencies.OverwriteInstalledWithFalse(deps[dependencies.CMAKE])
+	dependencies.MockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
 
 	opts := &options{}
 	opts.BuildSystem = config.BuildSystemCMake
