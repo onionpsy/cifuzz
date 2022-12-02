@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/pkg/mocks"
@@ -24,9 +23,8 @@ func TestCheck(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	result, err := Check(keys, deps, finder)
+	err = Check(keys, deps, finder)
 	require.NoError(t, err)
-	assert.True(t, result)
 }
 
 func TestCheck_NotInstalled(t *testing.T) {
@@ -37,9 +35,8 @@ func TestCheck_NotInstalled(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("", errors.New("missing-error"))
 
-	result, err := Check(keys, deps, finder)
-	require.NoError(t, err)
-	assert.False(t, result)
+	err = Check(keys, deps, finder)
+	require.Error(t, err)
 }
 
 func TestCheck_WrongVersion(t *testing.T) {
@@ -56,9 +53,8 @@ func TestCheck_WrongVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	result, err := Check(keys, deps, finder)
-	require.NoError(t, err)
-	assert.False(t, result)
+	err = Check(keys, deps, finder)
+	require.Error(t, err)
 }
 
 func TestCheck_ShortVersion(t *testing.T) {
@@ -75,9 +71,8 @@ func TestCheck_ShortVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	result, err := Check(keys, deps, finder)
+	err = Check(keys, deps, finder)
 	require.NoError(t, err)
-	assert.True(t, result)
 }
 
 func TestCheck_UnableToGetVersion(t *testing.T) {
@@ -94,11 +89,6 @@ func TestCheck_UnableToGetVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("ClangPath").Return("clang", nil)
 
-	result, err := Check(keys, deps, finder)
+	err = Check(keys, deps, finder)
 	require.NoError(t, err)
-
-	// yes, this is right :) If there was an error while
-	// detecting the version we assume it is most probably
-	// a fail of your extraction mechanism
-	assert.True(t, result)
 }

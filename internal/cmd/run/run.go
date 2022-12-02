@@ -220,12 +220,9 @@ depends on the build system configured for the project.
 }
 
 func (c *runCmd) run() error {
-	depsOk, err := c.checkDependencies()
+	err := c.checkDependencies()
 	if err != nil {
 		return err
-	}
-	if !depsOk {
-		return dependencies.Error()
 	}
 
 	// Create a temporary directory which the builder can use to create
@@ -531,7 +528,8 @@ func (c *runCmd) printFinalMetrics(generatedCorpus, seedCorpus string) error {
 	return c.reportHandler.PrintFinalMetrics(numCorpusEntries)
 }
 
-func (c *runCmd) checkDependencies() (bool, error) {
+func (c *runCmd) checkDependencies() error {
+	var depsErr error
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
 		deps := []dependencies.Key{
@@ -539,40 +537,48 @@ func (c *runCmd) checkDependencies() (bool, error) {
 			dependencies.LLVM_SYMBOLIZER,
 			dependencies.CMAKE,
 		}
-		return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
 	case config.BuildSystemMaven:
 		deps := []dependencies.Key{
 			dependencies.JAVA,
 			dependencies.MAVEN,
 		}
-		return dependencies.Check(deps, dependencies.MavenDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps, dependencies.MavenDeps, runfiles.Finder)
 	case config.BuildSystemGradle:
 		// First check if gradle wrapper exists and check for gradle in path otherwise
 		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return false, err
+			return err
 		}
+		// TODO: Do we really not want to check that Java is installed
+		// too when we found the gradle wrapper?
 		if wrapper != "" {
-			return true, nil
+			return nil
 		}
 
 		deps := []dependencies.Key{
 			dependencies.JAVA,
 			dependencies.GRADLE,
 		}
-		return dependencies.Check(deps, dependencies.GradleDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps, dependencies.GradleDeps, runfiles.Finder)
 	case config.BuildSystemOther:
 		deps := []dependencies.Key{
 			dependencies.CLANG,
 			dependencies.LLVM_SYMBOLIZER,
 		}
-		return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+		depsErr = dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
 	case config.BuildSystemBazel:
 		// When bazel is used, all dependencies are managed via bazel
-		return true, nil
+		return nil
+	default:
+		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
+	if depsErr != nil {
+		log.Error(depsErr)
+		return cmdutils.WrapSilentError(depsErr)
+	}
+	return nil
 
-	return false, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 }
 
 func executeRunner(runner runner) error {

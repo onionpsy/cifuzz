@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Masterminds/semver"
@@ -8,6 +9,13 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
+
+var ErrDeps = errors.New(`Unable to run command due to missing/invalid dependencies.
+For installation instruction see:
+
+	https://github.com/CodeIntelligenceTesting/cifuzz#installation
+
+`)
 
 type Key string
 
@@ -57,19 +65,6 @@ func (dep *Dependency) CheckVersion() bool {
 	return true
 }
 
-func (dep *Dependency) Ok() bool {
-	if !dep.Installed(dep) {
-		log.Warnf(MESSAGE_MISSING, dep.Key)
-		return false
-	}
-
-	if !dep.CheckVersion() {
-		return false
-	}
-
-	return true
-}
-
 // helper to easily check against functions from the runfiles.RunfilesFinder interface
 func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 	if _, err := finderFunc(); err != nil {
@@ -78,8 +73,8 @@ func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 	return true
 }
 
-// Iterates of a list of dependencies and checks if they are fulfilled
-func Check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) (bool, error) {
+// Check iterates of a list of dependencies and checks if they are fulfilled
+func Check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error {
 	allFine := true
 	for _, key := range keys {
 		dep, found := deps[key]
@@ -95,9 +90,19 @@ func Check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) (bool,
 			log.Debugf("Checking dependency: %s version >= %s", dep.Key, dep.MinVersion.String())
 		}
 
-		if !dep.Ok() {
+		if !dep.Installed(dep) {
+			log.Warnf(MESSAGE_MISSING, dep.Key)
 			allFine = false
 		}
+
+		if !dep.CheckVersion() {
+			allFine = false
+		}
+
 	}
-	return allFine, nil
+
+	if !allFine {
+		return ErrDeps
+	}
+	return nil
 }

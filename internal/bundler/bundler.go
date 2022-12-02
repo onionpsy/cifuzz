@@ -198,12 +198,9 @@ func (b *Bundler) Bundle() error {
 	}
 	defer fileutil.Cleanup(b.tempDir)
 
-	depsOk, err := b.checkDependencies()
+	err = b.checkDependencies()
 	if err != nil {
 		return err
-	}
-	if !depsOk {
-		return dependencies.Error()
 	}
 
 	// TODO: Do not hardcode these values.
@@ -535,7 +532,7 @@ func (b *Bundler) copyArtifactsToTempdir(buildResult *build.Result, tempDir stri
 	return nil
 }
 
-func (b *Bundler) checkDependencies() (bool, error) {
+func (b *Bundler) checkDependencies() error {
 	var deps []dependencies.Key
 	switch b.Opts.BuildSystem {
 	case config.BuildSystemCMake:
@@ -543,7 +540,12 @@ func (b *Bundler) checkDependencies() (bool, error) {
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.CLANG}
 	}
-	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	err := dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+	return nil
 }
 
 //nolint:nonamedreturns

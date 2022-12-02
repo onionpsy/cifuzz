@@ -123,12 +123,7 @@ func (c *createCmd) run() error {
 	}
 	log.Debugf("Output path: %s", c.opts.outputPath)
 
-	// we ignore the first value, as this command has no actual
-	// dependencies and we just want to give recommendations
-	// instead of letting the command fail
-	if _, err := c.checkDependencies(); err != nil {
-		return err
-	}
+	c.checkDependencies()
 
 	// create stub
 	err = stubs.Create(c.opts.outputPath, c.opts.testType)
@@ -207,7 +202,7 @@ and $FUZZ_TEST_LDFLAGS to the linker.`)
 	}
 }
 
-func (c *createCmd) checkDependencies() (bool, error) {
+func (c *createCmd) checkDependencies() {
 	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
@@ -215,5 +210,11 @@ func (c *createCmd) checkDependencies() (bool, error) {
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.CLANG}
 	}
-	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	err := dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	if err != nil {
+		// we ignore errors here because this command has no actual
+		// dependencies and we just want to give recommendations
+		// instead of letting the command fail
+		log.Debug(err)
+	}
 }

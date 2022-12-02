@@ -149,12 +149,9 @@ or a lcov trace file.
 }
 
 func (c *coverageCmd) run() error {
-	depsOk, err := c.checkDependencies()
+	err := c.checkDependencies()
 	if err != nil {
 		return err
-	}
-	if !depsOk {
-		return dependencies.Error()
 	}
 
 	log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
@@ -289,7 +286,7 @@ func (c *coverageCmd) printReportURI(reportPath string) error {
 	return nil
 }
 
-func (c *coverageCmd) checkDependencies() (bool, error) {
+func (c *coverageCmd) checkDependencies() error {
 	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
@@ -312,10 +309,10 @@ func (c *coverageCmd) checkDependencies() (bool, error) {
 		// First check if gradle wrapper exists and check for gradle in path otherwise
 		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return false, err
+			return err
 		}
 		if wrapper != "" {
-			return true, nil
+			return nil
 		}
 
 		deps = []dependencies.Key{
@@ -329,7 +326,12 @@ func (c *coverageCmd) checkDependencies() (bool, error) {
 			dependencies.LLVM_PROFDATA,
 		}
 	default:
-		return false, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
+		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
-	return dependencies.Check(deps, dependencies.All, runfiles.Finder)
+	err := dependencies.Check(deps, dependencies.All, runfiles.Finder)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+	return nil
 }

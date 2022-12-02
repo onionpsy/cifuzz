@@ -67,12 +67,9 @@ func newWithOptions(opts *options) *cobra.Command {
 }
 
 func (c *reloadCmd) run() error {
-	depsOk, err := c.checkDependencies()
+	err := c.checkDependencies()
 	if err != nil {
 		return err
-	}
-	if !depsOk {
-		return dependencies.Error()
 	}
 
 	if c.opts.BuildSystem == config.BuildSystemCMake {
@@ -106,10 +103,15 @@ func (c *reloadCmd) reloadCMake() error {
 	return nil
 }
 
-func (c *reloadCmd) checkDependencies() (bool, error) {
+func (c *reloadCmd) checkDependencies() error {
 	deps := []dependencies.Key{}
 	if c.opts.BuildSystem == config.BuildSystemCMake {
 		deps = append(deps, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}...)
 	}
-	return dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	err := dependencies.Check(deps, dependencies.CMakeDeps, runfiles.Finder)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+	return nil
 }
