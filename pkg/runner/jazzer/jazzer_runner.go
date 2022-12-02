@@ -194,14 +194,15 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 		return nil, err
 	}
 
-	// Set JAVA_HOME
-	javaHome, err := runfiles.Finder.JavaHomePath()
-	if err != nil {
-		return nil, err
-	}
-	env, err = envutil.Setenv(env, "JAVA_HOME", javaHome)
-	if err != nil {
-		return nil, err
+	// Try to find a reasonable JAVA_HOME if none is set.
+	if _, set := envutil.LookupEnv(env, "JAVA_HOME"); !set {
+		javaHome, err := runfiles.Finder.JavaHomePath()
+		if err == nil {
+		}
+		env, err = envutil.Setenv(env, "JAVA_HOME", javaHome)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Enable more verbose logging for Jazzer's libjvm.so search process.
