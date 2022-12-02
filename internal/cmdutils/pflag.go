@@ -168,6 +168,16 @@ func AddProjectDirFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddProjectFlag(cmd *cobra.Command) func() {
+	// TODO: Make the project name more accessible in the web app (currently
+	//       it's only shown in the URL)
+	cmd.Flags().StringP("project", "p", "", `The name of the CI Fuzz project you want to start a fuzzing run for,
+e.g. "my-project-c170bc17".`)
+	return func() {
+		ViperMustBindPFlag("project", cmd.Flags().Lookup("project"))
+	}
+}
+
 func AddSeedCorpusFlag(cmd *cobra.Command) func() {
 	// TODO(afl): Also link to https://aflplus.plus/docs/fuzzing_in_depth/#a-collecting-inputs
 	cmd.Flags().StringArrayP("seed-corpus", "s", nil,
@@ -178,6 +188,13 @@ func AddSeedCorpusFlag(cmd *cobra.Command) func() {
 			"This flag can be used multiple times.")
 	return func() {
 		ViperMustBindPFlag("seed-corpus-dirs", cmd.Flags().Lookup("seed-corpus"))
+	}
+}
+
+func AddServerFlag(cmd *cobra.Command) func() {
+	cmd.PersistentFlags().String("server", "https://app.code-intelligence.com", "Address of the fuzzing server")
+	return func() {
+		ViperMustBindPFlag("server", cmd.Flags().Lookup("server"))
 	}
 }
 
