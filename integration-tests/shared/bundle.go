@@ -84,6 +84,7 @@ func TestBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	// Extract the archive into a new temporary directory.
 	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
 	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(archiveDir) })
 	err = artifact.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
 	require.NoError(t, err)
 

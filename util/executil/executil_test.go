@@ -277,6 +277,7 @@ func echoCommand(args ...string) *Cmd {
 
 func buildYes(t *testing.T) string {
 	tmpDir, err := os.MkdirTemp("", "cifuzz-yes-")
+	t.Cleanup(func() { fileutil.Cleanup(tmpDir) })
 	require.NoError(t, err)
 	path := filepath.Join(tmpDir, "yes")
 	if runtime.GOOS == "windows" {
