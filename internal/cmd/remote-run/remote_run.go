@@ -522,15 +522,16 @@ func (c *runRemoteCmd) listProjects(token string) ([]*project, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
 	if resp.StatusCode != 200 {
 		msg := responseToErrMsg(resp)
 		err := errors.Errorf("Failed to list projects: %s", msg)
 		log.Error(err)
 		return nil, cmdutils.WrapSilentError(err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	var objmap map[string]json.RawMessage
