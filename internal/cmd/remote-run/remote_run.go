@@ -321,7 +321,8 @@ func (c *runRemoteCmd) selectProject(token string) (string, error) {
 
 	if len(items) == 0 {
 		err := errors.Errorf("No projects found. Please create a project first at %s.", c.opts.Server)
-		return "", errors.WithStack(err)
+		log.Error(err)
+		return "", cmdutils.WrapSilentError(err)
 	}
 
 	projectName, err := dialog.Select("Select the project you want to start a fuzzing run for", items)
