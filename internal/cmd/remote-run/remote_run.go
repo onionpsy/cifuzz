@@ -505,7 +505,7 @@ type project struct {
 func (c *runRemoteCmd) listProjects(token string) ([]*project, error) {
 	resp, err := c.sendRequest("GET", "v1/projects", token)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 
