@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -145,6 +146,17 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				opts.Stdout = cmd.OutOrStdout()
 			}
 			opts.Stderr = cmd.ErrOrStderr()
+
+			// Check if the server option is a valid URL
+			err = validateURL(opts.Server)
+			if err != nil {
+				// See if prefixing https:// makes it a valid URL
+				err = validateURL("https://" + opts.Server)
+				if err != nil {
+					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
+				}
+				opts.Server = "https://" + opts.Server
+			}
 
 			return opts.Validate()
 		},
@@ -559,4 +571,15 @@ func responseToErrMsg(resp *http.Response) string {
 		return fmt.Sprintf("%s: %s", msg, string(body))
 	}
 	return fmt.Sprintf("%s: %s", msg, apiResp.Message)
+}
+
+func validateURL(s string) error {
+	u, err := url.Parse(s)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.Errorf("unsupported protocol scheme %q", u.Scheme)
+	}
+	return nil
 }
