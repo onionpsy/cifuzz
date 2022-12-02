@@ -19,6 +19,7 @@ import (
 	findingCmd "code-intelligence.com/cifuzz/internal/cmd/finding"
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	integrateCmd "code-intelligence.com/cifuzz/internal/cmd/integrate"
+	loginCmd "code-intelligence.com/cifuzz/internal/cmd/login"
 	reloadCmd "code-intelligence.com/cifuzz/internal/cmd/reload"
 	remoteRunCmd "code-intelligence.com/cifuzz/internal/cmd/remote-run"
 	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
@@ -84,6 +85,7 @@ func New() (*cobra.Command, error) {
 	rootCmd.SetFlagErrorFunc(rootFlagErrorFunc)
 
 	cobra.EnableCommandSorting = false
+	rootCmd.AddCommand(loginCmd.New())
 	rootCmd.AddCommand(initCmd.New())
 	rootCmd.AddCommand(createCmd.New())
 	rootCmd.AddCommand(runCmd.New())

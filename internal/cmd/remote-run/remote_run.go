@@ -223,7 +223,7 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 			log.Print()
 			token = strings.TrimSpace(token)
 		} else {
-			err := errors.New("An API token must be passed via stdin or CIFUZZ_API_TOKEN")
+			err = errors.New("You are not logged in. Please log in by running `cifuzz login`.")
 			return cmdutils.WrapIncorrectUsageError(err)
 		}
 

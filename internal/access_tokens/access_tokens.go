@@ -37,7 +37,7 @@ func init() {
 
 func Set(target, token string) error {
 	// Ensure that the parent directory exists
-	err := os.MkdirAll(filepath.Dir(accessTokensFilePath), 0755)
+	err := os.MkdirAll(filepath.Dir(accessTokensFilePath), 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -51,7 +51,7 @@ func Set(target, token string) error {
 	}
 
 	// Write the JSON to file
-	err = os.WriteFile(accessTokensFilePath, bytes, 0600)
+	err = os.WriteFile(accessTokensFilePath, bytes, 0o600)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -60,4 +60,8 @@ func Set(target, token string) error {
 
 func Get(target string) string {
 	return accessTokens[target]
+}
+
+func GetTokenFilePath() string {
+	return accessTokensFilePath
 }
