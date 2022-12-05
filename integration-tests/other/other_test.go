@@ -24,7 +24,12 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-var filteredLine = regexp.MustCompile(`child process \d+ exited`)
+var installDir string
+
+func TestMain(m *testing.M) {
+	defer fileutil.Cleanup(installDir)
+	m.Run()
+}
 
 func TestIntegration_Other_RunCoverage(t *testing.T) {
 	if testing.Short() {
@@ -35,12 +40,12 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	}
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
-	installDir := shared.InstallCIFuzzInTemp(t)
+	installDir = shared.InstallCIFuzzInTemp(t)
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
-	defer fileutil.Cleanup(dir)
+	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing other build system integration test in %s", dir)
 
 	cifuzzRunner := shared.CIFuzzRunner{
@@ -159,12 +164,12 @@ func TestIntegration_Other_DetailedCoverage(t *testing.T) {
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 
-	installDir := shared.InstallCIFuzzInTemp(t)
+	installDir = shared.InstallCIFuzzInTemp(t)
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
-	defer fileutil.Cleanup(dir)
+	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing other build system coverage test in %s", dir)
 
 	createAndVerifyLcovCoverageReport(t, cifuzz, dir, "crashing_fuzz_test")
@@ -179,12 +184,12 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	}
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
-	installDir := shared.InstallCIFuzzInTemp(t)
+	installDir = shared.InstallCIFuzzInTemp(t)
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
-	defer fileutil.Cleanup(dir)
+	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing other build system integration test in %s", dir)
 
 	// Use a different Makefile on macOS, because shared objects need

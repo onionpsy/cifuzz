@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
@@ -108,8 +107,9 @@ func GetFindings(t *testing.T, cifuzz string, dir string) []*finding.Finding {
 	return findings
 }
 
-// InstallCIFuzzInTemp creates an installation builder and
-// installs cifuzz in a temp folder and returns its path.
+// InstallCIFuzzInTemp creates an installation builder and extracts it
+// into a temporary directory. The caller should clean up the returned
+// directory.
 func InstallCIFuzzInTemp(t *testing.T) string {
 	t.Helper()
 
@@ -126,31 +126,15 @@ func InstallCIFuzzInTemp(t *testing.T) string {
 	}()
 
 	installOnce.Do(func() {
-		// Create installation builder
-		projectDir, err := builderPkg.FindProjectDir()
-		require.NoError(t, err)
-		targetDir := filepath.Join(projectDir, "cmd", "installer", "build")
-		err = os.RemoveAll(targetDir)
-		require.NoError(t, err)
-
-		opts := builderPkg.Options{Version: "dev", TargetDir: targetDir}
-		builder, err := builderPkg.NewCIFuzzBuilder(opts)
-		require.NoError(t, err)
-		defer builder.Cleanup()
-		err = builder.BuildCIFuzzAndDeps()
-		require.NoError(t, err)
-
 		// Create directory for installation files
 		installDir, err = os.MkdirTemp("", "cifuzz-")
 		require.NoError(t, err)
 
-		// Install cifuzz
-		installer := filepath.Join("cmd", "installer", "installer.go")
-		installCmd := exec.Command("go", "run", "-tags", "installer", installer, "-i", installDir, "--ignore-installation-check")
-		installCmd.Stderr = os.Stderr
-		installCmd.Dir = projectDir
-		t.Logf("Command: %s", installCmd.String())
-		err = installCmd.Run()
+		// Build cifuzz in the install directory
+		opts := builderPkg.Options{Version: "dev", TargetDir: installDir}
+		builder, err := builderPkg.NewCIFuzzBuilder(opts)
+		require.NoError(t, err)
+		err = builder.BuildCIFuzzAndDeps()
 		require.NoError(t, err)
 	})
 
