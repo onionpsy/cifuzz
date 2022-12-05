@@ -342,8 +342,9 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,
 			},
-			Stdout: c.OutOrStdout(),
-			Stderr: c.ErrOrStderr(),
+			Stdout:    c.OutOrStdout(),
+			Stderr:    c.ErrOrStderr(),
+			BuildOnly: c.opts.BuildOnly,
 		})
 		if err != nil {
 			return nil, err
@@ -355,6 +356,9 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		buildResults, err := builder.Build([]string{c.opts.fuzzTest})
 		if err != nil {
 			return nil, err
+		}
+		if c.opts.BuildOnly {
+			return nil, nil
 		}
 		return buildResults[0], nil
 	case config.BuildSystemMaven:

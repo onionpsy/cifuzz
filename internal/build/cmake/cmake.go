@@ -37,6 +37,7 @@ type BuilderOptions struct {
 	Parallel   ParallelOptions
 	Stdout     io.Writer
 	Stderr     io.Writer
+	BuildOnly  bool
 
 	FindRuntimeDeps bool
 }
@@ -180,6 +181,10 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		log.Error(err)
 		return nil, cmdutils.ErrSilent
+	}
+
+	if b.BuildOnly {
+		return nil, nil
 	}
 
 	var results []*build.Result
