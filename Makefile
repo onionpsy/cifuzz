@@ -102,11 +102,11 @@ lint: deps/dev
 
 .PHONY: fmt
 fmt:
-	find . -type f -name "*.go" -exec goimports-reviser -project-name $(project) -file-path {} \;
+	find . -type f -name "*.go" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -list-diff -file-path
 
 .PHONY: fmt/check
 fmt/check:
-	@DIFF=$$(find . -type f -name "*.go" -exec goimports-reviser -project-name $(project) -list-diff -file-path {} \;); \
+	@DIFF=$$(find . -type f -name "*.go" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -list-diff -file-path \;); \
 	if [ -n "$$DIFF" ]; then \
 		echo >&2 "Unformatted files:\n$$DIFF"; \
 		exit 1; \
