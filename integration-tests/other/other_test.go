@@ -276,6 +276,6 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 	assert.Subset(t, []uint{
 		// Lines after the three crashes. Whether these are covered depends on implementation details of the coverage
 		// instrumentation, so we conservatively assume they aren't covered.
-		20, 30, 40},
+		21, 31, 41},
 		uncoveredLines)
 }
