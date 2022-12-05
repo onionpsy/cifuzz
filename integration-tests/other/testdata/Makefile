@@ -1,7 +1,7 @@
 CXXFLAGS += -std=c++11
 
 clean:
-	rm -rf *.o *.a *.so.* *.so a.out
+	rm -rf *.o *.a *.so.* *.so a.out my_fuzz_test
 
 libexplore.so.4.2: src/explore/explore_me.cpp src/explore/explore_me.h
 	${CXX} ${CXXFLAGS} -shared -fpic -o libexplore.so.4.2 $<
