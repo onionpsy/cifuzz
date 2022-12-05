@@ -60,3 +60,7 @@ Check out [@jochil](https://github.com/jochil)'s live session for
 [a walkthrough](https://www.code-intelligence.com/webinar/uncovering-hidden-bugs-and-vulnerabilities)
 of how to get started with cifuzz. The event is freely accessible on YouTube
 and Linkedin.
+
+Also, watch [Going Beyond Unit Testing | How to Uncover Blind Spots in your
+Java Code with Fuzzing](https://www.youtube.com/watch?v=8yECb-p3cQI) on
+YouTube.
