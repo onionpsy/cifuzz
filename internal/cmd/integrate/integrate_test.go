@@ -86,7 +86,7 @@ func TestSetupGitIgnore(t *testing.T) {
 
 func TestSetupCMakePresets(t *testing.T) {
 	sourceDir := getRootSourceDirectory(t)
-	cmakePresets := filepath.Join(sourceDir, "tools", "cmake", "cifuzz", "share", "CMakePresets.json")
+	cmakePresets := filepath.Join(sourceDir, "tools", "cmake", "cifuzz", "CMakePresets.json")
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePresetsPath").Return(cmakePresets, nil)
 

@@ -52,8 +52,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
-	// The CMake registration is tested in the integration test.
-	err = os.Setenv("CMAKE_PREFIX_PATH", installDir)
+	err = os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 	if err != nil {
 		builder.Cleanup()
 		log.Fatalf("Failed to install CMake integration: %+v", err)

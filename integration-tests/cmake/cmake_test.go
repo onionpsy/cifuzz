@@ -35,7 +35,8 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	installDir := shared.InstallCIFuzzInTemp(t)
 	t.Cleanup(func() { fileutil.Cleanup(installDir) })
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
-	err := os.Setenv("CMAKE_PREFIX_PATH", installDir)
+	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
+	err := os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 	require.NoError(t, err)
 
 	// Copy testdata

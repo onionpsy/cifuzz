@@ -103,7 +103,7 @@ func (i *CIFuzzBuilder) libDir() string {
 }
 
 func (i *CIFuzzBuilder) shareDir() string {
-	return filepath.Join(i.TargetDir, "share", "cifuzz")
+	return filepath.Join(i.TargetDir, "share")
 }
 
 func (i *CIFuzzBuilder) lockFile() string {
@@ -377,8 +377,7 @@ func (i *CIFuzzBuilder) CopySharedFolder() error {
 	}()
 
 	tasksSrc := filepath.Join(i.projectDir, "share")
-	destDir := filepath.Join(i.shareDir(), "share")
-	err = copy.Copy(tasksSrc, destDir)
+	err = copy.Copy(tasksSrc, i.shareDir())
 	if err != nil {
 		return errors.WithStack(err)
 	}

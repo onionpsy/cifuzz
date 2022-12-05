@@ -117,7 +117,7 @@ func installCIFuzz(installDir string) error {
 			// See:
 			// https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure
 			// https://gitlab.kitware.com/cmake/cmake/-/blob/5ed9232d781ccfa3a9fae709e12999c6649aca2f/Modules/Platform/UnixPaths.cmake#L30)
-			cmakeSrc := filepath.Join(installDir, "share", "cifuzz")
+			cmakeSrc := filepath.Join(installDir, "share", "cmake")
 			cmakeDest := "/usr/local/share/cifuzz"
 			log.Printf("Creating symlink %s -> %s", cmakeSrc, cmakeDest)
 			// Older versions of the installer copied the directory, so
@@ -139,7 +139,7 @@ func installCIFuzz(installDir string) error {
 			// The CMake package registry entry has to point directly to the directory
 			// containing the CIFuzzConfig.cmake file rather than any valid prefix for
 			// the config mode search procedure.
-			dirForRegistry := filepath.Join(installDir, "share", "cifuzz", "cmake")
+			dirForRegistry := filepath.Join(installDir, "share", "cmake")
 			err = installer.RegisterCMakePackage(dirForRegistry)
 			if err != nil {
 				return err
@@ -487,7 +487,7 @@ func createCommandCompletionScript(installDir, shell string) error {
 }
 
 func completionScriptPath(installDir, shell string) string {
-	return filepath.Join(installDir, "share", "cifuzz", "completions", shell)
+	return filepath.Join(installDir, "share", "completions", shell)
 }
 
 func cifuzzPath(installDir string) string {

@@ -16,7 +16,7 @@ type RunfilesFinderImpl struct {
 }
 
 func (f RunfilesFinderImpl) CIFuzzIncludePath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/include/cifuzz")
+	return f.findFollowSymlinks("share/include/cifuzz")
 }
 
 func (f RunfilesFinderImpl) ClangPath() (string, error) {
@@ -30,7 +30,7 @@ func (f RunfilesFinderImpl) CMakePath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) CMakePresetsPath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/share/CMakePresets.json")
+	return f.findFollowSymlinks("share/CMakePresets.json")
 }
 
 func (f RunfilesFinderImpl) LLVMCovPath() (string, error) {
@@ -78,23 +78,23 @@ func (f RunfilesFinderImpl) ProcessWrapperPath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) ReplayerSourcePath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/src/replayer.c")
+	return f.findFollowSymlinks("share/src/replayer.c")
 }
 
 func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/src/dumper.c")
+	return f.findFollowSymlinks("share/src/dumper.c")
 }
 
 func (f RunfilesFinderImpl) VSCodeTasksPath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/share/tasks.json")
+	return f.findFollowSymlinks("share/tasks.json")
 }
 
 func (f RunfilesFinderImpl) LogoPath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/share/logo.png")
+	return f.findFollowSymlinks("share/logo.png")
 }
 
 func (f RunfilesFinderImpl) GradleInitScriptPath() (string, error) {
-	return f.findFollowSymlinks("share/cifuzz/share/init.gradle")
+	return f.findFollowSymlinks("share/init.gradle")
 }
 
 // JavaHomePath returns the absolute path to the base directory of the
