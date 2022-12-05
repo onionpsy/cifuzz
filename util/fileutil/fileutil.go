@@ -128,11 +128,11 @@ func ForceSymlink(oldname, newname string) error {
 //
 // We prevent this issue by forcing long paths in os.TempDir() rather than
 // normalizing paths whenever we relativize them for the following reasons:
-// * Go does not provide a function that normalizes paths without following
-//   symlinks, so we would have to implement it ourselves.
-// * The temporary directories we create in cifuzz appear to be the only common
-//   source of 8.3 paths and users are very unlikely to launch cifuzz from an
-//   8.3 path.
+//   - Go does not provide a function that normalizes paths without following
+//     symlinks, so we would have to implement it ourselves.
+//   - The temporary directories we create in cifuzz appear to be the only common
+//     source of 8.3 paths and users are very unlikely to launch cifuzz from an
+//     8.3 path.
 func ForceLongPathTempDir() {
 	if runtime.GOOS != "windows" {
 		return
