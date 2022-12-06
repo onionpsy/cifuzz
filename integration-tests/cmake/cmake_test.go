@@ -25,7 +25,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
+func TestIntegration_CMake(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -44,7 +44,7 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing cmake integration test in %s", dir)
 
-	cifuzzRunner := shared.CIFuzzRunner{
+	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
 		DefaultWorkDir:  dir,
 		DefaultFuzzTest: "parser_fuzz_test",
@@ -74,10 +74,12 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	findings := shared.GetFindings(t, cifuzz, dir)
 	require.Empty(t, findings)
 
-	// Run the (empty) fuzz test
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
-		TerminateAfterExpectedOutput: true,
+	t.Run("runEmptyFuzzTest", func(t *testing.T) {
+		// Run the (empty) fuzz test
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
+			TerminateAfterExpectedOutput: true,
+		})
 	})
 
 	// Make the fuzz test call a function. Before we do that, we sleep
@@ -101,6 +103,49 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
 	}
 
+	t.Run("runBuildOnly", func(t *testing.T) {
+		cifuzzRunner.Run(t, &shared.RunOptions{Args: []string{"--build-only"}})
+	})
+
+	t.Run("run", func(t *testing.T) {
+		testRun(t, cifuzzRunner)
+
+		t.Run("htmlReport", func(t *testing.T) {
+			// Produce a coverage report for parser_fuzz_test
+			testHtmlCoverageReport(t, cifuzz, dir)
+		})
+		t.Run("lcovReport", func(t *testing.T) {
+			// Produces a coverage report for crashing_fuzz_test
+			testLcovCoverageReport(t, cifuzz, dir)
+		})
+	})
+
+	t.Run("runWithConfigFile", func(t *testing.T) {
+		// Check that options set via the config file are respected
+		testRunWithConfigFile(t, cifuzzRunner)
+	})
+
+	t.Run("runWithAsanOptions", func(t *testing.T) {
+		// Check that ASAN_OPTIONS can be set
+		testRunWithAsanOptions(t, cifuzzRunner)
+	})
+
+	t.Run("bundle", func(t *testing.T) {
+		// Run cifuzz bundle and verify the contents of the archive.
+		shared.TestBundleLibFuzzer(t, dir, cifuzz, "parser_fuzz_test")
+	})
+
+	t.Run("remoteRun", func(t *testing.T) {
+		testRemoteRun(t, cifuzzRunner)
+	})
+
+}
+
+func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	var expectedOutputs []*regexp.Regexp
+
 	// Check that Minijail is used (if running on Linux, because Minijail
 	// is only supported on Linux)
 	if runtime.GOOS == "linux" {
@@ -112,7 +157,7 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 	})
 
 	// Check that the findings command lists the findings
-	findings = shared.GetFindings(t, cifuzz, dir)
+	findings := shared.GetFindings(t, cifuzz, testdata)
 	// On Windows, only the ASan finding is expected, on Linux and macOS
 	// both the ASan and the UBSan finding are expected.
 	if runtime.GOOS == "windows" {
@@ -189,32 +234,9 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 			require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
 		}
 	}
+}
 
-	// Check that options set via the config file are respected
-	configFileContent := `use-sandbox: false`
-	err = os.WriteFile(filepath.Join(dir, "cifuzz.yaml"), []byte(configFileContent), 0644)
-	require.NoError(t, err)
-	// Check that Minijail is not used (i.e. the artifact prefix is
-	// not set to the Minijail output path)
-	expectedOutputs = []*regexp.Regexp{
-		regexp.MustCompile(regexp.QuoteMeta(`artifact_prefix='` + filepath.Join(os.TempDir(), "libfuzzer-out"))),
-	}
-	cifuzzRunner.Run(t, &shared.RunOptions{ExpectedOutputs: expectedOutputs})
-
-	if runtime.GOOS == "linux" {
-		// Check that command-line flags take precedence over config file
-		// settings (only on Linux because we only support Minijail on
-		// Linux).
-		cifuzzRunner.Run(t, &shared.RunOptions{
-			Args:            []string{"--use-sandbox=true"},
-			ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(`minijail`)},
-		})
-	}
-	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
-	err = os.WriteFile(filepath.Join(dir, "cifuzz.yaml"), nil, 0644)
-	require.NoError(t, err)
-
-	// Check that ASAN_OPTIONS can be set
+func testRunWithAsanOptions(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	env, err := envutil.Setenv(os.Environ(), "ASAN_OPTIONS", "print_stats=1:atexit=1")
 	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
@@ -222,27 +244,48 @@ func TestIntegration_CMake_InitCreateRunCoverageBundle(t *testing.T) {
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,
 	})
-
-	// Building with coverage instrumentation doesn't work on Windows yet
-	if runtime.GOOS != "windows" {
-		// Produce a coverage report for parser_fuzz_test
-		createHtmlCoverageReport(t, cifuzz, dir)
-		// Produces a coverage report for crashing_fuzz_test
-		createAndVerifyLcovCoverageReport(t, cifuzz, dir)
-	}
-
-	// Run cifuzz bundle and verify the contents of the archive.
-	shared.TestBundleLibFuzzer(t, dir, cifuzz, "parser_fuzz_test")
-
-	// The remote-run command is currently only supported on Linux
-	if runtime.GOOS == "linux" {
-		shared.TestRemoteRun(t, dir, cifuzz)
-	}
-
 }
 
-func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
-	t.Helper()
+func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	testdata := cifuzzRunner.DefaultWorkDir
+
+	configFileContent := `use-sandbox: false`
+	err := os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), []byte(configFileContent), 0644)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
+		err = os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), nil, 0644)
+		require.NoError(t, err)
+	})
+
+	// Check that Minijail is not used (i.e. the artifact prefix is
+	// not set to the Minijail output path)
+	expectedOutputs := []*regexp.Regexp{
+		regexp.MustCompile(regexp.QuoteMeta(`artifact_prefix='` + filepath.Join(os.TempDir(), "libfuzzer-out"))),
+	}
+	cifuzzRunner.Run(t, &shared.RunOptions{ExpectedOutputs: expectedOutputs})
+
+	t.Run("WithFlags", func(t *testing.T) {
+		// Check that command-line flags take precedence over config file
+		// settings (only on Linux because we only support Minijail on
+		// Linux).
+		// TODO: We should use a different flag to also be able to test
+		// this on non-Linux platforms
+		if runtime.GOOS != "linux" {
+			t.Skip()
+		}
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			Args:            []string{"--use-sandbox=true"},
+			ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(`minijail`)},
+		})
+	})
+}
+
+func testHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
+	}
 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
 		"--output", "coverage-report",
@@ -266,8 +309,10 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
 	require.NotContains(t, report, "include/cifuzz")
 }
 
-func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
-	t.Helper()
+func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
+	}
 
 	reportPath := filepath.Join(dir, "crashing_fuzz_test.lcov")
 
@@ -319,4 +364,16 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string) 
 		// instrumentation, so we conservatively assume they aren't covered.
 		21, 31, 41},
 		uncoveredLines)
+}
+
+func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// The remote-run command is currently only supported on Linux
+	if runtime.GOOS != "linux" {
+		t.Skip()
+	}
+	t.Parallel()
+
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	shared.TestRemoteRun(t, testdata, cifuzz)
 }
