@@ -76,6 +76,7 @@ type RunOptions struct {
 	Args     []string
 
 	ExpectedOutputs              []*regexp.Regexp
+	UnexpectedOutput             *regexp.Regexp
 	TerminateAfterExpectedOutput bool
 	ExpectError                  bool
 }
@@ -130,30 +131,25 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	}()
 
 	// Check that the output contains the expected output
-	var seenExpectedOutputs int
-	lenExpectedOutputs := len(opts.ExpectedOutputs)
-	mutex := sync.Mutex{}
+	outputChecker := outputChecker{
+		mutex:                        &sync.Mutex{},
+		lenExpectedOutputs:           len(opts.ExpectedOutputs),
+		numSeenExpectedOutputs:       0,
+		expectedOutputs:              opts.ExpectedOutputs,
+		unexpectedOutput:             opts.UnexpectedOutput,
+		terminateAfterExpectedOutput: opts.TerminateAfterExpectedOutput,
+		termationFunc: func() {
+			err := cmd.TerminateProcessGroup()
+			require.NoError(t, err)
+		},
+	}
 
 	routines := errgroup.Group{}
 	routines.Go(func() error {
 		// cifuzz progress messages go to stdout.
 		scanner := bufio.NewScanner(stdoutPipe)
 		for scanner.Scan() {
-			mutex.Lock()
-			var remainingExpectedOutputs []*regexp.Regexp
-			for _, expectedOutput := range opts.ExpectedOutputs {
-				if expectedOutput.MatchString(scanner.Text()) {
-					seenExpectedOutputs += 1
-				} else {
-					remainingExpectedOutputs = append(remainingExpectedOutputs, expectedOutput)
-				}
-			}
-			opts.ExpectedOutputs = remainingExpectedOutputs
-			if seenExpectedOutputs == lenExpectedOutputs && opts.TerminateAfterExpectedOutput {
-				err = cmd.TerminateProcessGroup()
-				require.NoError(t, err)
-			}
-			mutex.Unlock()
+			outputChecker.checkOutput(t, scanner.Text())
 		}
 		err = stdoutPipe.Close()
 		require.NoError(t, err)
@@ -164,21 +160,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		// Fuzzer output goes to stderr.
 		scanner := bufio.NewScanner(stderrPipe)
 		for scanner.Scan() {
-			mutex.Lock()
-			var remainingExpectedOutputs []*regexp.Regexp
-			for _, expectedOutput := range opts.ExpectedOutputs {
-				if expectedOutput.MatchString(scanner.Text()) {
-					seenExpectedOutputs += 1
-				} else {
-					remainingExpectedOutputs = append(remainingExpectedOutputs, expectedOutput)
-				}
-			}
-			opts.ExpectedOutputs = remainingExpectedOutputs
-			if seenExpectedOutputs == lenExpectedOutputs && opts.TerminateAfterExpectedOutput {
-				err = cmd.TerminateProcessGroup()
-				require.NoError(t, err)
-			}
-			mutex.Unlock()
+			outputChecker.checkOutput(t, scanner.Text())
 		}
 		err = stderrPipe.Close()
 		require.NoError(t, err)
@@ -191,8 +173,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		err = routines.Wait()
 		require.NoError(t, err)
 
-		seen := seenExpectedOutputs == lenExpectedOutputs
-		if seen && opts.TerminateAfterExpectedOutput && executil.IsTerminatedExitErr(waitErr) {
+		if outputChecker.hasCalledTerminationFunc && executil.IsTerminatedExitErr(waitErr) {
 			return
 		}
 		if opts.ExpectError {
@@ -204,6 +185,47 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		require.NoError(t, runCtx.Err())
 	}
 
-	seen := seenExpectedOutputs == lenExpectedOutputs
-	require.True(t, seen, "Did not see %q in fuzzer output", opts.ExpectedOutputs)
+	require.True(t, outputChecker.hasSeenExpectedOutputs, "Did not see %q in fuzzer output", opts.ExpectedOutputs)
+}
+
+type outputChecker struct {
+	mutex                        *sync.Mutex
+	lenExpectedOutputs           int
+	numSeenExpectedOutputs       int
+	expectedOutputs              []*regexp.Regexp
+	unexpectedOutput             *regexp.Regexp
+	terminateAfterExpectedOutput bool
+	termationFunc                func()
+	hasSeenExpectedOutputs       bool
+	hasCalledTerminationFunc     bool
+}
+
+func (c *outputChecker) checkOutput(t *testing.T, line string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.unexpectedOutput != nil {
+		if c.unexpectedOutput.MatchString(line) {
+			require.FailNowf(t, "Unexpected output", "Seen unexpected output %v in line: %s", c.unexpectedOutput.String(), line)
+		}
+	}
+
+	var remainingExpectedOutputs []*regexp.Regexp
+	for _, expectedOutput := range c.expectedOutputs {
+		if expectedOutput.MatchString(line) {
+			c.numSeenExpectedOutputs += 1
+		} else {
+			remainingExpectedOutputs = append(remainingExpectedOutputs, expectedOutput)
+		}
+	}
+	c.expectedOutputs = remainingExpectedOutputs
+
+	if c.numSeenExpectedOutputs == c.lenExpectedOutputs {
+		c.hasSeenExpectedOutputs = true
+		if c.terminateAfterExpectedOutput {
+			c.hasCalledTerminationFunc = true
+			c.termationFunc()
+		}
+	}
+
 }

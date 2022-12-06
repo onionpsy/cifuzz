@@ -130,6 +130,10 @@ func TestIntegration_CMake(t *testing.T) {
 		testRunWithAsanOptions(t, cifuzzRunner)
 	})
 
+	t.Run("runWithSecretEnvVar", func(t *testing.T) {
+		testRunWithSecretEnvVar(t, cifuzzRunner)
+	})
+
 	t.Run("bundle", func(t *testing.T) {
 		// Run cifuzz bundle and verify the contents of the archive.
 		shared.TestBundleLibFuzzer(t, dir, cifuzz, "parser_fuzz_test")
@@ -243,6 +247,15 @@ func testRunWithAsanOptions(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 		Env:                          env,
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,
+	})
+}
+
+func testRunWithSecretEnvVar(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	env, err := envutil.Setenv(os.Environ(), "SECRET", "verysecret")
+	require.NoError(t, err)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Env:              env,
+		UnexpectedOutput: regexp.MustCompile(`verysecret`),
 	})
 }
 
