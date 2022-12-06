@@ -99,10 +99,15 @@ func TestIntegration_Bazel(t *testing.T) {
 		testRunWithAdditionalArgs(t, cifuzzRunner)
 	})
 
-	t.Run("runAndLCOV", func(t *testing.T) {
+	t.Run("run", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
 		// Requires the generated corpus to be populated by run.
-		testLCOVCoverage(t, cifuzzRunner)
+		t.Run("lcov", func(t *testing.T) { testLCOVCoverage(t, cifuzzRunner) })
+	})
+
+	t.Run("runWithAsanOptions", func(t *testing.T) {
+		// Check that ASAN_OPTIONS can be set
+		testRunWithAsanOptions(t, cifuzzRunner)
 	})
 
 	t.Run("bundle", func(t *testing.T) {
@@ -219,8 +224,9 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 		}
 		require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
 	}
+}
 
-	// Check that ASAN_OPTIONS can be set
+func testRunWithAsanOptions(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	env, err := envutil.Setenv(os.Environ(), "ASAN_OPTIONS", "print_stats=1:atexit=1")
 	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
