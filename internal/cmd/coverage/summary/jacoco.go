@@ -3,7 +3,7 @@ package summary
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
+	"io"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 )
@@ -78,20 +78,20 @@ func countJacoco(c *Coverage, counter *jacocoCounter) {
 // as possible. It will output debug/error logs instead of
 // failing, with the goal to gather as much information as
 // possible
-func ParseJacocoXML(reportPath string) *CoverageSummary {
+func ParseJacocoXML(in io.Reader) *CoverageSummary {
 	summary := &CoverageSummary{
 		Total: &Coverage{},
 	}
 
-	data, err := os.ReadFile(reportPath)
+	output, err := io.ReadAll(in)
 	if err != nil {
-		log.Debugf("Unable to open jacoco xml report: %s", reportPath)
+		log.Debugf("Unable to read jacoco xml report")
 		return summary
 	}
 	report := &jacocoReport{}
-	err = xml.Unmarshal([]byte(data), report)
+	err = xml.Unmarshal(output, report)
 	if err != nil {
-		log.Debugf("Unable to parse jacoco xml report: %s", reportPath)
+		log.Debugf("Unable to parse jacoco xml report")
 		return summary
 	}
 

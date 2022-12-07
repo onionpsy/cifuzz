@@ -122,7 +122,13 @@ func (cov *GradleCoverageGenerator) Generate() (string, error) {
 		return "", err
 	}
 
-	summary.ParseJacocoXML(filepath.Join(cov.OutputPath, "jacoco.xml")).PrintTable(cov.StdErr)
+	reportPath := filepath.Join(cov.OutputPath, "jacoco.xml")
+	reportFile, err := os.Open(reportPath)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer reportFile.Close()
+	summary.ParseJacocoXML(reportFile).PrintTable(cov.StdErr)
 
 	if cov.OutputFormat == coverage.FormatJacocoXML {
 		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil

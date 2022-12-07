@@ -143,7 +143,8 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	summary.ParseLcov(string(lcovReportContent)).PrintTable(opts.Stderr)
+	reportReader := strings.NewReader(string(lcovReportContent))
+	summary.ParseLcov(reportReader).PrintTable(opts.Stderr)
 
 	if opts.OutputFormat == "lcov" {
 		if opts.OutputPath == "" {

@@ -3,6 +3,7 @@ package summary
 import (
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ FNH:1
 FNF:1
 end_of_record
 `
-	ParseLcov(report).PrintTable(wPipe)
+	ParseLcov(strings.NewReader(report)).PrintTable(wPipe)
 
 	wPipe.Close()
 	pipeOut, err := io.ReadAll(rPipe)

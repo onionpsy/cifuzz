@@ -3,6 +3,7 @@ package summary
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"strconv"
 	"strings"
 
@@ -31,7 +32,7 @@ func count(c *Coverage, key string, value int) {
 // as possible. It will output debug/error logs instead of
 // failing, with the goal to gather as much information as
 // possible
-func ParseLcov(report string) *CoverageSummary {
+func ParseLcov(in io.Reader) *CoverageSummary {
 	summary := &CoverageSummary{
 		Total: &Coverage{},
 	}
@@ -40,7 +41,7 @@ func ParseLcov(report string) *CoverageSummary {
 
 	// The definition of the lcov tracefile format can be viewed
 	// with `man geninfo`
-	scanner := bufio.NewScanner(strings.NewReader(report))
+	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		parts := strings.Split(scanner.Text(), ":")
 		key := parts[0]

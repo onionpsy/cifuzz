@@ -1,6 +1,7 @@
 package summary
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ LH:50
 LF:50
 end_of_record
 `
-	summary := ParseLcov(report)
+	summary := ParseLcov(strings.NewReader(report))
 
 	assert.Len(t, summary.Files, 2)
 	assert.Equal(t, 3, summary.Total.FunctionsHit)
@@ -57,7 +58,7 @@ SF:foo.cpp
 FNH:1
 FNF:1
 `
-	summary := ParseLcov(report)
+	summary := ParseLcov(strings.NewReader(report))
 
 	assert.Len(t, summary.Files, 2)
 	assert.Equal(t, 3, summary.Total.FunctionsHit)
@@ -77,7 +78,7 @@ FNF:21
 end_of_record
 `
 
-	summary := ParseLcov(report)
+	summary := ParseLcov(strings.NewReader(report))
 	assert.Equal(t, 2, summary.Files[0].Coverage.FunctionsHit)
 	assert.Equal(t, 21, summary.Files[0].Coverage.FunctionsFound)
 }
@@ -91,7 +92,7 @@ FOO:::
 end_of_record
 `
 
-	summary := ParseLcov(report)
+	summary := ParseLcov(strings.NewReader(report))
 	assert.Equal(t, 2, summary.Files[0].Coverage.FunctionsHit)
 	assert.Equal(t, 21, summary.Files[0].Coverage.FunctionsFound)
 }
@@ -102,13 +103,13 @@ FNH:foo
 end_of_record
 `
 
-	summary := ParseLcov(report)
+	summary := ParseLcov(strings.NewReader(report))
 	assert.Equal(t, 0, summary.Files[0].Coverage.FunctionsHit)
 }
 
 func TestParseLcov_Empty(t *testing.T) {
 	report := ""
-	summary := ParseLcov(report)
+	summary := ParseLcov(strings.NewReader(report))
 	assert.Len(t, summary.Files, 0)
 	assert.Empty(t, summary.Total.BranchesFound)
 	assert.Empty(t, summary.Total.LinesFound)

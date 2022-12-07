@@ -317,7 +317,8 @@ func (cov *LLVMCoverageGenerator) report() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	summary.ParseLcov(lcovReportSummary).PrintTable(cov.StdErr)
+	reportReader := strings.NewReader(lcovReportSummary)
+	summary.ParseLcov(reportReader).PrintTable(cov.StdErr)
 
 	reportPath := ""
 	switch cov.OutputFormat {

@@ -152,7 +152,10 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 
 	// Check that the coverage report contains coverage for
 	// ExploreMe.java source file, but not for App.java.
-	summary := summary.ParseJacocoXML(reportPath)
+	reportFile, err := os.Open(reportPath)
+	require.NoError(t, err)
+	defer reportFile.Close()
+	summary := summary.ParseJacocoXML(reportFile)
 	for _, file := range summary.Files {
 		if file.Filename == "com/example/ExploreMe.java" {
 			assert.Equal(t, 2, file.Coverage.FunctionsHit)

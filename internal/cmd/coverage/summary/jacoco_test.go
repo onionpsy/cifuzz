@@ -1,27 +1,11 @@
 package summary
 
 import (
-	"os"
-	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"code-intelligence.com/cifuzz/internal/testutil"
 )
-
-var testDir string
-var reportPath string
-
-func TestMain(m *testing.M) {
-	testDir, cleanup := testutil.ChdirToTempDir("llvm-coverage-gen")
-	defer cleanup()
-
-	reportPath = filepath.Join(testDir, "jacoco.xml")
-
-	m.Run()
-}
 
 func TestParseJacoco(t *testing.T) {
 	reportData := `
@@ -40,9 +24,7 @@ func TestParseJacoco(t *testing.T) {
     </package>
 </report>
 `
-	err := os.WriteFile(reportPath, []byte(reportData), 0644)
-	require.NoError(t, err)
-	summary := ParseJacocoXML(reportPath)
+	summary := ParseJacocoXML(strings.NewReader(reportData))
 
 	assert.Len(t, summary.Files, 2)
 	assert.Equal(t, 3, summary.Total.FunctionsHit)
@@ -68,9 +50,7 @@ func TestParseJacoco(t *testing.T) {
 }
 
 func TestParseJacoco_Empty(t *testing.T) {
-	err := os.WriteFile(reportPath, []byte{}, 0644)
-	require.NoError(t, err)
-	summary := ParseJacocoXML(reportPath)
+	summary := ParseJacocoXML(strings.NewReader(""))
 
 	assert.Len(t, summary.Files, 0)
 	assert.Empty(t, summary.Total.BranchesFound)
