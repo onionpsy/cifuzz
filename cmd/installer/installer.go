@@ -471,7 +471,7 @@ See https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Installatio
 func createCommandCompletionScript(installDir, shell string) error {
 	cifuzz := cifuzzPath(installDir)
 	completionScript := completionScriptPath(installDir, shell)
-	err := os.MkdirAll(filepath.Dir(completionScript), 0700)
+	err := os.MkdirAll(filepath.Dir(completionScript), 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
