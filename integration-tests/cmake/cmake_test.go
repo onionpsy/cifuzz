@@ -107,6 +107,10 @@ func TestIntegration_CMake(t *testing.T) {
 		cifuzzRunner.Run(t, &shared.RunOptions{Args: []string{"--build-only"}})
 	})
 
+	t.Run("runWithAdditionalArgs", func(t *testing.T) {
+		testRunWithAdditionalArgs(t, cifuzzRunner)
+	})
+
 	t.Run("run", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
 
@@ -143,6 +147,17 @@ func TestIntegration_CMake(t *testing.T) {
 		testRemoteRun(t, cifuzzRunner)
 	})
 
+}
+
+func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run cmake and expect it to fail because we passed it a non-existent flag
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Args: []string{"--", "--non-existent-flag"},
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`Unknown argument --non-existent-flag`),
+		},
+		ExpectError: true,
+	})
 }
 
 func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

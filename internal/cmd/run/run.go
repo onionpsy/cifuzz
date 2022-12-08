@@ -129,6 +129,10 @@ depends on the build system configured for the project.
 
   The --build-command flag is ignored.
 
+  Additional CMake arguments can be passed after a "--". For example:
+
+    cifuzz run my_fuzz_test -- -G Ninja
+
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Bazel") + `
   <fuzz test> is the name of the cc_fuzz_test target as defined in your
   BUILD file, either as a relative or absolute Bazel label.
@@ -324,13 +328,9 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 		return buildResults[0], nil
 	case config.BuildSystemCMake:
-		if len(c.opts.argsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for CMake.\n"+
-				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
-		}
-
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
+			Args:       c.opts.argsToPass,
 			// TODO: Do not hardcode this value.
 			Engine:     "libfuzzer",
 			Sanitizers: sanitizers,

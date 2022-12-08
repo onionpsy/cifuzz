@@ -3,6 +3,8 @@ package cmake
 import (
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -36,22 +38,31 @@ func TestNewBuilder(t *testing.T) {
 		Stderr:     os.Stderr,
 	})
 	require.NoError(t, err)
-	require.DirExists(t, builder1.BuildDir())
+	buildDir1, err := builder1.BuildDir()
+	require.NoError(t, err)
+	require.DirExists(t, buildDir1)
+	expectedBuildDir1 := filepath.Join(projectDir, ".cifuzz-build", "engine1", "sanitizer1+sanitizer2")
+	require.Equal(t, expectedBuildDir1, buildDir1)
 
-	// Create a builder with engine "engine2"
+	// Create a builder with engine "engine2" and additional args
 	builder2, err := NewBuilder(&BuilderOptions{
 		ProjectDir: projectDir,
+		Args:       []string{"foo"},
 		Engine:     "engine2",
 		Sanitizers: []string{"sanitizer1", "sanitizer2"},
 		Stdout:     os.Stderr,
 		Stderr:     os.Stderr,
 	})
 	require.NoError(t, err)
-	require.DirExists(t, builder2.BuildDir())
+	buildDir2, err := builder2.BuildDir()
+	require.NoError(t, err)
+	require.DirExists(t, buildDir2)
+	// Check that the build dir name contains an additional hash value
+	require.Equal(t, 64, len(strings.Split(filepath.Base(buildDir2), "-")[1]))
 
 	// Check that the two builders have different build directories
 	// (because they use different engines)
-	require.NotEqual(t, builder1.BuildDir(), builder2.BuildDir())
+	require.NotEqual(t, buildDir1, buildDir2)
 
 	// Create another builder with "engine1"
 	builder3, err := NewBuilder(&BuilderOptions{
@@ -62,9 +73,11 @@ func TestNewBuilder(t *testing.T) {
 		Stderr:     os.Stderr,
 	})
 	require.NoError(t, err)
-	require.DirExists(t, builder3.BuildDir())
+	buildDir3, err := builder3.BuildDir()
+	require.NoError(t, err)
+	require.DirExists(t, buildDir3)
 
 	// Check that builder1 and builder3 have the same build directory
 	// (because they use the same engine and sanitizers)
-	require.Equal(t, builder1.BuildDir(), builder3.BuildDir())
+	require.Equal(t, buildDir1, buildDir3)
 }

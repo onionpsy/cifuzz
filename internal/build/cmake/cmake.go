@@ -3,6 +3,9 @@ package cmake
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -32,6 +35,7 @@ type ParallelOptions struct {
 
 type BuilderOptions struct {
 	ProjectDir string
+	Args       []string
 	Engine     string
 	Sanitizers []string
 	Parallel   ParallelOptions
@@ -69,7 +73,11 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	b := &Builder{BuilderOptions: opts}
 
 	// Ensure that the build directory exists.
-	err = os.MkdirAll(b.BuildDir(), 0755)
+	buildDir, err := b.BuildDir()
+	if err != nil {
+		return nil, err
+	}
+	err = os.MkdirAll(buildDir, 0755)
 	if err != nil {
 		return nil, err
 	}
@@ -86,21 +94,42 @@ func (b *Builder) Opts() *BuilderOptions {
 	return b.BuilderOptions
 }
 
-func (b *Builder) BuildDir() string {
+func (b *Builder) BuildDir() (string, error) {
 	// Note: Invoking CMake on the same build directory with different cache
 	// variables is a no-op. For this reason, we have to encode all choices made
 	// for the cache variables below in the path to the build directory.
-	// Currently, this includes the fuzzing engine and the choice of sanitizers.
+	// Currently, this includes the fuzzing engine, the choice of sanitizers
+	// and optional user arguments
 	sanitizersSegment := strings.Join(b.Sanitizers, "+")
 	if sanitizersSegment == "" {
 		sanitizersSegment = "none"
 	}
-	return filepath.Join(
-		b.ProjectDir,
-		".cifuzz-build",
-		b.Engine,
-		sanitizersSegment,
-	)
+
+	buildDir := sanitizersSegment
+
+	if len(b.Args) > 0 {
+		// Add the hash of all user arguments to the build dir name in order to
+		// create different build directories for different combinations of arguments
+		hash := sha256.New()
+		for _, arg := range b.Args {
+			// Prepend the length of each argument in order to differentiate
+			// between arguments like {"foo", "bar"} and {"foobar"}
+			err := binary.Write(hash, binary.BigEndian, uint32(len(arg)))
+			if err != nil {
+				return "", errors.WithStack(err)
+			}
+			err = binary.Write(hash, binary.BigEndian, []byte(arg))
+			if err != nil {
+				return "", errors.WithStack(err)
+			}
+		}
+		hashString := hex.EncodeToString(hash.Sum(nil))
+		buildDir = fmt.Sprintf("%s-%s", sanitizersSegment, hashString)
+	}
+
+	buildDir = filepath.Join(b.ProjectDir, ".cifuzz-build", b.Engine, buildDir)
+
+	return buildDir, nil
 }
 
 // Configure calls cmake to "Generate a project buildsystem" (that's the
@@ -113,6 +142,11 @@ func (b *Builder) BuildDir() string {
 // we either get a helpful error message or the build step will succeed if
 // the user fixed the issue in the meantime.
 func (b *Builder) Configure() error {
+	buildDir, err := b.BuildDir()
+	if err != nil {
+		return err
+	}
+
 	cacheArgs := []string{
 		"-DCMAKE_BUILD_TYPE=" + cmakeBuildConfiguration,
 		"-DCIFUZZ_ENGINE=" + b.Engine,
@@ -132,16 +166,20 @@ func (b *Builder) Configure() error {
 		cacheArgs = append(cacheArgs, "-DCMAKE_BUILD_RPATH_USE_ORIGIN:BOOL=ON")
 	}
 
-	cmd := exec.Command("cmake", append(cacheArgs, b.ProjectDir)...)
+	args := cacheArgs
+	args = append(args, b.Args...)
+	args = append(args, b.ProjectDir)
+
+	cmd := exec.Command("cmake", args...)
 	// Redirect the build command's stdout to stderr to only have
 	// reports printed to stdout
 	cmd.Stdout = b.Stderr
 	cmd.Stderr = b.Stderr
 	cmd.Env = b.env
-	cmd.Dir = b.BuildDir()
+	cmd.Dir = buildDir
 	log.Debugf("Working directory: %s", cmd.Dir)
 	log.Debugf("Command: %s", cmd.String())
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		// It's expected that cmake might fail due to user configuration,
 		// so we print the error without the stack trace.
@@ -155,8 +193,13 @@ func (b *Builder) Configure() error {
 // Build builds the specified fuzz tests with CMake. The fuzz tests must
 // not contain duplicates.
 func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
+	buildDir, err := b.BuildDir()
+	if err != nil {
+		return nil, err
+	}
+
 	flags := append([]string{
-		"--build", b.BuildDir(),
+		"--build", buildDir,
 		"--config", cmakeBuildConfiguration,
 		"--target"}, fuzzTests...)
 
@@ -174,7 +217,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 	cmd.Stderr = b.Stderr
 	cmd.Env = b.env
 	log.Debugf("Command: %s", cmd.String())
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		// It's expected that cmake might fail due to user configuration,
 		// so we print the error without the stack trace.
@@ -210,7 +253,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 			Executable:      executable,
 			GeneratedCorpus: generatedCorpus,
 			SeedCorpus:      seedCorpus,
-			BuildDir:        b.BuildDir(),
+			BuildDir:        buildDir,
 			ProjectDir:      b.ProjectDir,
 			Engine:          b.Engine,
 			Sanitizers:      b.Sanitizers,
@@ -260,10 +303,15 @@ func (b *Builder) ListFuzzTests() ([]string, error) {
 // dependencies of the given fuzz test. It prints a warning if any dependency
 // couldn't be resolved or resolves to more than one file.
 func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
+	buildDir, err := b.BuildDir()
+	if err != nil {
+		return nil, err
+	}
+
 	cmd := exec.Command(
 		"cmake",
 		"--install",
-		b.BuildDir(),
+		buildDir,
 		"--config", cmakeBuildConfiguration,
 		"--component", "cifuzz_internal_deps_"+fuzzTest,
 	)
@@ -352,13 +400,17 @@ func (b *Builder) readInfoFileAsPath(fuzzTest string, kind string) (string, erro
 }
 
 func (b *Builder) fuzzTestsInfoDir() (string, error) {
+	buildDir, err := b.BuildDir()
+	if err != nil {
+		return "", err
+	}
 	// The path to the info file for single-configuration CMake generators (e.g. Makefiles).
-	fuzzTestsDir := filepath.Join(b.BuildDir(), ".cifuzz", "fuzz_tests")
+	fuzzTestsDir := filepath.Join(buildDir, ".cifuzz", "fuzz_tests")
 	if fileutil.IsDir(fuzzTestsDir) {
 		return fuzzTestsDir, nil
 	}
 	// The path to the info file for multi-configuration CMake generators (e.g. MSBuild).
-	fuzzTestsDir = filepath.Join(b.BuildDir(), cmakeBuildConfiguration, ".cifuzz", "fuzz_tests")
+	fuzzTestsDir = filepath.Join(buildDir, cmakeBuildConfiguration, ".cifuzz", "fuzz_tests")
 	if fileutil.IsDir(fuzzTestsDir) {
 		return fuzzTestsDir, nil
 	}
