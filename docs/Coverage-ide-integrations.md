@@ -45,9 +45,16 @@ can be produced.
 
 ![Bazel fuzz test in IntelliJ](assets/coverage_intellij_bazel.gif)
 
+### Maven/Gradle (in IntelliJ)
+You can start a coverage with "Run ... with Coverage". This will run the
+fuzz test with the finding inputs from the `*Inputs` directory in
+your test resources and produce a coverage report.
+
+![Jazzer fuzz test in IntelliJ](/docs/assets/coverage_intellij_jazzer.gif)
+
 ## VS Code
 
-### CMake
+### CMake/Maven/Gradle
 You can start coverage runs from within VS Code with the help of tasks. See
 [How to Integrate with External Tools via
 Tasks](https://code.visualstudio.com/docs/editor/tasks) for more details. A
