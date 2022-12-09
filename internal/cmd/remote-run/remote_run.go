@@ -16,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -223,7 +224,13 @@ func (c *runRemoteCmd) run() error {
 			token = strings.TrimSpace(string(b))
 		} else if c.opts.Interactive {
 			fmt.Printf(`Enter an API access token and press Enter. You can generate a token for
-your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
+your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
+
+			err = browser.OpenURL(c.opts.Server + "/dashboard/settings/account/tokens?create")
+			if err != nil {
+				log.Errorf(err, "Failed to open browser: %v", err.Error())
+			}
+
 			reader := bufio.NewReader(os.Stdin)
 			token, err = reader.ReadString('\n')
 			if err != nil {
