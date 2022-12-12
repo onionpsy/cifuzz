@@ -109,13 +109,13 @@ fmt:
 fmt/check:
 	command -v goimports-reviser || go install github.com/incu6us/goimports-reviser/v2@latest
 	@DIFF=$$(find . -type f -name "*.go" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -list-diff -file-path); \
-# Exit if the find command failed
-	@if [ "$$?" -ne 0 ]; then \
+	# Exit if the find command failed \
+	if [ "$$?" -ne 0 ]; then \
 	  exit "$$1"; \
-	fi;
-# Exit after printing unformatted files (if any)
-	@if [ -n "$$DIFF" ]; then \
-		echo >&2 "Unformatted files:\n$$DIFF"; \
+	fi; \
+	# Exit after printing unformatted files (if any) \
+	if [ -n "$${DIFF}" ]; then \
+		echo >&2 "Unformatted files:\n$${DIFF}"; \
 		exit 1; \
 	fi;
 
