@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -152,7 +153,7 @@ For more information on cifuzz sandboxing, see:
     https://github.com/CodeIntelligenceTesting/cifuzz#sandboxing
 
 `
-			log.Notef(msg, strings.Join(os.Args, " "))
+			log.Notef(msg, shellescape.QuoteCommand(os.Args))
 		}
 
 		var signalErr *cmdutils.SignalError
