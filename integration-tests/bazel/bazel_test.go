@@ -130,7 +130,6 @@ func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) 
 }
 
 func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	t.Parallel()
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 
@@ -235,7 +234,6 @@ func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	if runtime.GOOS == "darwin" {
 		t.Skip("Bundle is currently not supported on macOS")
 	}
-	t.Parallel()
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	// Run cifuzz bundle and verify the contents of the archive.
@@ -247,7 +245,6 @@ func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	if runtime.GOOS != "linux" {
 		t.Skip()
 	}
-	t.Parallel()
 
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
