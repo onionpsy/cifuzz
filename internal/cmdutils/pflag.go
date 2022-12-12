@@ -139,7 +139,6 @@ func AddPresetFlag(cmd *cobra.Command) func() {
 	}
 }
 
-
 func AddPrintJSONFlag(cmd *cobra.Command) func() {
 	cmd.Flags().Bool("json", false, "Print output as JSON")
 	return func() {
@@ -186,4 +185,3 @@ func AddUseSandboxFlag(cmd *cobra.Command) func() {
 		ViperMustBindPFlag("use-sandbox", cmd.Flags().Lookup("use-sandbox"))
 	}
 }
-

@@ -179,7 +179,7 @@ func (c *coverageCmd) run() error {
 			log.Info("The --vscode flag only supports the following build systems: CMake, Bazel, Maven, Gradle")
 			return nil
 		}
-		
+
 		if c.opts.OutputFormat == "" {
 			c.opts.OutputFormat = format
 		}
