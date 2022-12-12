@@ -150,7 +150,7 @@ running it without sandboxing:
 
 For more information on cifuzz sandboxing, see:
 
-    https://github.com/CodeIntelligenceTesting/cifuzz#sandboxing
+    https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Getting-Started.md#sandboxing
 
 `
 			log.Notef(msg, shellescape.QuoteCommand(os.Args))
