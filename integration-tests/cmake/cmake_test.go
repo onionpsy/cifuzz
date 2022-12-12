@@ -269,7 +269,7 @@ func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	t.Cleanup(func() {
 		// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
 		err = os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), nil, 0644)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	// Check that Minijail is not used (i.e. the artifact prefix is
