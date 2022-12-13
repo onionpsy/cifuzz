@@ -56,14 +56,12 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	buildResult := &build.Result{
 		Name:        fuzzTest,
 		BuildDir:    buildDir,
-		Engine:      "JAVA_LIBFUZZER",
 		RuntimeDeps: runtimeDeps,
 		ProjectDir:  projectDir,
 	}
 	anotherBuildResult := &build.Result{
 		Name:        anotherFuzzTest,
 		BuildDir:    buildDir,
-		Engine:      "JAVA_LIBFUZZER",
 		RuntimeDeps: runtimeDeps,
 		ProjectDir:  projectDir,
 	}

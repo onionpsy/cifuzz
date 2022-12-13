@@ -81,12 +81,10 @@ func (c *reloadCmd) run() error {
 
 func (c *reloadCmd) reloadCMake() error {
 	// TODO: Make these configurable
-	engine := "libfuzzer"
 	sanitizers := []string{"address", "undefined"}
 
 	builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 		ProjectDir: c.opts.ProjectDir,
-		Engine:     engine,
 		Sanitizers: sanitizers,
 		Stdout:     c.OutOrStdout(),
 		Stderr:     c.ErrOrStderr(),

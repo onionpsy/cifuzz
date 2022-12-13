@@ -36,7 +36,6 @@ type ParallelOptions struct {
 type BuilderOptions struct {
 	ProjectDir string
 	Args       []string
-	Engine     string
 	Sanitizers []string
 	Parallel   ParallelOptions
 	Stdout     io.Writer
@@ -127,7 +126,7 @@ func (b *Builder) BuildDir() (string, error) {
 		buildDir = fmt.Sprintf("%s-%s", sanitizersSegment, hashString)
 	}
 
-	buildDir = filepath.Join(b.ProjectDir, ".cifuzz-build", b.Engine, buildDir)
+	buildDir = filepath.Join(b.ProjectDir, ".cifuzz-build", "libfuzzer", buildDir)
 
 	return buildDir, nil
 }
@@ -149,7 +148,7 @@ func (b *Builder) Configure() error {
 
 	cacheArgs := []string{
 		"-DCMAKE_BUILD_TYPE=" + cmakeBuildConfiguration,
-		"-DCIFUZZ_ENGINE=" + b.Engine,
+		"-DCIFUZZ_ENGINE=libfuzzer",
 		"-DCIFUZZ_SANITIZERS=" + strings.Join(b.Sanitizers, ";"),
 		"-DCIFUZZ_TESTING:BOOL=ON",
 	}
@@ -255,7 +254,6 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 			SeedCorpus:      seedCorpus,
 			BuildDir:        buildDir,
 			ProjectDir:      b.ProjectDir,
-			Engine:          b.Engine,
 			Sanitizers:      b.Sanitizers,
 			RuntimeDeps:     runtimeDeps,
 		}

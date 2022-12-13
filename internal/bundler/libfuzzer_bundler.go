@@ -27,7 +27,6 @@ import (
 )
 
 type configureVariant struct {
-	Engine     string
 	Sanitizers []string
 }
 
@@ -127,7 +126,6 @@ func (b *libfuzzerBundler) bundle() ([]*artifact.Fuzzer, artifact.FileMap, error
 func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
 	fuzzingVariant := configureVariant{
 		// TODO: Do not hardcode these values.
-		Engine:     "libfuzzer",
 		Sanitizers: []string{"address"},
 	}
 	// UBSan is not supported by MSVb.
@@ -142,7 +140,6 @@ func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
 	// Coverage builds are not supported by MSVb.
 	if runtime.GOOS != "windows" {
 		coverageVariant := configureVariant{
-			Engine:     "libfuzzer",
 			Sanitizers: []string{"coverage"},
 		}
 		configureVariants = append(configureVariants, coverageVariant)
@@ -169,7 +166,6 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 	for i, variant := range configureVariants {
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
-			Engine:     "libfuzzer",
 			NumJobs:    b.opts.NumBuildJobs,
 			Stdout:     b.opts.Stdout,
 			Stderr:     b.opts.Stderr,
@@ -190,7 +186,7 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 			panic("No fuzz tests specified")
 		}
 
-		results, err := builder.BuildForBundle(variant.Engine, variant.Sanitizers, b.opts.FuzzTests)
+		results, err := builder.BuildForBundle(variant.Sanitizers, b.opts.FuzzTests)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +201,6 @@ func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVa
 	for i, variant := range configureVariants {
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
-			Engine:     variant.Engine,
 			Sanitizers: variant.Sanitizers,
 			Parallel: cmake.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
@@ -270,7 +265,6 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   b.opts.ProjectDir,
 			BuildCommand: b.opts.BuildCommand,
-			Engine:       variant.Engine,
 			Sanitizers:   variant.Sanitizers,
 			Stdout:       b.opts.Stdout,
 			Stderr:       b.opts.Stderr,
@@ -572,7 +566,7 @@ func fuzzTestPrefix(buildResult *build.Result) string {
 	if sanitizerSegment == "" {
 		sanitizerSegment = "none"
 	}
-	engine := buildResult.Engine
+	engine := "libfuzzer"
 	if isCoverageBuild(buildResult.Sanitizers) {
 		// The backend currently only passes the corpus directory (rather than the files contained in it) as
 		// an argument to the coverage binary if it finds the substring "replayer/coverage" in the fuzz test archive

@@ -25,7 +25,6 @@ import (
 type BuilderOptions struct {
 	ProjectDir   string
 	BuildCommand string
-	Engine       string
 	Sanitizers   []string
 
 	RunfilesFinder runfiles.RunfilesFinder
@@ -79,20 +78,15 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 
 	// Set CFLAGS, CXXFLAGS, LDFLAGS, and FUZZ_TEST_LDFLAGS which must
 	// be passed to the build commands by the build system.
-	switch opts.Engine {
-	case "libfuzzer":
-		if len(opts.Sanitizers) == 1 && opts.Sanitizers[0] == "coverage" {
-			err = b.setCoverageEnv()
-			break
-		}
+	if len(opts.Sanitizers) == 1 && opts.Sanitizers[0] == "coverage" {
+		err = b.setCoverageEnv()
+	} else {
 		for _, sanitizer := range opts.Sanitizers {
 			if sanitizer != "address" && sanitizer != "undefined" {
-				panic(fmt.Sprintf("Invalid sanitizer for engine %q: %q", opts.Engine, sanitizer))
+				panic(fmt.Sprintf("Invalid sanitizer: %q", sanitizer))
 			}
 		}
 		err = b.setLibFuzzerEnv()
-	default:
-		panic(fmt.Sprintf("Invalid engine %q", opts.Engine))
 	}
 	if err != nil {
 		return nil, err
@@ -106,7 +100,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	var err error
 	defer fileutil.Cleanup(b.buildDir)
 
-	if b.Engine == "libfuzzer" && !slices.Equal(b.Sanitizers, []string{"coverage"}) {
+	if !slices.Equal(b.Sanitizers, []string{"coverage"}) {
 		// We compile the dumper without any user-provided flags. This
 		// should be safe as it does not use any stdlib functions.
 		dumperSource, err := runfiles.Finder.DumperSourcePath()
@@ -186,7 +180,6 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		SeedCorpus:      seedCorpus,
 		BuildDir:        wd,
 		ProjectDir:      b.ProjectDir,
-		Engine:          b.Engine,
 		Sanitizers:      b.Sanitizers,
 		RuntimeDeps:     runtimeDeps,
 	}, nil

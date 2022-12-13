@@ -96,7 +96,6 @@ func (cov *LLVMCoverageGenerator) build() error {
 	case config.BuildSystemCMake:
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: cov.ProjectDir,
-			Engine:     "libfuzzer",
 			Sanitizers: []string{"coverage"},
 			Parallel: cmake.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
@@ -129,7 +128,6 @@ func (cov *LLVMCoverageGenerator) build() error {
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:     cov.ProjectDir,
 			BuildCommand:   cov.BuildCommand,
-			Engine:         "libfuzzer",
 			Sanitizers:     []string{"coverage"},
 			RunfilesFinder: cov.runfilesFinder,
 			Stdout:         cov.StdOut,

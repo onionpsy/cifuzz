@@ -29,10 +29,9 @@ func TestNewBuilder(t *testing.T) {
 	projectDir, err := os.MkdirTemp(baseTempDir, "project-dir-")
 	require.NoError(t, err)
 
-	// Create a builder with engine "engine1"
+	// Create a builder
 	builder1, err := NewBuilder(&BuilderOptions{
 		ProjectDir: projectDir,
-		Engine:     "engine1",
 		Sanitizers: []string{"sanitizer1", "sanitizer2"},
 		Stdout:     os.Stderr,
 		Stderr:     os.Stderr,
@@ -41,14 +40,13 @@ func TestNewBuilder(t *testing.T) {
 	buildDir1, err := builder1.BuildDir()
 	require.NoError(t, err)
 	require.DirExists(t, buildDir1)
-	expectedBuildDir1 := filepath.Join(projectDir, ".cifuzz-build", "engine1", "sanitizer1+sanitizer2")
+	expectedBuildDir1 := filepath.Join(projectDir, ".cifuzz-build", "libfuzzer", "sanitizer1+sanitizer2")
 	require.Equal(t, expectedBuildDir1, buildDir1)
 
-	// Create a builder with engine "engine2" and additional args
+	// Create another builder with additional args
 	builder2, err := NewBuilder(&BuilderOptions{
 		ProjectDir: projectDir,
 		Args:       []string{"foo"},
-		Engine:     "engine2",
 		Sanitizers: []string{"sanitizer1", "sanitizer2"},
 		Stdout:     os.Stderr,
 		Stderr:     os.Stderr,
@@ -64,10 +62,9 @@ func TestNewBuilder(t *testing.T) {
 	// (because they use different engines)
 	require.NotEqual(t, buildDir1, buildDir2)
 
-	// Create another builder with "engine1"
+	// Create another builder without additional args
 	builder3, err := NewBuilder(&BuilderOptions{
 		ProjectDir: projectDir,
-		Engine:     "engine1",
 		Sanitizers: []string{"sanitizer1", "sanitizer2"},
 		Stdout:     os.Stderr,
 		Stderr:     os.Stderr,

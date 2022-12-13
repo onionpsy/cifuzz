@@ -312,7 +312,6 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Args:       c.opts.argsToPass,
-			Engine:     "libfuzzer",
 			NumJobs:    c.opts.NumBuildJobs,
 			Stdout:     c.OutOrStdout(),
 			Stderr:     c.ErrOrStderr(),
@@ -331,8 +330,6 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Args:       c.opts.argsToPass,
-			// TODO: Do not hardcode this value.
-			Engine:     "libfuzzer",
 			Sanitizers: sanitizers,
 			Parallel: cmake.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
@@ -412,11 +409,9 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   c.opts.ProjectDir,
 			BuildCommand: c.opts.BuildCommand,
-			// TODO: Do not hardcode this value.
-			Engine:     "libfuzzer",
-			Sanitizers: sanitizers,
-			Stdout:     c.OutOrStdout(),
-			Stderr:     c.ErrOrStderr(),
+			Sanitizers:   sanitizers,
+			Stdout:       c.OutOrStdout(),
+			Stderr:       c.ErrOrStderr(),
 		})
 		if err != nil {
 			return nil, err

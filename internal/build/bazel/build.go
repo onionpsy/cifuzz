@@ -25,7 +25,6 @@ import (
 type BuilderOptions struct {
 	ProjectDir string
 	Args       []string
-	Engine     string
 	NumJobs    uint
 	Stdout     io.Writer
 	Stderr     io.Writer
@@ -49,10 +48,6 @@ func (opts *BuilderOptions) Validate() error {
 	// we panic if it's not set
 	if opts.TempDir == "" {
 		panic("TempDir is not set")
-	}
-
-	if opts.Engine != "libfuzzer" {
-		panic(fmt.Sprintf("Invalid engine %q", opts.Engine))
 	}
 
 	return nil
@@ -221,7 +216,6 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 			GeneratedCorpus: generatedCorpus,
 			SeedCorpus:      seedCorpus,
 			BuildDir:        buildDir,
-			Engine:          b.Engine,
 			Sanitizers:      []string{"address"},
 		}
 		results = append(results, result)
@@ -230,7 +224,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	return results, nil
 }
 
-func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests []string) ([]*build.Result, error) {
+func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*build.Result, error) {
 	var err error
 
 	env, err := build.CommonBuildEnv()
@@ -238,14 +232,9 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 		return nil, err
 	}
 
-	switch engine {
-	case "libfuzzer":
-		env, err = b.setLibFuzzerEnv(env)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		panic(fmt.Sprintf("Invalid engine %q", engine))
+	env, err = b.setLibFuzzerEnv(env)
+	if err != nil {
+		return nil, err
 	}
 
 	// To avoid part of the loading and/or analysis phase to rerun, we
@@ -314,7 +303,7 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 				// variables are then picked up by the OSS-Fuzz engine
 				// instrumentation.
 			default:
-				panic(fmt.Sprintf("Invalid sanitizer for engine %q: %q", b.Engine, sanitizer))
+				panic(fmt.Sprintf("Invalid sanitizer: %q", sanitizer))
 			}
 		}
 	}
@@ -425,7 +414,6 @@ func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests [
 			BuildDir:   extractedDir,
 			// Bazel builds files with PWD=/proc/self/cwd
 			ProjectDir:  "/proc/self/cwd",
-			Engine:      b.Engine,
 			Sanitizers:  sanitizers,
 			RuntimeDeps: runtimeDeps,
 		}

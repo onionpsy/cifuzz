@@ -29,8 +29,6 @@ type Result struct {
 	SeedCorpus string
 	// Canonical path of the build directory
 	BuildDir string
-	// The engine for which the fuzz test was built
-	Engine string
 	// The sanitizers with which the fuzz test was built
 	Sanitizers []string
 	// The canonical paths of the fuzz test's runtime dependencies
