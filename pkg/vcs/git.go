@@ -23,12 +23,12 @@ func GitCommit() (string, error) {
 // GitBranch returns the name of the current branch if the working directory is contained in a Git repository.
 func GitBranch() (string, error) {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-	commit, err := cmd.Output()
+	branch, err := cmd.Output()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	log.Debugf("Current Git branch: %s", string(commit))
-	return strings.TrimSpace(string(commit)), nil
+	log.Debugf("Current Git branch: %s", string(branch))
+	return strings.TrimSpace(string(branch)), nil
 }
 
 // GitIsDirty returns true if and only if the current working directory is contained in a Git repository that has
