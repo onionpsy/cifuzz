@@ -162,6 +162,16 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				opts.Server = "https://" + opts.Server
 			}
 
+			// Print warning that flags which only effect the build of
+			// the bundle are ignored when an existing bundle is specified
+			if opts.BundlePath != "" {
+				for _, flag := range cmdutils.BundleFlags {
+					if cmd.Flags().Lookup(flag).Changed {
+						log.Warnf("Flag --%s is ignored when --bundle is used", flag)
+					}
+				}
+			}
+
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {

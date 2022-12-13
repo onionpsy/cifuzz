@@ -8,6 +8,19 @@ import (
 	"github.com/spf13/viper"
 )
 
+var BundleFlags = []string{
+	"branch",
+	"build-command",
+	"build-jobs",
+	"commit",
+	"dict",
+	"docker-image",
+	"engine-arg",
+	"env",
+	"seed-corpus",
+	"timeout",
+}
+
 func MarkFlagsRequired(cmd *cobra.Command, flags ...string) {
 	for _, flag := range flags {
 		err := cmd.MarkFlagRequired(flag)
