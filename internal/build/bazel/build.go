@@ -68,6 +68,11 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 		return nil, err
 	}
 
+	err = checkCIFuzzBazelRepoCommit()
+	if err != nil {
+		return nil, err
+	}
+
 	b := &Builder{BuilderOptions: opts}
 	return b, nil
 }
@@ -82,11 +87,6 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 // support for combining sanitizers.
 func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	var err error
-
-	err = b.checkCIFuzzBazelRepoCommit()
-	if err != nil {
-		return nil, err
-	}
 
 	var binLabels []string
 	for i := range fuzzTests {
@@ -227,11 +227,6 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 
 func (b *Builder) BuildForBundle(engine string, sanitizers []string, fuzzTests []string) ([]*build.Result, error) {
 	var err error
-
-	err = b.checkCIFuzzBazelRepoCommit()
-	if err != nil {
-		return nil, err
-	}
 
 	env, err := build.CommonBuildEnv()
 	if err != nil {
@@ -505,7 +500,7 @@ func PathFromLabel(label string, flags []string) (string, error) {
 // to a commit hash.
 var cifuzzCommitRegex = regexp.MustCompile(`(?m)^\s*(?:commit|branch)\s*=\s*"([^"]*)"`)
 
-func (b *Builder) checkCIFuzzBazelRepoCommit() error {
+func checkCIFuzzBazelRepoCommit() error {
 	cmd := exec.Command("bazel", "query", "--output=build", "//external:cifuzz")
 	out, err := cmd.Output()
 	if err != nil {
