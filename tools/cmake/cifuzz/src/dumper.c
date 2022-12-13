@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef __APPLE__
@@ -11,6 +12,7 @@ extern "C" {
 #endif
 
 static const char UBSAN_SUMMARY_PREFIX[] = "SUMMARY: UndefinedBehaviorSanitizer:";
+static const char ASAN_SUMMARY_PREFIX[] = "SUMMARY: AddressSanitizer:";
 static void (*sanitizer_death_callback)(void) = NULL;
 
 /*
@@ -18,13 +20,50 @@ static void (*sanitizer_death_callback)(void) = NULL;
  * non-fatal sanitizer findings will still write an input to disk.
  *
  * For both macOS and Linux, we hook:
- * - __sanitizer_set_death_callback, to which libFuzzer provides a callback that
- *   can be used to dump the current input;
+ * - __sanitizer_set_death_callback, which is executed by libFuzzer with a
+     callback function that dumps the current input when executed;
  * - __sanitizer_report_error_summary, which is executed by all sanitizers on a
- *   finding, regardless of whether it is fatal. Since this function is provided
- *   the summary line, we can call __sanitizer_set_death_callback only if
- *   needed.
+ *   finding, regardless of whether it is fatal. When the sanitizer is
+ *   configured to not halt on error, we call the death callback function in
+ *   this hook to also dump the input for non-fatal findings.
  */
+
+void sanitizer_death_callback_if_non_fatal_finding(const char *error_summary) {
+  if (strncmp(ASAN_SUMMARY_PREFIX, error_summary, strlen(ASAN_SUMMARY_PREFIX)) == 0) {
+    char *options = getenv("ASAN_OPTIONS");
+    /*
+     * The default for ASan is to halt on error, so we check if it was
+     * configured to *not* halt on error
+     */
+    if (strstr(options, "halt_on_error=0") || \
+        strstr(options, "halt_on_error=no") || \
+        strstr(options, "halt_on_error=false")) {
+      /*
+       * ASan was configured to not halt, so we dump the input here
+       * because it's not dumped by libFuzzer itself
+       */
+      sanitizer_death_callback();
+    }
+  }
+
+  if (strncmp(UBSAN_SUMMARY_PREFIX, error_summary, strlen(ASAN_SUMMARY_PREFIX)) == 0) {
+    char *options = getenv("UBSAN_OPTIONS");
+    /*
+    * The default for UBSan is to *not* halt on error, so we check if
+    * it was configured to do halt on error
+    */
+    if (!strstr(options, "halt_on_error=1") && \
+        !strstr(options, "halt_on_error=yes") && \
+        !strstr(options, "halt_on_error=true")) {
+      /*
+      * UBSan was not configured to halt, so we dump the input here
+      * because it's not dumped by libFuzzer itself
+      */
+      sanitizer_death_callback();
+    }
+  }
+}
+
 #ifdef __APPLE__
 /*
  * On macOS, sanitizers are exclusively linked dynamically, which allows us to
@@ -64,9 +103,7 @@ void __sanitizer_report_error_summary(const char *error_summary) {
   void *real_sanitizer_report_error_summary =
     dlsym(RTLD_NEXT, "__sanitizer_report_error_summary");
   ((void (*)(const char *))(real_sanitizer_report_error_summary))(error_summary);
-  if (strncmp(UBSAN_SUMMARY_PREFIX, error_summary, strlen(UBSAN_SUMMARY_PREFIX)) == 0) {
-    sanitizer_death_callback();
-  }
+  sanitizer_death_callback_if_non_fatal_finding(error_summary);
 }
 #else
 /*
@@ -95,13 +132,8 @@ void __sanitizer_report_error_summary(const char *error_summary) {
   if (sanitizer_death_callback == NULL) {
     return;
   }
-  /*
-   * Do not emit the input twice for ASan, which is always fatal.
-   * TODO: This will change if we introduce --recover-asan.
-   */
-  if (strncmp(UBSAN_SUMMARY_PREFIX, error_summary, strlen(UBSAN_SUMMARY_PREFIX)) == 0) {
-    sanitizer_death_callback();
-  }
+
+  sanitizer_death_callback_if_non_fatal_finding(error_summary);
 }
 #endif
 
