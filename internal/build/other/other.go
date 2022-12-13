@@ -101,7 +101,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	return b, nil
 }
 
-// Build builds the specified fuzz test with CMake
+// Build builds the specified fuzz test via the user-specified build command
 func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	var err error
 	defer fileutil.Cleanup(b.buildDir)
