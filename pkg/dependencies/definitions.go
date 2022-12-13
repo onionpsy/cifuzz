@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -158,3 +159,12 @@ var deps = Dependencies{
 //
 // Keep in sync with examples/bazel/WORKSPACE.
 const CIFuzzBazelCommit = "b013aa0f90fe8ac60adfc6d9640a9cfa451dda9e"
+
+const RulesFuzzingSHA256 = "4beab98d88e4bf2d04da0412d413a1364f95e5eb88963e15e603bee1410fcedf"
+
+var RulesFuzzingHTTPArchiveRule = fmt.Sprintf(`http_archive(
+        name = "rules_fuzzing",
+        sha256 = "%s",
+        strip_prefix = "rules_fuzzing-ca617e846d0f92e00a903903b0554ea9142e1132",
+        urls = ["https://github.com/CodeIntelligenceTesting/rules_fuzzing/archive/ca617e846d0f92e00a903903b0554ea9142e1132.tar.gz"],
+    )`, RulesFuzzingSHA256)

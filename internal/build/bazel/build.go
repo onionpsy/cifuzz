@@ -73,6 +73,11 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 		return nil, err
 	}
 
+	err = checkRulesFuzzingVersion()
+	if err != nil {
+		return nil, err
+	}
+
 	b := &Builder{BuilderOptions: opts}
 	return b, nil
 }
@@ -500,6 +505,8 @@ func PathFromLabel(label string, flags []string) (string, error) {
 // to a commit hash.
 var cifuzzCommitRegex = regexp.MustCompile(`(?m)^\s*(?:commit|branch)\s*=\s*"([^"]*)"`)
 
+var rulesFuzzingSHA256Regex = regexp.MustCompile(`(?m)^\s*sha256\s*=\s*"([^"]*)"`)
+
 func checkCIFuzzBazelRepoCommit() error {
 	cmd := exec.Command("bazel", "query", "--output=build", "//external:cifuzz")
 	out, err := cmd.Output()
@@ -534,6 +541,39 @@ Required: %[1]s
 Current : %[2]s`,
 			fmt.Sprintf(`commit = %q`, dependencies.CIFuzzBazelCommit),
 			strings.TrimSpace(string(matches[0])),
+		))
+		return cmdutils.ErrSilent
+	}
+	return nil
+}
+
+func checkRulesFuzzingVersion() error {
+	cmd := exec.Command("bazel", "query", "--output=build", "//external:rules_fuzzing")
+	out, err := cmd.Output()
+	if err != nil {
+		// It's expected that bazel might fail due to user configuration,
+		// so we print the error without the stack trace.
+		// If the reason for the error is that the cifuzz repository is
+		// missing, produce a more helpful error message.
+		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
+		if strings.Contains(err.Error(), "target 'rules_fuzzing' not declared in package") {
+			log.Error(errors.New(`The "rules_fuzzing" repository is not defined in the WORKSPACE file, run
+'cifuzz init' to see setup instructions.`))
+		} else {
+			log.Error(err)
+		}
+		return cmdutils.ErrSilent
+	}
+	matches := rulesFuzzingSHA256Regex.FindSubmatch(out)
+	if len(matches) == 0 || string(matches[1]) != dependencies.RulesFuzzingSHA256 {
+		log.Error(errors.Errorf(
+			`Please update the http_archive rule of the "rules_fuzzing" repository in
+the WORKSPACE file to:
+
+    %s
+
+`,
+			dependencies.RulesFuzzingHTTPArchiveRule,
 		))
 		return cmdutils.ErrSilent
 	}

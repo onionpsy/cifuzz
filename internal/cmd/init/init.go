@@ -95,7 +95,7 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 
 	switch buildSystem {
 	case config.BuildSystemBazel:
-		log.Print(fmt.Sprintf(bazelSetup, dependencies.CIFuzzBazelCommit))
+		log.Print(fmt.Sprintf(bazelSetup, dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))
 	case config.BuildSystemCMake:
 		// Note: We set NO_SYSTEM_ENVIRONMENT_PATH to avoid that the
 		// system-wide cmake package takes precedence over a package
