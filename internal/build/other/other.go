@@ -134,6 +134,12 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		return nil, err
 	}
 
+	if slices.Contains(b.Sanitizers, "coverage") {
+		// Allow the build command to figure out if it's executed for a
+		// coverage build
+		buildCommandEnv, err = envutil.Setenv(buildCommandEnv, "CIFUZZ_COVERAGE_BUILD", "1")
+	}
+
 	// Run the build command
 	cmd := exec.Command("/bin/sh", "-c", b.BuildCommand)
 	// Redirect the build command's stdout to stderr to only have
