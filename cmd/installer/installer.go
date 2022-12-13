@@ -117,7 +117,7 @@ func installCIFuzz(installDir string) error {
 			// See:
 			// https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure
 			// https://gitlab.kitware.com/cmake/cmake/-/blob/5ed9232d781ccfa3a9fae709e12999c6649aca2f/Modules/Platform/UnixPaths.cmake#L30)
-			cmakeSrc := filepath.Join(installDir, "share", "cmake")
+			cmakeSrc := filepath.Join(installDir, "share")
 			cmakeDest := "/usr/local/share/cifuzz"
 			log.Printf("Creating symlink %s -> %s", cmakeSrc, cmakeDest)
 			// Older versions of the installer copied the directory, so
