@@ -46,8 +46,7 @@ build-command: "make all"
 ### seed-corpus-dirs
 
 Directories containing sample inputs for the code under test.
-See https://llvm.org/docs/LibFuzzer.html#corpus and
-https://aflplus.plus/docs/fuzzing_in_depth/#a-collecting-inputs.
+See https://llvm.org/docs/LibFuzzer.html#corpus.
 
 #### Example
 
@@ -61,8 +60,8 @@ seed-corpus-dirs:
 ### dict
 
 A file containing input language keywords or other interesting byte
-sequences. See https://llvm.org/docs/LibFuzzer.html#dictionaries and
-https://github.com/AFLplusplus/AFLplusplus/blob/stable/dictionaries/README.md.
+sequences.
+See https://llvm.org/docs/LibFuzzer.html#dictionaries.
 
 #### Example
 ```yaml
@@ -72,9 +71,8 @@ dict: path/to/dictionary.dct
 <a id="engine-args"></a>
 
 ### engine-args
-Command-line arguments to pass to the fuzzing engine (libFuzzer or
-AFL++). See https://llvm.org/docs/LibFuzzer.html#options and
-https://www.mankier.com/8/afl-fuzz.
+Command-line arguments to pass to libFuzzer.
+See https://llvm.org/docs/LibFuzzer.html#options.
 
 #### Example
 ```yaml
