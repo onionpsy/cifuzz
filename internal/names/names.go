@@ -1,7 +1,7 @@
 package names
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/binary"
 	"math/rand"
 )
@@ -483,8 +483,9 @@ var (
 // "adjective_surname". For example 'focused_turing'.
 // The name is chosen deterministically based on the specified seed.
 func GetDeterministicName(seedValue []byte) string {
-	hash := sha1.Sum(seedValue)
-	source := rand.NewSource(int64(binary.BigEndian.Uint64(hash[:])))
+	hash := sha256.New()
+	hash.Write(seedValue)
+	source := rand.NewSource(int64(binary.BigEndian.Uint64(hash.Sum(nil))))
 	r := rand.New(source)
 	return left[r.Intn(len(left))] + "_" + right[r.Intn(len(right))]
 }
