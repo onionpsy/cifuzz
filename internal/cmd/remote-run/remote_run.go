@@ -45,11 +45,15 @@ type artifact struct {
 
 type remoteRunOpts struct {
 	bundler.Opts `mapstructure:",squash"`
-	BundlePath   string `mapstructure:"artifacts-path"`
 	Interactive  bool   `mapstructure:"interactive"`
 	PrintJSON    bool   `mapstructure:"print-json"`
 	ProjectName  string `mapstructure:"project"`
 	Server       string `mapstructure:"server"`
+
+	// Fields which are not configurable via viper (i.e. via cifuzz.yaml
+	// and CIFUZZ_* environment variables), by setting
+	// mapstructure:"-"
+	BundlePath string `mapstructure:"-"`
 }
 
 func (opts *remoteRunOpts) Validate() error {
