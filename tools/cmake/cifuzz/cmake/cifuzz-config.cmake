@@ -5,7 +5,7 @@ set(CIFUZZ_ENGINE "replayer" CACHE STRING "The fuzzing engine used to run fuzz t
 set(CIFUZZ_SANITIZERS "" CACHE STRING "The sanitizers to instrument the code with")
 set(CIFUZZ_USE_DEPRECATED_MACROS OFF CACHE BOOL "Whether to use the deprecated FUZZ(_INIT) macros instead of FUZZ_TEST(_SETUP)")
 
-set(CIFUZZ_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/../include/cifuzz" CACHE INTERNAL "The include directory for the cifuzz headers")
+set(CIFUZZ_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/../include" CACHE INTERNAL "The include directory for the cifuzz headers")
 set(CIFUZZ_DUMPER_C_SRC "${CMAKE_CURRENT_LIST_DIR}/../src/dumper.c" CACHE INTERNAL "The path of the dumper as a C source file.")
 set(CIFUZZ_DUMPER_CXX_SRC "${CMAKE_CURRENT_LIST_DIR}/../src/dumper.cpp" CACHE INTERNAL "The path of the dumper as a CXX source file.")
 set(CIFUZZ_LAUNCHER_C_SRC "${CMAKE_CURRENT_LIST_DIR}/../src/launcher.c" CACHE INTERNAL "The path of the launcher as a C source file.")

@@ -146,7 +146,7 @@ function(add_fuzz_test name)
   if(CIFUZZ_USE_DEPRECATED_MACROS)
     # The old fuzz macro header is injected via the compile command line. It does not live under the include directory
     # so that is not offered to fuzz tests using the new macros via include path IDE completions.
-    set(_fuzz_macro_header "$<SHELL_PATH:${CIFUZZ_INCLUDE_DIR}/../legacy/fuzz_macro.h>")
+    set(_fuzz_macro_header "$<SHELL_PATH:${CIFUZZ_INCLUDE_DIR}/legacy/fuzz_macro.h>")
     if(MSVC)
       target_compile_options("${name}" PRIVATE /FI"${_fuzz_macro_header}")
     else()

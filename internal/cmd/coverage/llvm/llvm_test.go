@@ -50,7 +50,7 @@ func TestLLVM(t *testing.T) {
 			// get path to shared include
 			repoRoot, err := builder.FindProjectDir()
 			require.NoError(t, err)
-			includePath := filepath.Join(repoRoot, "tools", "cmake", "cifuzz", "include", "cifuzz")
+			includePath := filepath.Join(repoRoot, "tools", "cmake", "cifuzz", "include")
 
 			tmpDir, cleanup := testutil.ChdirToTempDir("llvm-coverage-gen")
 			defer cleanup()

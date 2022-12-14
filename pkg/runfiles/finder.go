@@ -16,7 +16,7 @@ type RunfilesFinderImpl struct {
 }
 
 func (f RunfilesFinderImpl) CIFuzzIncludePath() (string, error) {
-	return f.findFollowSymlinks("share/include/cifuzz")
+	return f.findFollowSymlinks("share/include")
 }
 
 func (f RunfilesFinderImpl) ClangPath() (string, error) {
