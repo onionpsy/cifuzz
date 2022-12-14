@@ -186,16 +186,17 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	nameSeed := append(b.Bytes(), f.InputData...)
 	f.Name = names.GetDeterministicName(nameSeed)
 
-	err = f.Save(h.ProjectDir)
-	if err != nil {
-		return err
-	}
-
 	if f.InputFile != "" {
-		err = f.CopyInputFile(h.ProjectDir, h.SeedCorpusDir)
+		err = f.CopyInputFileAndUpdateFinding(h.ProjectDir, h.SeedCorpusDir)
 		if err != nil {
 			return err
 		}
+	}
+
+	// Do not mutate f after this call.
+	err = f.Save(h.ProjectDir)
+	if err != nil {
+		return err
 	}
 
 	if !print {

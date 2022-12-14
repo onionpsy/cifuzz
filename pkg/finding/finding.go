@@ -125,9 +125,9 @@ func (f *Finding) saveJson(jsonPath string) error {
 	return nil
 }
 
-// CopyInputFile copies the input file to the finding directory and
+// CopyInputFileAndUpdateFinding copies the input file to the finding directory and
 // the seed corpus directory and adjusts the finding logs accordingly.
-func (f *Finding) CopyInputFile(projectDir, seedCorpusDir string) error {
+func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string) error {
 	// Acquire a file lock to avoid races with other cifuzz processes
 	// running in parallel
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)

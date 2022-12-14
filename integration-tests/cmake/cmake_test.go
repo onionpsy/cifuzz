@@ -198,6 +198,10 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 	// Verify that there is an ASan finding and that it has the correct details.
 	require.NotNil(t, asanFinding)
+	// Verify that ASan findings come with inputs under the project directory.
+	require.NotEmpty(t, asanFinding.InputFile)
+	require.False(t, filepath.IsAbs(asanFinding.InputFile), "Should be relative: %s", asanFinding.InputFile)
+	require.FileExists(t, filepath.Join(testdata, asanFinding.InputFile))
 	// TODO: This check currently fails on macOS because there
 	// llvm-symbolizer doesn't read debug info from object files.
 	// See https://github.com/google/sanitizers/issues/207#issuecomment-136495556
@@ -231,8 +235,10 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	// Verify that there is a UBSan finding and that it has the correct details.
 	if runtime.GOOS != "windows" {
 		require.NotNil(t, ubsanFinding)
-		// Verify that UBSan findings come with inputs.
+		// Verify that UBSan findings come with inputs under the project directory.
 		require.NotEmpty(t, ubsanFinding.InputFile)
+		require.False(t, filepath.IsAbs(ubsanFinding.InputFile), "Should be relative: %s", ubsanFinding.InputFile)
+		require.FileExists(t, filepath.Join(testdata, ubsanFinding.InputFile))
 		if runtime.GOOS != "darwin" {
 			expectedStackTrace := []*stacktrace.StackFrame{
 				{
