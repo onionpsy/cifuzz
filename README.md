@@ -150,7 +150,7 @@ choco install cmake llvm
 **Ubuntu / Debian**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo apt install clang llvm lcov default-jdk
+sudo apt install clang llvm lcov default-jdk zip
 
 # install bazelisk
 sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
@@ -160,7 +160,7 @@ sudo chmod +x /usr/local/bin/bazel
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo pacman -S clang llvm lcov python jdk-openjdk
+sudo pacman -S clang llvm lcov python jdk-openjdk zip
 
 # install bazelisk
 sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
@@ -170,7 +170,7 @@ sudo chmod +x /usr/local/bin/bazel
 **macOS**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-brew install llvm lcov openjdk bazelisk
+brew install llvm lcov openjdk bazelisk zip
 ```
 
 **Windows**
@@ -179,7 +179,7 @@ brew install llvm lcov openjdk bazelisk
 At least Visual Studio 2022 version 17 is required.
 
 ```bash
-choco install cmake llvm microsoft-openjdk bazelisk
+choco install cmake llvm microsoft-openjdk bazelisk zip
 ```
 
 </details>
