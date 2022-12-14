@@ -30,6 +30,16 @@ static void (*sanitizer_death_callback)(void) = NULL;
 
 void sanitizer_death_callback_if_non_fatal_finding(const char *error_summary) {
   if (strncmp(ASAN_SUMMARY_PREFIX, error_summary, strlen(ASAN_SUMMARY_PREFIX)) == 0) {
+    /*
+     * Don't dump the input if this is a memory leak report, because
+     * those are dumped by libFuzzer itself even when ASan was
+     * configured to not halt on error
+     */
+    if (strstr(error_summary, "byte(s) leaked")) {
+      return;
+    }
+
+
     char *options = getenv("ASAN_OPTIONS");
     /*
      * The default for ASan is to halt on error, so we check if it was
