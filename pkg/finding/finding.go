@@ -32,11 +32,11 @@ type Finding struct {
 	HumanReadableInput string        `json:"human_readable_input,omitempty"`
 	MoreDetails        *ErrorDetails `json:"more_details,omitempty"`
 	Tag                uint64        `json:"tag,omitempty"`
-	InputFile          string
 
 	// Note: The following fields don't exist in the protobuf
 	// representation used in the Code Intelligence core repository.
 	CreatedAt  time.Time                `json:"created_at,omitempty"`
+	InputFile  string                   `json:"input_file,omitempty"`
 	StackTrace []*stacktrace.StackFrame `json:"stack_trace,omitempty"`
 
 	seedPath string
