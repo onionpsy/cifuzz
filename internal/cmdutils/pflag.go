@@ -172,7 +172,8 @@ func AddSeedCorpusFlag(cmd *cobra.Command) func() {
 	// TODO(afl): Also link to https://aflplus.plus/docs/fuzzing_in_depth/#a-collecting-inputs
 	cmd.Flags().StringArrayP("seed-corpus", "s", nil,
 		"A `directory` containing sample inputs for the code under test,\n"+
-			"which is used in addition to inputs found in <fuzz test>_inputs.\n"+
+			"which is used in addition to inputs found in the inputs\n"+
+			"directory of the fuzz test.\n"+
 			"See https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Glossary.md#seed-corpus.\n"+
 			"This flag can be used multiple times.")
 	return func() {
