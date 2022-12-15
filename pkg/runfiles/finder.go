@@ -16,7 +16,7 @@ type RunfilesFinderImpl struct {
 }
 
 func (f RunfilesFinderImpl) CIFuzzIncludePath() (string, error) {
-	return f.findFollowSymlinks("share/include")
+	return f.findFollowSymlinks("include")
 }
 
 func (f RunfilesFinderImpl) ClangPath() (string, error) {
@@ -78,11 +78,11 @@ func (f RunfilesFinderImpl) ProcessWrapperPath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) ReplayerSourcePath() (string, error) {
-	return f.findFollowSymlinks("share/src/replayer.c")
+	return f.findFollowSymlinks("src/replayer.c")
 }
 
 func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
-	return f.findFollowSymlinks("share/src/dumper.c")
+	return f.findFollowSymlinks("src/dumper.c")
 }
 
 func (f RunfilesFinderImpl) VSCodeTasksPath() (string, error) {

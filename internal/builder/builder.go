@@ -82,11 +82,19 @@ func (i *CIFuzzBuilder) createDirectoryLayout() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	err = os.MkdirAll(i.includeDir(), 0755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	err = os.MkdirAll(i.libDir(), 0755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	err = os.MkdirAll(i.shareDir(), 0755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = os.MkdirAll(i.srcDir(), 0755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -98,12 +106,20 @@ func (i *CIFuzzBuilder) binDir() string {
 	return filepath.Join(i.TargetDir, "bin")
 }
 
+func (i *CIFuzzBuilder) includeDir() string {
+	return filepath.Join(i.TargetDir, "include")
+}
+
 func (i *CIFuzzBuilder) libDir() string {
 	return filepath.Join(i.TargetDir, "lib")
 }
 
 func (i *CIFuzzBuilder) shareDir() string {
 	return filepath.Join(i.TargetDir, "share")
+}
+
+func (i *CIFuzzBuilder) srcDir() string {
+	return filepath.Join(i.TargetDir, "src")
 }
 
 func (i *CIFuzzBuilder) lockFile() string {
@@ -334,21 +350,21 @@ func (i *CIFuzzBuilder) CopyFiles() error {
 	}
 
 	// Copy the include directory
-	err = copy.Copy(filepath.Join(i.projectDir, "include"), filepath.Join(i.shareDir(), "include"), opts)
+	err = copy.Copy(filepath.Join(i.projectDir, "include"), i.includeDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	// Copy C/C++ source files to the src directory
-	err = copy.Copy(filepath.Join(i.projectDir, "tools", "dumper"), filepath.Join(i.shareDir(), "src"), opts)
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "dumper"), i.srcDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	err = copy.Copy(filepath.Join(i.projectDir, "tools", "launcher"), filepath.Join(i.shareDir(), "src"), opts)
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "launcher"), i.srcDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	err = copy.Copy(filepath.Join(i.projectDir, "tools", "replayer", "src"), filepath.Join(i.shareDir(), "src"), opts)
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "replayer", "src"), i.srcDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
