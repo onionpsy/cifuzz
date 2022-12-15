@@ -86,7 +86,7 @@ func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) VSCodeTasksPath() (string, error) {
-	return f.findFollowSymlinks("share/tasks.json")
+	return f.findFollowSymlinks("share/integration/tasks.json")
 }
 
 func (f RunfilesFinderImpl) LogoPath() (string, error) {
@@ -94,7 +94,7 @@ func (f RunfilesFinderImpl) LogoPath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) GradleInitScriptPath() (string, error) {
-	return f.findFollowSymlinks("share/init.gradle")
+	return f.findFollowSymlinks("share/integration/init.gradle")
 }
 
 // JavaHomePath returns the absolute path to the base directory of the

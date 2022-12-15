@@ -110,7 +110,7 @@ func TestSetupCMakePresets(t *testing.T) {
 
 func TestSetupVSCodeTasks(t *testing.T) {
 	sourceDir := getRootSourceDirectory(t)
-	vscodeTasks := filepath.Join(sourceDir, "share", "tasks.json")
+	vscodeTasks := filepath.Join(sourceDir, "share", "integration", "tasks.json")
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("VSCodeTasksPath").Return(vscodeTasks, nil)
 
