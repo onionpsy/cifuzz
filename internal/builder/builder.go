@@ -321,11 +321,11 @@ func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
 	cmakeSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz")
 	destDir := i.shareDir()
 	opts := copy.Options{
-		// Skip copying the replayer, which is a symlink on UNIX but checked out
-		// by git as a file containing the relative path on Windows. It is
-		// handled below.
-		OnSymlink: func(string) copy.SymlinkAction {
-			return copy.Skip
+		// Create deep copies of symlinks because the installer embeds
+		// the target directory and the Go embed package doesn't support
+		// symlinks
+		OnSymlink: func(symlink string) copy.SymlinkAction {
+			return copy.Deep
 		},
 	}
 	err = copy.Copy(cmakeSrc, destDir, opts)
@@ -333,33 +333,6 @@ func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
 		return errors.WithStack(err)
 	}
 
-	// Copy the replayer, which is a symlink and thus may not have been copied
-	// correctly on Windows.
-	replayerSrc := filepath.Join(i.projectDir, "tools", "replayer", "src", "replayer.c")
-	replayerDir := filepath.Join(destDir, "src")
-	err = os.MkdirAll(replayerDir, 0755)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	err = copy.Copy(replayerSrc, filepath.Join(replayerDir, "replayer.c"))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	err = copy.Copy(replayerSrc, filepath.Join(replayerDir, "replayer.cpp"))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	// The same applies to the C++ version of the launcher and the dumper.
-	launcherSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz", "src", "launcher.c")
-	err = copy.Copy(launcherSrc, filepath.Join(destDir, "src", "launcher.cpp"))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	dumperSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz", "src", "dumper.c")
-	err = copy.Copy(dumperSrc, filepath.Join(destDir, "src", "dumper.cpp"))
-	if err != nil {
-		return errors.WithStack(err)
-	}
 
 	return nil
 }
