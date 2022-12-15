@@ -68,7 +68,7 @@ func NewCIFuzzBuilder(opts Options) (*CIFuzzBuilder, error) {
 
 	err = i.createDirectoryLayout()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	log.Printf("Building cifuzz in %v", opts.TargetDir)
