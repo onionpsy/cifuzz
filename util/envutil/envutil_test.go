@@ -49,3 +49,11 @@ func TestGetenv(t *testing.T) {
 	val = Getenv([]string{"foo=bar"}, "foo")
 	require.Equal(t, val, "bar")
 }
+
+func TestCopy(t *testing.T) {
+	src := []string{"FOO=foo", "BAR=bar"}
+	dst := []string{"BAO=bab", "BAR=overwrite me"}
+	res, err := Copy(dst, src)
+	require.NoError(t, err)
+	require.Equal(t, []string{"BAO=bab", "BAR=bar", "FOO=foo"}, res)
+}

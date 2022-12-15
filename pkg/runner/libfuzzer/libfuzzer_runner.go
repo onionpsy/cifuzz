@@ -143,13 +143,10 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	// The environment to run libfuzzer in
-	fuzzerEnv, err := r.FuzzerEnvironment()
+	env, err := r.FuzzerEnvironment()
 	if err != nil {
 		return err
 	}
-
-	// The environment we run minijail in
-	wrapperEnv := os.Environ()
 
 	if r.UseMinijail {
 		libfuzzerArgs := args
@@ -174,7 +171,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		mj, err := minijail.NewMinijail(&minijail.Options{
 			Args:      libfuzzerArgs,
 			Bindings:  bindings,
-			Env:       fuzzerEnv,
 			OutputDir: outputDir,
 		})
 		if err != nil {
@@ -184,18 +180,9 @@ func (r *Runner) Run(ctx context.Context) error {
 
 		// Use the command which runs libfuzzer via minijail
 		args = mj.Args
-	} else {
-		// We don't use minijail, so we can set the environment
-		// variables for the fuzzer in the wrapper environment
-		for key, value := range envutil.ToMap(fuzzerEnv) {
-			wrapperEnv, err = envutil.Setenv(wrapperEnv, key, value)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
-	return r.RunLibfuzzerAndReport(ctx, args, wrapperEnv)
+	return r.RunLibfuzzerAndReport(ctx, args, env)
 }
 
 func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env []string) error {
@@ -218,7 +205,10 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 	}
 	defer cancelCmdCtx()
 	r.cmd = executil.CommandContext(cmdCtx, args[0], args[1:]...)
-	r.cmd.Env = env
+	r.cmd.Env, err = envutil.Copy(os.Environ(), env)
+	if err != nil {
+		return err
+	}
 
 	var stderrPipe io.ReadCloser
 	if r.Verbose {
@@ -257,7 +247,7 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 		}
 	}
 
-	log.Debugf("Command: %s", strings.Join(stringutil.QuotedStrings(r.cmd.Args), " "))
+	log.Debugf("Command: %s %s", strings.Join(env, " "), strings.Join(stringutil.QuotedStrings(r.cmd.Args), " "))
 	err = r.cmd.Start()
 	if err != nil {
 		return err

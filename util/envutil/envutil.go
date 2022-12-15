@@ -75,6 +75,20 @@ func Setenv(env []string, key, value string) ([]string, error) {
 	return env, nil
 }
 
+// Copy copies all environment variables from src to dst. When an
+// environment variable is already set in dst, the value in dst is
+// overwritten.
+func Copy(dst []string, src []string) ([]string, error) {
+	var err error
+	for key, value := range ToMap(src) {
+		dst, err = Setenv(dst, key, value)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return dst, nil
+}
+
 // ToMap converts the specified strings representing an environment in
 // the form "key=value" to a map.
 func ToMap(env []string) map[string]string {

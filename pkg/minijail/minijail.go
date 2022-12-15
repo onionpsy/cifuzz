@@ -9,10 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
-	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 const (
@@ -189,7 +189,6 @@ var defaultBindings = []*Binding{
 
 type Options struct {
 	Args      []string
-	Env       []string
 	Bindings  []*Binding
 	OutputDir string
 }
@@ -289,8 +288,7 @@ func NewMinijail(opts *Options) (*minijail, error) {
 	bindings = append(bindings, &Binding{Source: path})
 
 	// Add binding for process_wrapper. process_wrapper changes the
-	// working directory and sets environment variables and then
-	// executes the specified command.
+	// working directory and then executes the specified command.
 	processWrapperPath, err := runfiles.Finder.ProcessWrapperPath()
 	if err != nil {
 		return nil, err
@@ -351,23 +349,23 @@ func NewMinijail(opts *Options) (*minijail, error) {
 	// sandbox to the first argument
 	processWrapperArgs := []string{processWrapperPath, workdir}
 
-	// The process wrapper sets environment variables inside the sandbox
-	// to the remaining arguments until the first "--".
-	processWrapperArgs = append(processWrapperArgs, opts.Env...)
-
 	// --------------------
 	// --- Run minijail ---
 	// --------------------
-	args := stringutil.JoinSlices("--", minijailArgs, processWrapperArgs, opts.Args)
+	args := append(minijailArgs, "--")
+	args = append(args, processWrapperArgs...)
+	args = append(args, opts.Args...)
 
-	// When CI_DEBUG_MINIJAIL_SLEEP_FOREVER is set, instead of executing
-	// the actual command, we store it in the CMD environment variable
-	// and start a shell to allow debugging issues interactively.
-	if os.Getenv("CI_DEBUG_MINIJAIL_SLEEP_FOREVER") != "" {
-		_ = os.MkdirAll(filepath.Join(chrootDir, "bin"), 0o755)
-		minijailArgs = append(minijailArgs, "-b", "/bin")
-		processWrapperArgs = append(processWrapperArgs, "CMD="+strings.Join(opts.Args, " "))
-		args = stringutil.JoinSlices("--", minijailArgs, processWrapperArgs, []string{"/bin/sh"})
+	// When DEBUG_MINIJAIL is set, we don't execute the actual libFuzzer
+	// command but only print it and start a shell instead. When used
+	// together with SKIP_CLEANUP, this allows to copy the Minijail
+	// command from the logs to open a shell in the sandbox environment
+	// to debug issues interactively.
+	if os.Getenv("DEBUG_MINIJAIL") != "" {
+		log.Print("libFuzzer command: ", strings.Join(opts.Args, " "))
+		args = append(minijailArgs, "--")
+		args = append(args, processWrapperArgs...)
+		args = append(args, "/bin/sh")
 	}
 
 	return &minijail{

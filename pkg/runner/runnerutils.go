@@ -166,6 +166,7 @@ func AddEnvFlags(env []string, envVars []string) ([]string, error) {
 
 func FuzzerEnvironment() ([]string, error) {
 	var err error
+
 	var env []string
 
 	// Tell the address sanitizer where it can find llvm-symbolizer.

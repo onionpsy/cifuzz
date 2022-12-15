@@ -178,21 +178,17 @@ func (cov *LLVMCoverageGenerator) run() error {
 		}
 	}
 
-	// The environment we run the binary in
-	var binaryEnv []string
 	executable := cov.buildResult.Executable
 	conModeSupport := binary.SupportsLlvmProfileContinuousMode(executable)
-	binaryEnv, err = envutil.Setenv(binaryEnv, "LLVM_PROFILE_FILE", cov.rawProfilePattern(conModeSupport))
+	var env []string
+	env, err = envutil.Setenv(env, "LLVM_PROFILE_FILE", cov.rawProfilePattern(conModeSupport))
 	if err != nil {
 		return err
 	}
-	binaryEnv, err = envutil.Setenv(binaryEnv, "NO_CIFUZZ", "1")
+	env, err = envutil.Setenv(env, "NO_CIFUZZ", "1")
 	if err != nil {
 		return err
 	}
-
-	// The environment we run minijail in
-	wrapperEnv := os.Environ()
 
 	dirWithEmptyFile := filepath.Join(cov.outputDir, "empty-file-corpus")
 	err = os.Mkdir(dirWithEmptyFile, 0o755)
@@ -225,16 +221,17 @@ func (cov *LLVMCoverageGenerator) run() error {
 	// always logs any error we encounter.
 	// This line is responsible for empty inputs being skipped:
 	// https://github.com/llvm/llvm-project/blob/c7c0ce7d9ebdc0a49313bc77e14d1e856794f2e0/compiler-rt/lib/fuzzer/FuzzerIO.cpp#L127
-	_ = cov.runFuzzer(append(args, "-runs=0"), []string{dirWithEmptyFile}, binaryEnv, wrapperEnv)
+	_ = cov.runFuzzer(append(args, "-runs=0"), []string{dirWithEmptyFile}, env)
 
 	// We use libFuzzer's crash-resistant merge mode to merge all corpus directories into an empty directory, which
 	// makes libFuzzer go over all inputs in a subprocess that is restarted in case it crashes. With LLVM's continuous
 	// mode (see rawProfilePattern) and since the LLVM coverage information is automatically appended to the existing
 	// .profraw file, we collect complete coverage information even if the target crashes on an input in the corpus.
-	return cov.runFuzzer(append(args, "-merge=1"), append([]string{emptyDir}, corpusDirs...), binaryEnv, wrapperEnv)
+	return cov.runFuzzer(append(args, "-merge=1"), append([]string{emptyDir}, corpusDirs...), env)
 }
 
-func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []string, binaryEnv []string, wrapperEnv []string) error {
+func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []string, env []string) error {
+	var err error
 	args := []string{cov.buildResult.Executable}
 	args = append(args, preCorpusArgs...)
 	args = append(args, corpusDirs...)
@@ -253,7 +250,6 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 		mj, err := minijail.NewMinijail(&minijail.Options{
 			Args:      args,
 			Bindings:  bindings,
-			Env:       binaryEnv,
 			OutputDir: cov.outputDir,
 		})
 		if err != nil {
@@ -263,20 +259,13 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 
 		// Use the command which runs the fuzz test via minijail
 		args = mj.Args
-	} else {
-		// We don't use minijail, so we can merge the binary and wrapper
-		// environment
-		for key, value := range envutil.ToMap(binaryEnv) {
-			var err error
-			wrapperEnv, err = envutil.Setenv(wrapperEnv, key, value)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	cmd := executil.Command(args[0], args[1:]...)
-	cmd.Env = wrapperEnv
+	cmd.Env, err = envutil.Copy(os.Environ(), env)
+	if err != nil {
+		return err
+	}
 
 	errStream := &bytes.Buffer{}
 	if viper.GetBool("verbose") {
@@ -289,7 +278,7 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 	}
 
 	log.Debugf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		// Print the stderr output of the fuzzer to provide users with
 		// the context of this error even without verbose mode.
