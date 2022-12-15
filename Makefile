@@ -148,11 +148,11 @@ test/unit: deps
 
 .PHONY: test/integration
 test/integration: deps deps/integration-tests
-	go test -v ./... -run 'TestIntegration.*'
+	go test -v -timeout=20m ./... -run 'TestIntegration.*'
 
 .PHONY: test/integration/sequential
 test/integration/sequential: deps deps/integration-tests
-	go test -v -parallel=1 ./... -run 'TestIntegration.*'
+	go test -v -timeout=20m -parallel=1 ./... -run 'TestIntegration.*'
 
 .PHONY: test/race
 test/race: deps build/$(current_os)
