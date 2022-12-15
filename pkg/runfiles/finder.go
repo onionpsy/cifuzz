@@ -30,7 +30,7 @@ func (f RunfilesFinderImpl) CMakePath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) CMakePresetsPath() (string, error) {
-	return f.findFollowSymlinks("share/CMakePresets.json")
+	return f.findFollowSymlinks("share/integration/CMakePresets.json")
 }
 
 func (f RunfilesFinderImpl) LLVMCovPath() (string, error) {
