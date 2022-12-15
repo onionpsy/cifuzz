@@ -342,14 +342,6 @@ func (i *CIFuzzBuilder) CopyFiles() error {
 		return errors.WithStack(err)
 	}
 
-	// Copy the cmake directory
-	cmakeSrc := filepath.Join(i.projectDir, "tools", "cmake", "modules")
-	cmakeDest := filepath.Join(i.shareDir(), "cmake")
-	err = copy.Copy(cmakeSrc, cmakeDest, opts)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	// Copy the include directory
 	err = copy.Copy(filepath.Join(i.projectDir, "include"), i.includeDir(), opts)
 	if err != nil {
