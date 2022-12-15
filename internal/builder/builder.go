@@ -184,9 +184,10 @@ func (i *CIFuzzBuilder) BuildCIFuzzAndDeps() error {
 		return err
 	}
 
-	err = i.CopySharedFolder()
+	// Copy the share directory
+	err = copy.Copy(filepath.Join(i.projectDir, "share"), i.shareDir())
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -356,28 +357,6 @@ func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
 	}
 	dumperSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz", "src", "dumper.c")
 	err = copy.Copy(dumperSrc, filepath.Join(destDir, "src", "dumper.cpp"))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-func (i *CIFuzzBuilder) CopySharedFolder() error {
-	var err error
-	err = i.Lock()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = i.Unlock()
-		if err != nil {
-			log.Printf("error: %v", err)
-		}
-	}()
-
-	tasksSrc := filepath.Join(i.projectDir, "share")
-	err = copy.Copy(tasksSrc, i.shareDir())
 	if err != nil {
 		return errors.WithStack(err)
 	}
