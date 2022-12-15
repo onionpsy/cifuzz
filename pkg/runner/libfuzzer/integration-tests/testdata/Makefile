@@ -74,7 +74,7 @@ all: $(ALL_PREREQUISITES)
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 dumper.o:
-	$(CC) -fPIC -c $(ROOT_DIR)/src/dumper.c -o $@
+	$(CC) -fPIC -c $(ROOT_DIR)/dumper/dumper.c -o $@
 
 $(FUZZ_TARGET_DIR)/trigger_asan_with_file_accesses: OUT=$(BUILD_DIR)/$(notdir $@)$(EXT)
 $(FUZZ_TARGET_DIR)/trigger_asan_with_file_accesses: ${FUZZ_TARGET_DIR}/trigger_asan_with_file_accesses.c ${DEPS}

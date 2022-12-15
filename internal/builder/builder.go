@@ -179,15 +179,9 @@ func (i *CIFuzzBuilder) BuildCIFuzzAndDeps() error {
 		return err
 	}
 
-	err = i.CopyCMakeIntegration()
+	err = i.CopyFiles()
 	if err != nil {
 		return err
-	}
-
-	// Copy the share directory
-	err = copy.Copy(filepath.Join(i.projectDir, "share"), i.shareDir())
-	if err != nil {
-		return errors.WithStack(err)
 	}
 
 	return nil
@@ -303,9 +297,8 @@ func (i *CIFuzzBuilder) BuildCIFuzz() error {
 	return nil
 }
 
-// CopyCMakeIntegration copies the CMake integration to shareDir.
-// Directories are created as needed.
-func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
+// CopyFiles copies all files which don't need to built to the target directory.
+func (i *CIFuzzBuilder) CopyFiles() error {
 	var err error
 	err = i.Lock()
 	if err != nil {
@@ -318,8 +311,6 @@ func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
 		}
 	}()
 
-	cmakeSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz")
-	destDir := i.shareDir()
 	opts := copy.Options{
 		// Create deep copies of symlinks because the installer embeds
 		// the target directory and the Go embed package doesn't support
@@ -328,11 +319,39 @@ func (i *CIFuzzBuilder) CopyCMakeIntegration() error {
 			return copy.Deep
 		},
 	}
-	err = copy.Copy(cmakeSrc, destDir, opts)
+
+	// Copy the share directory
+	err = copy.Copy(filepath.Join(i.projectDir, "share"), i.shareDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
+	// Copy the cmake directory
+	cmakeSrc := filepath.Join(i.projectDir, "tools", "cmake", "cifuzz")
+	err = copy.Copy(cmakeSrc, i.shareDir(), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Copy the include directory
+	err = copy.Copy(filepath.Join(i.projectDir, "include"), filepath.Join(i.shareDir(), "include"), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Copy C/C++ source files to the src directory
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "dumper"), filepath.Join(i.shareDir(), "src"), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "launcher"), filepath.Join(i.shareDir(), "src"), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "replayer", "src"), filepath.Join(i.shareDir(), "src"), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
 	return nil
 }

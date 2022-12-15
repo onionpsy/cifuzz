@@ -222,7 +222,7 @@ function(add_fuzz_test name)
     if((NOT MSVC) AND ((address IN_LIST CIFUZZ_SANITIZERS) OR (undefined IN_LIST CIFUZZ_SANITIZERS)))
       # The macOS linker doesn't support --wrap, so we fall back to a different strategy that doesn't require any linker
       # flags.
-      # See tools/cmake/cifuzz/src/dumper.c for details.
+      # See src/dumper.c for details.
       if(NOT APPLE)
         target_link_options("${name}" PRIVATE -Wl,--wrap=__sanitizer_set_death_callback)
       endif()

@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 		builder.Cleanup()
 		log.Fatalf("Failed to install CMake integration: %+v", err)
 	}
-	err = builder.CopyCMakeIntegration()
+	err = builder.CopyFiles()
 	if err != nil {
 		builder.Cleanup()
 		log.Fatalf("Failed to install CMake integration: %+v", err)

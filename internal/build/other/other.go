@@ -230,7 +230,7 @@ func (b *Builder) setLibFuzzerEnv() error {
 	// it to "-fsanitize=fuzzer" to build a libfuzzer binary.
 	// We also link in an additional object to ensure that non-fatal
 	// sanitizer findings still have an input attached.
-	// See tools/cmake/cifuzz/src/dumper.c for details.
+	// See src/dumper.c for details.
 	var fuzzTestLdflags []string
 	if runtime.GOOS != "darwin" {
 		fuzzTestLdflags = append(fuzzTestLdflags, "-Wl,--wrap=__sanitizer_set_death_callback")
