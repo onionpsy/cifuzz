@@ -99,7 +99,7 @@ var commonCFlags = []string{
 func LibFuzzerCFlags() []string {
 	// These flags must not contain spaces, because the environment
 	// variables that are set to these flags are space separated.
-	// Note: Keep in sync with tools/cmake/CIFuzz/share/CIFuzz/CIFuzzFunctions.cmake
+	// Note: Keep in sync with share/cmake/cifuzz-functions.cmake
 	return append(commonCFlags, []string{
 		// ----- Flags used to build with libFuzzer -----
 		// Compile with edge coverage and compare instrumentation. We

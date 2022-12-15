@@ -250,7 +250,7 @@ func (b *Builder) setCoverageEnv() error {
 	// Set CFLAGS and CXXFLAGS. Note that these flags must not contain
 	// spaces, because the environment variables are space separated.
 	//
-	// Note: Keep in sync with tools/cmake/CIFuzz/share/CIFuzz/CIFuzzFunctions.cmake
+	// Note: Keep in sync with share/cmake/cifuzz-functions.cmake
 	cc := envutil.Getenv(b.env, "CC")
 	clangVersion, err := dependencies.ClangVersion(cc)
 	if err != nil {

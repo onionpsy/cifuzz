@@ -68,7 +68,7 @@ func TestIntegration_Ctest_DefaultSettings(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	// Simulate a build without any special flags. This is closest to what users get when they run fuzz tests like their
 	// existing (unit) tests - without cifuzz run or any CIFUZZ_* CMake variables set.
@@ -89,7 +89,7 @@ func TestIntegration_Ctest_WithAddressSanitizer(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	buildDir := build(t, cifuzzCmakeBuildType, map[string]string{
 		"CIFUZZ_SANITIZERS": "address",
@@ -113,7 +113,7 @@ func TestIntegration_Ctest_WithUndefinedBehaviorSanitizer(t *testing.T) {
 		t.Skip("MSVC does not support UndefinedBehaviorSanitizer")
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	buildDir := build(t, cifuzzCmakeBuildType, map[string]string{
 		"CIFUZZ_SANITIZERS": "undefined",
@@ -137,7 +137,7 @@ func TestIntegration_Build_WithMultipleSanitizers(t *testing.T) {
 		t.Skip("MSVC does not support UndefinedBehaviorSanitizer")
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	build(t, cifuzzCmakeBuildType, map[string]string{
 		"CIFUZZ_SANITIZERS": "address;undefined",
@@ -150,7 +150,7 @@ func TestIntegration_Build_LegacyFuzzTests(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	buildDir := build(t, cifuzzCmakeBuildType, map[string]string{"CIFUZZ_USE_DEPRECATED_MACROS": "ON"})
 	runAndAssertTests(t, buildDir, cifuzzCmakeBuildType, map[string]bool{"legacy_fuzz_test_regression_test": true})
@@ -161,7 +161,7 @@ func TestIntegration_CIFuzzInfoIsCreated(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	buildDir, err := os.MkdirTemp(baseTempDir, "build")
 	require.NoError(t, err)
@@ -231,7 +231,7 @@ func TestIntegration_RuntimeDepsInfo(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	buildDir := build(t, cifuzzCmakeBuildType, nil)
 
@@ -260,7 +260,7 @@ func TestIntegration_FuzzTestBinaryLaunchesCIFuzz(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	testutil.RegisterTestDeps("testdata", "cifuzz")
+	testutil.RegisterTestDeps("testdata", "modules")
 
 	cmakeVariables := map[string]string{
 		"CIFUZZ_ENGINE":     "libfuzzer",

@@ -24,7 +24,7 @@ import (
 )
 
 // The CMake configuration (also called "build type") to use for fuzzing runs.
-// See enable_fuzz_testing in tools/cmake/CIFuzz/share/CIFuzz/CIFuzzFunctions.cmake for the rationale for using this
+// See enable_fuzz_testing in tools/cmake/modules/cifuzz-functions.cmake for the rationale for using this
 // build type.
 const cmakeBuildConfiguration = "RelWithDebInfo"
 
