@@ -68,6 +68,7 @@ func NewCIFuzzBuilder(opts Options) (*CIFuzzBuilder, error) {
 
 	err = i.createDirectoryLayout()
 	if err != nil {
+		i.Cleanup()
 		return nil, err
 	}
 
@@ -79,17 +80,14 @@ func NewCIFuzzBuilder(opts Options) (*CIFuzzBuilder, error) {
 func (i *CIFuzzBuilder) createDirectoryLayout() error {
 	err := os.MkdirAll(i.binDir(), 0755)
 	if err != nil {
-		i.Cleanup()
 		return errors.WithStack(err)
 	}
 	err = os.MkdirAll(i.libDir(), 0755)
 	if err != nil {
-		i.Cleanup()
 		return errors.WithStack(err)
 	}
 	err = os.MkdirAll(i.shareDir(), 0755)
 	if err != nil {
-		i.Cleanup()
 		return errors.WithStack(err)
 	}
 
