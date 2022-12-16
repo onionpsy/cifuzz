@@ -10,7 +10,7 @@ on:
 jobs:
   linting:
     name: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3
@@ -34,7 +34,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-12, windows-2022]
     steps:
       - uses: actions/checkout@v3
 
@@ -51,7 +51,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # testing on ubuntu-20.04 is necessary
+        # testing on ubuntu-latest is for ensuring compatibility with current version
+        # we have to use macos-12 as after upgrading the external
+        # action for llvm setup as it seems that this is breaking
+        # with macos-11
+        os: [ubuntu-20.04, ubuntu-latest, macos-12, windows-2022]
     steps:
       - uses: actions/checkout@v3
 

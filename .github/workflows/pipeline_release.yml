@@ -8,14 +8,14 @@ on:
 jobs:
   version:
     name: Get version number from tag
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.vars.outputs.version }}
     steps:
       - name: Read version
         id: vars
         # extract tag name without v prefix
-        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/v}
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
   installer:
@@ -28,7 +28,7 @@ jobs:
 
   create_release:
     name: Create draft release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [version, installer]
     permissions:
       contents: write # for creating releases

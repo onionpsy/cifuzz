@@ -8,7 +8,7 @@ on:
 jobs:
   no-wip-commits:
     name: No WIP or XXX commits
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3

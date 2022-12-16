@@ -22,7 +22,7 @@ runs:
           key: ${{ inputs.os }}-llvm-14.0
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@f0cccbdf563688c6e0f9273d4bc27a8c5278de85
+        uses: KyleMayes/install-llvm-action@8852e4d5c58653ed05135c0a5d949d9c2febcb00
         with:
           version: "14.0"
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
@@ -58,7 +58,7 @@ runs:
       # Add cl.exe to the PATH on Windows for the replayer integration test.
       # Pinned to the commit of the v1.10.0 tag on 2022-05-05.
       - name: Setup - Windows
-        uses: ilammy/msvc-dev-cmd@d8610e2b41c6d0f0c3b4c46dad8df0fd826c68e1
+        uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
         if: contains(inputs.os, 'windows')
 
       # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
