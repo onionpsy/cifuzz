@@ -54,6 +54,18 @@ expect your fuzz tests to do any harm to the system (or you're already running
 `--use-sandbox=false` flag or the [`use-sandbox: false` config file
 setting](docs/Configuration.md#use-sandbox).
 
+If your fuzz test needs to access some files or directories which are not
+accessible in the sandbox, you can add bindings for those via the
+`CIFUZZ_MINIJAIL_BINDINGS` environment variable. The bindings must be separated
+by colon and be specified in the same format that is supported by the
+`--bind-mount` flag of [`minijail0`](https://google.github.io/minijail/minijail0.1.html):
+
+`CIFUZZ_MINIJAIL_BINDINGS=<src>[,[dest][,<writeable>]]`, where `<src>` must be an absolute path
+and `<writeable>` is either `0` or `1`. For example:
+```
+CIFUZZ_MINIJAIL_BINDINGS=/tmp/foo,/tmp/foo,1:/home/user/foo,/home/user/foo,1
+```
+
 ## Intro to cifuzz (live stream)
 
 Check out [@jochil](https://github.com/jochil)'s live session for

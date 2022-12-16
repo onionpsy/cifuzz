@@ -15,6 +15,12 @@ import (
 )
 
 const (
+	// BindingsEnvVarName is an environment variable which users can
+	// use to specify additional Minijail bindings. The bindings must
+	// be separated by colon and can be specified in the same format
+	// that is supported by minijail's --bind-mount flag:
+	// <src>[,[dest][,<writeable>]], where <src> must be an absolute
+	// path and <writeable> is either 0 or 1.
 	BindingsEnvVarName = "CIFUZZ_MINIJAIL_BINDINGS"
 
 	// Mount flags as defined in golang.org/x/sys/unix. We're not using
@@ -246,6 +252,17 @@ func NewMinijail(opts *Options) (*minijail, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		exists, err := fileutil.Exists(binding.Source)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			log.Debugf("Skipping binding %v: No such file or directory", binding.Source)
+			continue
+		}
+
+		log.Debugf("Adding binding %v", binding.Source)
 		bindings = append(bindings, binding)
 	}
 
