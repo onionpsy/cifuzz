@@ -15,13 +15,7 @@ import (
 )
 
 const (
-	EnvPrefix = "CIFUZZ_MINIJAIL_"
-
-	DebugEnvVarName    = EnvPrefix + "DEBUG"
-	BindingsEnvVarName = EnvPrefix + "BINDINGS"
-
-	BindingFlag = "bind"
-	EnvFlag     = "env"
+	BindingsEnvVarName = "CIFUZZ_MINIJAIL_BINDINGS"
 
 	// Mount flags as defined in golang.org/x/sys/unix. We're not using
 	// that package because it's not available on macOS.
