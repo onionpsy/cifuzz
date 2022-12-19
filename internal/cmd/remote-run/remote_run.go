@@ -220,7 +220,7 @@ func (c *runRemoteCmd) run() error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			token = string(b)
+			token = strings.TrimSpace(string(b))
 		} else if c.opts.Interactive {
 			fmt.Printf(`Enter an API access token and press Enter. You can generate a token for
 your account at %s/dashboard/settings/account.`+"\n", c.opts.Server)
