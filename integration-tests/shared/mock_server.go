@@ -21,6 +21,13 @@ type MockServer struct {
 func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServer {
 	server := &MockServer{}
 
+	handleListProjects := func(w http.ResponseWriter, req *http.Request) {
+		_, err := io.ReadAll(req.Body)
+		require.NoError(t, err)
+		_, err = fmt.Fprint(w, `{"projects": []}`)
+		require.NoError(t, err)
+	}
+
 	handleUpload := func(w http.ResponseWriter, req *http.Request) {
 		_, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
@@ -42,6 +49,7 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/projects", handleListProjects)
 	mux.HandleFunc(fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName), handleUpload)
 	mux.HandleFunc(fmt.Sprintf("/v1/%s:run", artifactsName), handleStartRun)
 	mux.HandleFunc("/", handleDefault)

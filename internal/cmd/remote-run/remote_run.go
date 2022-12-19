@@ -1,25 +1,22 @@
 package remote_run
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"code-intelligence.com/cifuzz/internal/access_tokens"
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dialog"
@@ -31,10 +28,9 @@ import (
 
 type remoteRunOpts struct {
 	bundler.Opts `mapstructure:",squash"`
-	Interactive  bool   `mapstructure:"interactive"`
-	PrintJSON    bool   `mapstructure:"print-json"`
-	ProjectName  string `mapstructure:"project"`
-	Server       string `mapstructure:"server"`
+	PrintJSON    bool       `mapstructure:"print-json"`
+	ProjectName  string     `mapstructure:"project"`
+	LoginOpts    login.Opts `mapstructure:",squash"`
 
 	// Fields which are not configurable via viper (i.e. via cifuzz.yaml
 	// and CIFUZZ_* environment variables), by setting
@@ -60,8 +56,8 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.
 		}
 	}
 
-	if opts.Interactive {
-		opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+	if opts.LoginOpts.Interactive {
+		opts.LoginOpts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 	}
 
 	return nil
@@ -136,14 +132,14 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 			opts.Stderr = cmd.ErrOrStderr()
 
 			// Check if the server option is a valid URL
-			err = api.ValidateURL(opts.Server)
+			err = api.ValidateURL(opts.LoginOpts.Server)
 			if err != nil {
 				// See if prefixing https:// makes it a valid URL
-				err = api.ValidateURL("https://" + opts.Server)
+				err = api.ValidateURL("https://" + opts.LoginOpts.Server)
 				if err != nil {
-					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
+					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.LoginOpts.Server))
 				}
-				opts.Server = "https://" + opts.Server
+				opts.LoginOpts.Server = "https://" + opts.LoginOpts.Server
 			}
 
 			// Print warning that flags which only effect the build of
@@ -190,58 +186,12 @@ func (c *runRemoteCmd) run() error {
 	var err error
 
 	apiClient := api.APIClient{
-		Server: c.opts.Server,
+		Server: c.opts.LoginOpts.Server,
 	}
 
-	// Obtain the API access token
-	token := os.Getenv("CIFUZZ_API_TOKEN")
-	if token == "" {
-		token = access_tokens.Get(c.opts.Server)
-	}
-
-	if token == "" {
-		if !term.IsTerminal(int(os.Stdin.Fd())) {
-			b, err := io.ReadAll(os.Stdin)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			token = strings.TrimSpace(string(b))
-		} else if c.opts.Interactive {
-			fmt.Printf(`Enter an API access token and press Enter. You can generate a token for
-your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
-
-			err = browser.OpenURL(c.opts.Server + "/dashboard/settings/account/tokens?create")
-			if err != nil {
-				log.Errorf(err, "Failed to open browser: %v", err.Error())
-			}
-
-			reader := bufio.NewReader(os.Stdin)
-			token, err = reader.ReadString('\n')
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			log.Print()
-			token = strings.TrimSpace(token)
-		} else {
-			err = errors.New("You are not logged in. Please log in by running `cifuzz login`.")
-			return cmdutils.WrapIncorrectUsageError(err)
-		}
-
-		// Try to authenticate with the access token
-		_, err = apiClient.ListProjects(token)
-		if err != nil {
-			// API calls might fail due to network issues, invalid server
-			// responses or similar. We don't want to print a stack trace
-			// in those cases.
-			log.Error(err)
-			return cmdutils.WrapSilentError(err)
-		}
-
-		// Store the access token in the config file
-		err = access_tokens.Set(c.opts.Server, token)
-		if err != nil {
-			return err
-		}
+	token, err := login.Login(c.opts.LoginOpts)
+	if err != nil {
+		return err
 	}
 
 	if c.opts.ProjectName == "" {
@@ -252,7 +202,7 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 			return cmdutils.WrapIncorrectUsageError(err)
 		}
 
-		if c.opts.Interactive {
+		if c.opts.LoginOpts.Interactive {
 			c.opts.ProjectName, err = c.selectProject(projects)
 			if err != nil {
 				return err
@@ -269,7 +219,7 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 				projectNames = append(projectNames, strings.TrimPrefix(p.Name, "projects/"))
 			}
 			if len(projectNames) == 0 {
-				log.Warnf("No projects found. Please create a project first at %s.", c.opts.Server)
+				log.Warnf("No projects found. Please create a project first at %s.", c.opts.LoginOpts.Server)
 				err = errors.New("Flag \"project\" must be set")
 				return cmdutils.WrapIncorrectUsageError(err)
 			}
@@ -286,7 +236,7 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 		defer fileutil.Cleanup(tempDir)
 		bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
 		c.opts.BundlePath = bundlePath
-		c.opts.Opts.OutputPath = bundlePath
+		c.opts.OutputPath = bundlePath
 		b := bundler.New(&c.opts.Opts)
 		err = b.Bundle()
 		if err != nil {
@@ -332,7 +282,7 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 
     %s/dashboard/%s/overview
 
-`, c.opts.Server, campaignRunName)
+`, c.opts.LoginOpts.Server, campaignRunName)
 	}
 
 	return nil
@@ -354,7 +304,7 @@ func (c *runRemoteCmd) selectProject(projects []*api.Project) (string, error) {
 	}
 
 	if len(items) == 0 {
-		err := errors.Errorf("No projects found. Please create a project first at %s.", c.opts.Server)
+		err := errors.Errorf("No projects found. Please create a project first at %s.", c.opts.LoginOpts.Server)
 		log.Error(err)
 		return "", cmdutils.WrapSilentError(err)
 	}
