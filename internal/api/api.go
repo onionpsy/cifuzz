@@ -276,6 +276,21 @@ func (client *APIClient) ListProjects(token string) ([]*Project, error) {
 	return filteredProjects, nil
 }
 
+func (client *APIClient) IsTokenValid(token string) (bool, error) {
+	// TOOD: Change this to use another check without querying projects
+	_, err := client.ListProjects(token)
+	if err != nil {
+		var apiErr *APIError
+		if errors.As(err, &apiErr) {
+			if apiErr.StatusCode == 401 {
+				return false, nil
+			}
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func ValidateURL(s string) error {
 	u, err := url.Parse(s)
 	if err != nil {

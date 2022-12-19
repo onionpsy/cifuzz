@@ -25,7 +25,8 @@ type loginOpts struct {
 }
 
 type loginCmd struct {
-	opts *loginOpts
+	opts      *loginOpts
+	apiClient *api.APIClient
 }
 
 func New() *cobra.Command {
@@ -61,7 +62,8 @@ To learn more, visit https://www.code-intelligence.com.`,
 				opts.Server = "https://" + opts.Server
 			}
 
-			cmd := loginCmd{opts: opts}
+			apiClient := &api.APIClient{Server: opts.Server}
+			cmd := loginCmd{opts: opts, apiClient: apiClient}
 			return cmd.run()
 		},
 	}
@@ -127,7 +129,7 @@ in interactive mode. You can generate a token here:
 
 func (c *loginCmd) handleNewToken(token string) error {
 	// Try to authenticate with the access token
-	tokenValid, err := cmdutils.IsTokenValid(c.opts.Server, token)
+	tokenValid, err := c.apiClient.IsTokenValid(token)
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func (c *loginCmd) handleNewToken(token string) error {
 }
 
 func (c *loginCmd) handleExistingToken(token string) error {
-	tokenValid, err := cmdutils.IsTokenValid(c.opts.Server, token)
+	tokenValid, err := c.apiClient.IsTokenValid(token)
 	if err != nil {
 		return err
 	}

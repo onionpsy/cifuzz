@@ -190,8 +190,18 @@ func (c *runRemoteCmd) run() error {
 	token := cmdutils.GetToken(c.opts.Server)
 	if token == "" {
 		log.Print("You need to authenticate to a CI Fuzz Server instance to use this command.\n" +
-			"Please run 'cifuzz login'.")
+			"Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
 		return cmdutils.ErrSilent
+	}
+
+	tokenValid, err := apiClient.IsTokenValid(token)
+	if err != nil {
+		return err
+	}
+	if !tokenValid {
+		err = errors.Errorf("Invalid token: Received 401 Unauthorized from server %s", c.opts.Server)
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
 	}
 
 	if c.opts.ProjectName == "" {
