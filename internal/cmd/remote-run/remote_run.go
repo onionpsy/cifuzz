@@ -208,12 +208,6 @@ func (c *runRemoteCmd) run() error {
 				return err
 			}
 		} else {
-			projects, err := apiClient.ListProjects(token)
-			if err != nil {
-				log.Error(err)
-				err = errors.New("Flag \"project\" must be set")
-				return cmdutils.WrapIncorrectUsageError(err)
-			}
 			var projectNames []string
 			for _, p := range projects {
 				projectNames = append(projectNames, strings.TrimPrefix(p.Name, "projects/"))
