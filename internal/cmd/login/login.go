@@ -45,7 +45,7 @@ To learn more, visit https://www.code-intelligence.com.`,
 				opts.Server = "https://" + opts.Server
 			}
 
-			_, err = loginUtil.Login(opts)
+			err = loginUtil.Login(opts)
 			return err
 		},
 	}

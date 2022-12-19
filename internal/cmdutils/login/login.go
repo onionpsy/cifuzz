@@ -75,7 +75,7 @@ Please remove the token from %s and try again.`,
 	return nil
 }
 
-func Login(opts Opts) (string, error) {
+func Login(opts Opts) error {
 	// Obtain the API access token
 	var token string
 
@@ -85,7 +85,7 @@ func Login(opts Opts) (string, error) {
 		// This should never block because stdin is not a TTY.
 		b, err := io.ReadAll(os.Stdin)
 		if err != nil {
-			return "", errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 		token = strings.TrimSpace(string(b))
 	}
@@ -99,7 +99,7 @@ func Login(opts Opts) (string, error) {
 	if token == "" {
 		token = access_tokens.Get(opts.Server)
 		if token != "" {
-			return token, handleExistingToken(opts.Server, token)
+			return handleExistingToken(opts.Server, token)
 		}
 	}
 
@@ -115,15 +115,27 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", opts.Server)
 
 		token, err = dialog.ReadSecret(msg, os.Stdin)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
 	if token == "" {
 		err := errors.New(`No API access token provided. Please pass a valid token via stdin,
 the CIFUZZ_API_TOKEN environment variable or run in interactive mode.`)
-		return "", cmdutils.WrapIncorrectUsageError(err)
+		return cmdutils.WrapIncorrectUsageError(err)
 	}
 
-	return token, handleNewToken(opts.Server, token)
+	return handleNewToken(opts.Server, token)
+}
+
+func GetToken(server string) string {
+	// Try the environment variable
+	token := os.Getenv("CIFUZZ_API_TOKEN")
+	if token != "" {
+		log.Print("Using token from $CIFUZZ_API_TOKEN")
+		return token
+	}
+
+	// Try the access tokens config file
+	return access_tokens.Get(server)
 }
