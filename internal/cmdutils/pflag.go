@@ -109,7 +109,7 @@ func AddDictFlag(cmd *cobra.Command) func() {
 func AddDockerImageFlag(cmd *cobra.Command) func() {
 	cmd.Flags().String("docker-image", "ubuntu:rolling",
 		"Docker image to use in the bundle config. This image will be used when\n"+
-			"the bundle is executed on a remote fuzzing server.")
+			"the bundle is executed on a CI Fuzz Server instance.")
 	return func() {
 		ViperMustBindPFlag("docker-image", cmd.Flags().Lookup("docker-image"))
 	}
@@ -192,7 +192,7 @@ func AddSeedCorpusFlag(cmd *cobra.Command) func() {
 }
 
 func AddServerFlag(cmd *cobra.Command) func() {
-	cmd.PersistentFlags().String("server", "https://app.code-intelligence.com", "Address of the fuzzing server")
+	cmd.PersistentFlags().String("server", "https://app.code-intelligence.com", "Address of the CI Fuzz Server instance")
 	return func() {
 		ViperMustBindPFlag("server", cmd.Flags().Lookup("server"))
 	}

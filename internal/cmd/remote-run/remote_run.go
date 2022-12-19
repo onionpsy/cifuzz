@@ -76,9 +76,9 @@ func newWithOptions(opts *remoteRunOpts) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "remote-run [flags] [<fuzz test>]...",
-		Short: "Build fuzz tests and run them on a remote fuzzing server",
+		Short: "Build fuzz tests and run them on a CI Fuzz Server instance",
 		Long: `This command builds fuzz tests, packages all runtime artifacts into a
-bundle and uploads that to a remote fuzzing server to start a remote
+bundle and uploads that to a CI Fuzz Server instance to start a remote
 fuzzing run.
 
 If the --bundle flag is used, building and bundling is skipped and the

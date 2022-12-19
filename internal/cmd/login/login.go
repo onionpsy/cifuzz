@@ -17,8 +17,8 @@ func New() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Login to a remote fuzzing server",
-		Long: `This command is used to authenticate with a CI remote fuzzing server.
+		Short: "Authenticate with a CI Fuzz Server instance",
+		Long: `This command is used to authenticate with a CI Fuzz Server instance.
 To learn more, visit https://www.code-intelligence.com.`,
 		Example: "$ cifuzz login",
 		PreRunE: func(cmd *cobra.Command, args []string) error {

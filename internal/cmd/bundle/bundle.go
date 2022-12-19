@@ -51,7 +51,7 @@ func newWithOptions(opts *options) *cobra.Command {
 		Short: "Bundles fuzz tests into an archive",
 		Long: `This command bundles all runtime artifacts required by the 
 given fuzz tests into a self-contained archive (bundle) that can be executed 
-by a remote fuzzing server. The usage of this command depends on the build 
+by a CI Fuzz Server instance. The usage of this command depends on the build
 system configured for the project.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("CMake") + `
