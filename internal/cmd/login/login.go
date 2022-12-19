@@ -90,11 +90,6 @@ func (c *loginCmd) run() error {
 		token = strings.TrimSpace(string(b))
 	}
 
-	// Try the environment variable
-	if token == "" {
-		token = os.Getenv("CIFUZZ_API_TOKEN")
-	}
-
 	// Try the access tokens config file
 	if token == "" {
 		token = access_tokens.Get(c.opts.Server)
@@ -105,8 +100,8 @@ func (c *loginCmd) run() error {
 
 	// Try reading it interactively
 	if token == "" && c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-		msg := fmt.Sprintf(`Enter an API access token and press Enter. You can generate a token for
-your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
+		msg := fmt.Sprintf(`Enter an API access token and press Enter. You can generate a token here:
+%s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
 
 		err := browser.OpenURL(c.opts.Server + "/dashboard/settings/account/tokens?create")
 		if err != nil {
@@ -120,8 +115,10 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 	}
 
 	if token == "" {
-		err := errors.New(`No API access token provided. Please pass a valid token via stdin,
-the CIFUZZ_API_TOKEN environment variable or run in interactive mode.`)
+		err := errors.Errorf(`No API access token provided. Please pass a valid token via stdin or run
+in interactive mode. You can generate a token here:
+%s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
+
 		return cmdutils.WrapIncorrectUsageError(err)
 	}
 
