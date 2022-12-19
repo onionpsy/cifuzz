@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cli/browser"
+	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"golang.org/x/term"
 

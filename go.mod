@@ -7,7 +7,6 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/alessio/shellescape v1.4.1
 	github.com/alexflint/go-filemutex v1.2.0
-	github.com/cli/browser v1.1.0
 	github.com/gen2brain/beeep v0.0.0-20220909211152-5a9ec94374f6
 	github.com/gookit/color v1.5.2
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
