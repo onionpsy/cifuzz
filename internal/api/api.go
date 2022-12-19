@@ -22,6 +22,46 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
+// APIError is returned when a REST request returns a status code other
+// than 200 OK
+type APIError struct {
+	err        error
+	StatusCode int
+}
+
+func (e APIError) Error() string {
+	return e.err.Error()
+}
+
+func (e APIError) Format(s fmt.State, verb rune) {
+	if formatter, ok := e.err.(fmt.Formatter); ok {
+		formatter.Format(s, verb)
+	} else {
+		_, _ = io.WriteString(s, e.Error())
+	}
+}
+
+func (e APIError) Unwrap() error {
+	return e.err
+}
+
+func responseToAPIError(resp *http.Response) error {
+	msg := resp.Status
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &APIError{StatusCode: resp.StatusCode, err: errors.New(msg)}
+	}
+	apiResp := struct {
+		Code    int
+		Message string
+	}{}
+	err = json.Unmarshal(body, &apiResp)
+	if err != nil {
+		return &APIError{StatusCode: resp.StatusCode, err: errors.Errorf("%s: %s", msg, string(body))}
+	}
+	return &APIError{StatusCode: resp.StatusCode, err: errors.Errorf("%s: %s", msg, apiResp.Message)}
+}
+
 type APIClient struct {
 	Server string
 }
@@ -118,10 +158,7 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			msg := responseToErrMsg(resp)
-			err := errors.Errorf("Failed to upload bundle: %s", msg)
-			log.Error(err)
-			return cmdutils.WrapSilentError(err)
+			return responseToAPIError(resp)
 		}
 
 		body, err = io.ReadAll(resp.Body)
@@ -156,10 +193,7 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		msg := responseToErrMsg(resp)
-		err = errors.Errorf("Failed to start fuzzing run: %s", msg)
-		log.Error(err)
-		return "", cmdutils.WrapSilentError(err)
+		return "", responseToAPIError(resp)
 	}
 
 	// Get the campaign run name from the response
@@ -211,10 +245,7 @@ func (client *APIClient) ListProjects(token string) ([]*Project, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		msg := responseToErrMsg(resp)
-		err := errors.Errorf("Failed to list projects: %s", msg)
-		log.Error(err)
-		return nil, cmdutils.WrapSilentError(err)
+		return nil, responseToAPIError(resp)
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -243,23 +274,6 @@ func (client *APIClient) ListProjects(token string) ([]*Project, error) {
 	}
 
 	return filteredProjects, nil
-}
-
-func responseToErrMsg(resp *http.Response) string {
-	msg := resp.Status
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return msg
-	}
-	apiResp := struct {
-		Code    int
-		Message string
-	}{}
-	err = json.Unmarshal(body, &apiResp)
-	if err != nil {
-		return fmt.Sprintf("%s: %s", msg, string(body))
-	}
-	return fmt.Sprintf("%s: %s", msg, apiResp.Message)
 }
 
 func ValidateURL(s string) error {

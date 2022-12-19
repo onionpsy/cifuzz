@@ -230,7 +230,11 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 		// Try to authenticate with the access token
 		_, err = apiClient.ListProjects(token)
 		if err != nil {
-			return err
+			// API calls might fail due to network issues, invalid server
+			// responses or similar. We don't want to print a stack trace
+			// in those cases.
+			log.Error(err)
+			return cmdutils.WrapSilentError(err)
 		}
 
 		// Store the access token in the config file
@@ -242,6 +246,11 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 
 	if c.opts.ProjectName == "" {
 		projects, err := apiClient.ListProjects(token)
+		if err != nil {
+			log.Error(err)
+			err = errors.New("Flag \"project\" must be set")
+			return cmdutils.WrapIncorrectUsageError(err)
+		}
 
 		if c.opts.Interactive {
 			c.opts.ProjectName, err = c.selectProject(projects)
@@ -287,12 +296,24 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Serve
 
 	artifact, err := apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)
 	if err != nil {
+		var apiErr *api.APIError
+		if !errors.As(err, &apiErr) {
+			// API calls might fail due to network issues, invalid server
+			// responses or similar. We don't want to print a stack trace
+			// in those cases.
+			log.Error(err)
+			return cmdutils.WrapSilentError(err)
+		}
 		return err
 	}
 
 	campaignRunName, err := apiClient.StartRemoteFuzzingRun(artifact, token)
 	if err != nil {
-		return err
+		// API calls might fail due to network issues, invalid server
+		// responses or similar. We don't want to print a stack trace
+		// in those cases.
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
 	}
 
 	if c.opts.PrintJSON {
