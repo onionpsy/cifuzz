@@ -77,9 +77,12 @@ Please remove the token from %s and try again.`,
 
 func Login(opts Opts) (string, error) {
 	// Obtain the API access token
-	token := os.Getenv("CIFUZZ_API_TOKEN")
+	var token string
 
+	// First, if stdin is *not* a TTY, we try to read it from stdin,
+	// in case it was provided via `cifuzz login < token-file`
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		// This should never block because stdin is not a TTY.
 		b, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			return "", errors.WithStack(err)
@@ -87,6 +90,12 @@ func Login(opts Opts) (string, error) {
 		token = strings.TrimSpace(string(b))
 	}
 
+	// Try the environment variable
+	if token == "" {
+		token = os.Getenv("CIFUZZ_API_TOKEN")
+	}
+
+	// Try the access tokens config file
 	if token == "" {
 		token = access_tokens.Get(opts.Server)
 		if token != "" {
@@ -94,7 +103,8 @@ func Login(opts Opts) (string, error) {
 		}
 	}
 
-	if token == "" && opts.Interactive {
+	// Try reading it interactively
+	if token == "" && opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
 		msg := fmt.Sprintf(`Enter an API access token and press Enter. You can generate a token for
 your account at %s/dashboard/settings/account/tokens?create.`+"\n", opts.Server)
 
@@ -108,10 +118,12 @@ your account at %s/dashboard/settings/account/tokens?create.`+"\n", opts.Server)
 			return "", err
 		}
 	}
+
 	if token == "" {
 		err := errors.New(`No API access token provided. Please pass a valid token via stdin,
 the CIFUZZ_API_TOKEN environment variable or run in interactive mode.`)
 		return "", cmdutils.WrapIncorrectUsageError(err)
 	}
+
 	return token, handleNewToken(opts.Server, token)
 }
