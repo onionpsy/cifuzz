@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,7 +24,6 @@ import (
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/sliceutil"
-	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 const (
@@ -247,7 +245,7 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 		}
 	}
 
-	log.Debugf("Command: %s %s", strings.Join(env, " "), strings.Join(stringutil.QuotedStrings(r.cmd.Args), " "))
+	log.Debugf("Command: %s", envutil.QuotedCommandWithEnv(r.cmd.Args, env))
 	err = r.cmd.Start()
 	if err != nil {
 		return err

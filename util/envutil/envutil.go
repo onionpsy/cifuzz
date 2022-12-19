@@ -1,6 +1,7 @@
 package envutil
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -102,4 +103,26 @@ func ToMap(env []string) map[string]string {
 		res[key] = val
 	}
 	return res
+}
+
+func QuotedEnv(env []string) []string {
+	var quotedEnv []string
+	for _, e := range env {
+		s := strings.SplitN(e, "=", 2)
+		k, v := s[0], s[1]
+		quotedEnv = append(quotedEnv, fmt.Sprintf("%s='%s'", k, v))
+	}
+	return quotedEnv
+}
+
+// QuotedCommandWithEnv returns a string which can be executed in a
+// shell to run the specified command with the specified environment
+// variables. Useful for debug output to be able to run commands manually.
+//
+// Note: When the result is printed, make sure that env doesn't contain
+// arbitrary environment variables from the host to avoid leaking
+// secrets in the log output.
+func QuotedCommandWithEnv(args []string, env []string) string {
+	quotedStrings := append(QuotedEnv(env), stringutil.QuotedStrings(args)...)
+	return strings.Join(quotedStrings, " ")
 }

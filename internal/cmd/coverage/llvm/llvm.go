@@ -277,7 +277,7 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 		cmd.Stderr = errStream
 	}
 
-	log.Debugf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
+	log.Debugf("Command: %s", envutil.QuotedCommandWithEnv(cmd.Args, env))
 	err = cmd.Run()
 	if err != nil {
 		// Print the stderr output of the fuzzer to provide users with
