@@ -5,7 +5,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,6 +30,7 @@ type Cmd struct {
 	ctx                             context.Context
 	waitDone                        chan struct{}
 	CloseAfterWait                  []io.Closer
+	signalErr                       <-chan error
 	terminatedAfterContextDone      bool
 	terminatedAfterContextDoneMutex sync.Mutex
 }
@@ -110,7 +113,12 @@ func (c *Cmd) Start() error {
 		}
 	}
 
+	c.waitDone = make(chan struct{}, 1)
+
 	c.prepareProcessGroupTermination()
+
+	// Terminate the process group on terminating signals
+	c.signalErr = c.terminateOnSignal()
 
 	err := c.Cmd.Start()
 	if err != nil {
@@ -119,7 +127,6 @@ func (c *Cmd) Start() error {
 	}
 
 	if c.ctx != nil {
-		c.waitDone = make(chan struct{}, 1)
 		go func() {
 			select {
 			case <-c.ctx.Done():
@@ -160,6 +167,16 @@ func (c *Cmd) Wait() error {
 	if c.waitDone != nil {
 		close(c.waitDone)
 	}
+
+	if c.signalErr != nil {
+		signalErr := <-c.signalErr
+		// If c.Cmd.Wait returned an error, prefer that.
+		// Otherwise, report any error from the signal handler goroutine.
+		if signalErr != nil && err == nil {
+			err = signalErr
+		}
+	}
+
 	return errors.WithStack(err)
 }
 
@@ -177,4 +194,51 @@ func (c *Cmd) closeDescriptors(closers []io.Closer) {
 	for _, fd := range closers {
 		_ = fd.Close()
 	}
+}
+
+// terminateOnSignal registers a signal handler for terminating signals
+// (SIGINT, SIGTERM, SIGQUIT) and starts a goroutine that waits until
+// either a terminating signal was received or c.Process.Wait has
+// completed (called from Wait).
+// When a terminating signal is received, the goroutine terminates the
+// process group of c.Process.
+//
+// terminateOnSignal returns a channel on which its result must be received.
+func (c *Cmd) terminateOnSignal() <-chan error {
+	errc := make(chan error)
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	go func() {
+		select {
+		case errc <- nil:
+			// c.Cmd.Wait has completed
+			signal.Stop(sigs)
+		case s := <-sigs:
+			log.Debugf("Received %s", s.String())
+
+			// Terminate the command's process group
+			err := c.TerminateProcessGroup()
+			if err != nil {
+				errc <- errors.WithStack(err)
+				return
+			}
+
+			// Re-raise the signal for other handlers
+			signal.Stop(sigs)
+			p, err := os.FindProcess(os.Getpid())
+			if err != nil {
+				errc <- errors.WithStack(err)
+				return
+			}
+			err = p.Signal(s)
+			if err != nil {
+				errc <- errors.WithStack(err)
+				return
+			}
+		}
+	}()
+
+	return errc
 }
