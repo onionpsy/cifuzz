@@ -102,15 +102,21 @@ func (c *loginCmd) run() error {
 
 	// Try reading it interactively
 	if token == "" && c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-		msg := fmt.Sprintf(`Enter an API access token and press Enter. You can generate a token here:
-%s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
+		log.Printf("You need an API access token which can be generated here:\n%s/dashboard/settings/account/tokens?create", c.opts.Server)
 
-		err := browser.OpenURL(c.opts.Server + "/dashboard/settings/account/tokens?create")
+		openBrowser, err := dialog.Confirm("Open browser to generate a new token?", true)
 		if err != nil {
-			log.Error(err, "failed to open browser")
+			return err
 		}
 
-		token, err = dialog.ReadSecret(msg, os.Stdin)
+		if openBrowser {
+			err = browser.OpenURL(c.opts.Server + "/dashboard/settings/account/tokens?create")
+			if err != nil {
+				log.Errorf(err, "Failed to open browser: %v", err)
+			}
+		}
+
+		token, err = dialog.ReadSecret(fmt.Sprintf("Paste your access token:"), os.Stdin)
 		if err != nil {
 			return err
 		}

@@ -53,6 +53,28 @@ func MultiSelect(message string, items map[string]string) ([]string, error) {
 	return result, nil
 }
 
+func Confirm(message string, defaultValue bool) (bool, error) {
+	var confirmText, rejectText string
+	if defaultValue {
+		confirmText = "Y"
+		rejectText = "n"
+	} else {
+		confirmText = "y"
+		rejectText = "N"
+	}
+	res, err := pterm.InteractiveConfirmPrinter{
+		DefaultValue: defaultValue,
+		DefaultText:  message,
+		TextStyle:    &pterm.ThemeDefault.PrimaryStyle,
+		ConfirmText:  confirmText,
+		ConfirmStyle: &pterm.ThemeDefault.PrimaryStyle,
+		RejectText:   rejectText,
+		RejectStyle:  &pterm.ThemeDefault.PrimaryStyle,
+		SuffixStyle:  &pterm.ThemeDefault.SecondaryStyle,
+	}.Show()
+	return res, errors.WithStack(err)
+}
+
 func ReadSecret(message string, file *os.File) (string, error) {
 	log.Info(message)
 	// TODO: print * characters instead of the actual secret

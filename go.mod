@@ -26,6 +26,9 @@ require (
 // TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
 replace github.com/otiai10/copy v1.9.0 => github.com/adombeck/copy v0.0.0-20221129184714-7b5f9872f143
 
+// TODO: Revert when https://github.com/pterm/pterm/pull/425 is merged
+replace github.com/pterm/pterm v0.12.50 => github.com/adombeck/pterm v0.0.0-20221220223233-5cf48e53b0de
+
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
