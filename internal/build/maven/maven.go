@@ -87,8 +87,8 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 
 	deps = append(deps, localDeps...)
 
-	seedCorpus := build.JazzerSeedCorpus(targetClass, b.ProjectDir)
-	generatedCorpus := build.JazzerGeneratedCorpus(targetClass, b.ProjectDir)
+	seedCorpus := cmdutils.JazzerSeedCorpus(targetClass, b.ProjectDir)
+	generatedCorpus := cmdutils.JazzerGeneratedCorpus(targetClass, b.ProjectDir)
 	buildDir, err := GetBuildDirectory(b.ProjectDir)
 	if err != nil {
 		return nil, err

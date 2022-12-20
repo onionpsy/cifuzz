@@ -1,6 +1,7 @@
 package bundler
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -168,7 +169,7 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 	var err error
 
 	if len(b.opts.FuzzTests) == 0 {
-		fuzzTests, err = build.ListJazzerFuzzTests(b.opts.ProjectDir)
+		fuzzTests, err = listFuzzTests(b.opts.ProjectDir)
 		if err != nil {
 			return nil, err
 		}
@@ -244,4 +245,28 @@ func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
 	}
 
 	return jarPath, nil
+}
+
+func listFuzzTests(projectDir string) ([]string, error) {
+	testDir := filepath.Join(projectDir, "src", "test", "java")
+
+	var fuzzTests []string
+	err := filepath.WalkDir(testDir, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() || filepath.Ext(path) != ".java" {
+			return nil
+		}
+
+		classPath, err := cmdutils.ConstructJavaFuzzTestIdentifier(path, testDir)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		fuzzTests = append(fuzzTests, classPath)
+		return nil
+	})
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return fuzzTests, nil
 }

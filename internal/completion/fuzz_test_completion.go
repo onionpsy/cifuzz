@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -183,26 +182,11 @@ func validJavaFuzzTests(toComplete string, projectDir string) ([]string, cobra.S
 				return nil
 			}
 
-			bytes, err := os.ReadFile(path)
+			classFilePath, err := cmdutils.ConstructJavaFuzzTestIdentifier(path, testDir)
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
-
-			match := build.JazzerFuzzTestRegex.MatchString(string(bytes))
-			if match == true {
-				classPath, err := filepath.Rel(testDir, path)
-				if err != nil {
-					return errors.WithStack(err)
-				}
-
-				classPath = filepath.Join(
-					filepath.Dir(classPath),
-					strings.TrimSuffix(filepath.Base(path), ".java"),
-				)
-				classPath = strings.ReplaceAll(classPath, string(os.PathSeparator), ".")
-
-				res = append(res, classPath)
-			}
+			res = append(res, classFilePath)
 		}
 
 		return nil
