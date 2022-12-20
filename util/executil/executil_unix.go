@@ -37,14 +37,10 @@ func IsTerminatedExitErr(err error) bool {
 }
 
 func (c *Cmd) TerminateProcessGroup() error {
-	if c.getpgidError != nil {
-		return errors.WithMessage(c.getpgidError, "Can't terminate process group")
-	}
-
-	log.Infof("Sending SIGTERM to process group %d", c.pgid)
+	log.Infof("Sending SIGTERM to process group %d", c.Process.Pid)
 	// We ignore errors here because the process group might not exist
 	// anymore at this point.
-	_ = syscall.Kill(-c.pgid, syscall.SIGTERM) // note the minus sign
+	_ = syscall.Kill(-c.Process.Pid, syscall.SIGTERM) // note the minus sign
 
 	// Close the write ends of any pipes to avoid that Wait blocks
 	// until the command has finished printing output (which could be
@@ -56,10 +52,10 @@ func (c *Cmd) TerminateProcessGroup() error {
 	case <-time.After(processGroupTerminationGracePeriod):
 		// The process group didn't exit within the grace period, so we
 		// send it a SIGKILL now
-		log.Infof("Sending SIGKILL to process group %d", c.pgid)
+		log.Infof("Sending SIGKILL to process group %d", c.Process.Pid)
 		// We ignore errors here because the process group might not exist
 		// anymore at this point.
-		_ = syscall.Kill(-c.pgid, syscall.SIGKILL) // note the minus sign
+		_ = syscall.Kill(-c.Process.Pid, syscall.SIGKILL) // note the minus sign
 	case <-c.waitDone:
 		// The process has already exited, nothing else to do here.
 		// Note: This might leave other processes in the process group
@@ -77,12 +73,8 @@ func (c *Cmd) prepareProcessGroupTermination() {
 	// Make the child process use a new process group to be able to
 	// terminate that process group on timeout.
 	c.SysProcAttr.Setpgid = true
-}
-
-func (c *Cmd) getpgid() (int, error) {
-	pgid, err := syscall.Getpgid(c.Process.Pid)
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	return pgid, nil
+	// By forcing c.SysProcAttr.Pgid to be zero, we ensure that the
+	// process ID of the child process is used as its process group ID
+	// (see setpgid(2)).
+	c.SysProcAttr.Pgid = 0
 }

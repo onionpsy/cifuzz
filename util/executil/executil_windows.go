@@ -50,9 +50,3 @@ func (c *Cmd) TerminateProcessGroup() error {
 func (c *Cmd) prepareProcessGroupTermination() {
 	// Nothing to prepare on Windows
 }
-
-func (c *Cmd) getpgid() (int, error) {
-	// We don't need a process group ID on Windows for process group
-	// termination
-	return 0, nil
-}

@@ -28,8 +28,6 @@ type Cmd struct {
 	ctx                             context.Context
 	waitDone                        chan struct{}
 	CloseAfterWait                  []io.Closer
-	pgid                            int
-	getpgidError                    error
 	terminatedAfterContextDone      bool
 	terminatedAfterContextDoneMutex sync.Mutex
 }
@@ -118,14 +116,6 @@ func (c *Cmd) Start() error {
 	if err != nil {
 		c.closeDescriptors(c.CloseAfterWait)
 		return errors.WithStack(err)
-	}
-
-	// Get the process group ID which is needed when
-	// c.TerminateProcessGroup() is called.
-	c.pgid, err = c.getpgid()
-	if err != nil {
-		log.Debugf("Couldn't get process group ID: %+v", err)
-		c.getpgidError = err
 	}
 
 	if c.ctx != nil {
