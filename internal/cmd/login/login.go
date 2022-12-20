@@ -155,11 +155,11 @@ func (c *loginCmd) handleExistingToken(token string) error {
 		return err
 	}
 	if !tokenValid {
-		log.Warnf(`cifuzz detected an API access token, but failed to authenticate with it.
-This might happen if the token has been revoked.
-Please remove the token from %s and try again.`,
-			access_tokens.GetTokenFilePath())
-		return cmdutils.WrapSilentError(errors.New("failed to authenticate with the provided API access token"))
+		err := errors.Errorf(`Failed to authenticate with the configured API access token.
+It's possible that the token has been revoked. Please try again after
+removing the token from %s.`, access_tokens.GetTokenFilePath())
+		log.Warn(err.Error())
+		return cmdutils.WrapSilentError(err)
 	}
 	log.Success("You are already logged in.")
 	log.Infof("Your API access token is stored in %s", access_tokens.GetTokenFilePath())
