@@ -134,7 +134,9 @@ func (c *loginCmd) handleNewToken(token string) error {
 		return err
 	}
 	if !tokenValid {
-		return errors.New("failed to authenticate with the provided API access token")
+		err := errors.New("Failed to authenticate with the provided API access token")
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
 	}
 
 	// Store the access token in the config file
