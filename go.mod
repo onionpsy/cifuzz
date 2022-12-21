@@ -16,7 +16,7 @@ require (
 	github.com/otiai10/copy v1.9.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
-	github.com/pterm/pterm v0.12.50
+	github.com/pterm/pterm v0.12.51-0.20221221034244-22f4f9645a9f
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
 	golang.org/x/sync v0.1.0
@@ -25,9 +25,6 @@ require (
 
 // TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
 replace github.com/otiai10/copy v1.9.0 => github.com/adombeck/copy v0.0.0-20221129184714-7b5f9872f143
-
-// TODO: Revert when https://github.com/pterm/pterm/pull/425 is merged
-replace github.com/pterm/pterm v0.12.50 => github.com/adombeck/pterm v0.0.0-20221220223233-5cf48e53b0de
 
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
