@@ -2,7 +2,6 @@ package cmdutils
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -28,7 +27,6 @@ func EvaluateBazelTargetPatterns(patterns []string) ([]string, error) {
 		fmt.Sprintf("kind(fuzzing_regression_test, attr(generator_function, cc_fuzz_test, %s))", multiPattern),
 	}
 	cmd := exec.Command("bazel", args...)
-	cmd.Stderr = os.Stderr
 	log.Debugf("Command: %s", cmd.String())
 	out, err := cmd.Output()
 	if err != nil {
