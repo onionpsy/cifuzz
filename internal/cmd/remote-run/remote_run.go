@@ -16,6 +16,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dialog"
@@ -183,25 +184,36 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 func (c *runRemoteCmd) run() error {
 	var err error
 
-	apiClient := api.APIClient{
+	apiClient := &api.APIClient{
 		Server: c.opts.Server,
 	}
 
-	token := cmdutils.GetToken(c.opts.Server)
+	token := login.GetToken(c.opts.Server)
 	if token == "" {
-		log.Print("You need to authenticate to a CI Fuzz Server instance to use this command.\n" +
-			"Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
-		return cmdutils.ErrSilent
-	}
+		log.Print("You need to authenticate to a CI Fuzz Server instance to use this command.")
 
-	tokenValid, err := apiClient.IsTokenValid(token)
-	if err != nil {
-		return err
-	}
-	if !tokenValid {
-		err = errors.Errorf("Invalid token: Received 401 Unauthorized from server %s", c.opts.Server)
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		if !c.opts.Interactive {
+			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
+			return cmdutils.ErrSilent
+		}
+
+		yes, err := dialog.Confirm("Log in now?", true)
+		if err != nil {
+			return err
+		}
+		if !yes {
+			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
+			return cmdutils.ErrSilent
+		}
+		token, err = login.ReadCheckAndStoreTokenInteractively(apiClient)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = login.CheckValidToken(apiClient, token)
+		if err != nil {
+			return err
+		}
 	}
 
 	if c.opts.ProjectName == "" {

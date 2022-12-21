@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,7 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/access_tokens"
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/pkg/dialog"
+	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -80,6 +79,7 @@ To learn more, visit https://www.code-intelligence.com.`,
 func (c *loginCmd) run() error {
 	// Obtain the API access token
 	var token string
+	var err error
 
 	// First, if stdin is *not* a TTY, we try to read it from stdin,
 	// in case it was provided via `cifuzz login < token-file`
@@ -90,69 +90,25 @@ func (c *loginCmd) run() error {
 			return errors.WithStack(err)
 		}
 		token = strings.TrimSpace(string(b))
+		return login.CheckAndStoreToken(c.apiClient, token)
 	}
 
 	// Try the access tokens config file
-	if token == "" {
-		token = access_tokens.Get(c.opts.Server)
-		if token != "" {
-			return c.handleExistingToken(token)
-		}
+	token = access_tokens.Get(c.opts.Server)
+	if token != "" {
+		return c.handleExistingToken(token)
 	}
 
 	// Try reading it interactively
-	if token == "" && c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-		log.Printf("You need an API access token which can be generated here:\n%s/dashboard/settings/account/tokens?create", c.opts.Server)
-
-		openBrowser, err := dialog.Confirm("Open browser to generate a new token?", true)
-		if err != nil {
-			return err
-		}
-
-		if openBrowser {
-			err = browser.OpenURL(c.opts.Server + "/dashboard/settings/account/tokens?create")
-			if err != nil {
-				log.Errorf(err, "Failed to open browser: %v", err)
-			}
-		}
-
-		token, err = dialog.ReadSecret(fmt.Sprintf("Paste your access token:"), os.Stdin)
-		if err != nil {
-			return err
-		}
+	if c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
+		_, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient)
+		return err
 	}
 
-	if token == "" {
-		err := errors.Errorf(`No API access token provided. Please pass a valid token via stdin or run
+	err = errors.Errorf(`No API access token provided. Please pass a valid token via stdin or run
 in interactive mode. You can generate a token here:
 %s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
-
-		return cmdutils.WrapIncorrectUsageError(err)
-	}
-
-	return c.handleNewToken(token)
-}
-
-func (c *loginCmd) handleNewToken(token string) error {
-	// Try to authenticate with the access token
-	tokenValid, err := c.apiClient.IsTokenValid(token)
-	if err != nil {
-		return err
-	}
-	if !tokenValid {
-		err := errors.New("Failed to authenticate with the provided API access token")
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
-	}
-
-	// Store the access token in the config file
-	err = access_tokens.Set(c.opts.Server, token)
-	if err != nil {
-		return err
-	}
-
-	log.Successf("Successfully authenticated with %s", c.opts.Server)
-	return nil
+	return cmdutils.WrapIncorrectUsageError(err)
 }
 
 func (c *loginCmd) handleExistingToken(token string) error {
