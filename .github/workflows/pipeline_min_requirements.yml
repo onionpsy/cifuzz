@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          DEBIAN_FRONTEND=noninteractive apt install -y cmake llvm-11 clang-11 openjdk-8-jdk maven subversion curl unzip git
+          DEBIAN_FRONTEND=noninteractive apt install -y cmake llvm-11 clang-11 lcov openjdk-8-jdk maven subversion curl unzip git
           ln -s /usr/bin/clang-11 /usr/bin/clang
           ln -s /usr/bin/clang++-11 /usr/bin/clang++
           ln -s /usr/bin/llvm-symbolizer-11 /usr/bin/llvm-symbolizer

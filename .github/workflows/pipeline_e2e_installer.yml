@@ -21,7 +21,7 @@ jobs:
         # please make sure this is in sync with the README.md / installation docs
         run: |
           sudo apt update
-          sudo apt --yes install cmake clang llvm default-jdk maven
+          sudo apt --yes install cmake clang llvm lcov default-jdk maven
           curl --fail --location https://services.gradle.org/distributions/gradle-7.5.1-bin.zip --output /tmp/gradle-7.5.1-bin.zip
           unzip -d /opt/gradle /tmp/gradle-7.5.1-bin.zip
           echo "/opt/gradle/gradle-7.5.1/bin" >> $GITHUB_PATH
@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies (windows) 
         if: contains(matrix.os, 'windows')
         # please make sure this is in sync with the README.md / installation docs
-        run: choco install cmake llvm microsoft-openjdk maven gradle
+        run: choco install cmake llvm lcov microsoft-openjdk maven gradle
 
       # Add cl.exe to the PATH on Windows for the replayer integration test.
       # Pinned to the commit of the v1.10.0 tag on 2022-05-05.
@@ -41,7 +41,7 @@ jobs:
         if: contains(matrix.os, 'macos')
         # please make sure this is in sync with the README.md / installation docs
         run: |
-          brew install cmake llvm@11 openjdk maven gradle
+          brew install cmake llvm@11 lcov openjdk maven gradle
           LLVM_PATH=$(brew --prefix llvm@11)
           LLVM_VERSION=11.1.0
           ls -lah $LLVM_PATH/lib/clang/
