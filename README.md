@@ -109,14 +109,14 @@ different prerequisites:
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 
 ```bash
-sudo apt install cmake clang llvm
+sudo apt install cmake clang llvm lcov
 ```
 
 **Arch**
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 
 ```bash
-sudo pacman -S cmake clang llvm
+sudo pacman -S cmake clang llvm lcov
 ```
 
 **macOS**
