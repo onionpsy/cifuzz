@@ -341,7 +341,7 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 	if executable == "" {
 		return "", nil
 	}
-	absPath, err := filepath.Abs(fuzzTest)
+	absPath, err := filepath.Abs(executable)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
