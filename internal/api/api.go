@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/proxy"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/term"
 
@@ -144,7 +146,7 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 		req.Header.Set("Content-Type", m.FormDataContentType())
 		req.Header.Add("Authorization", "Bearer "+token)
 
-		httpClient := &http.Client{}
+		httpClient := &http.Client{Transport: getCustomTransport()}
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			return errors.WithStack(err)
@@ -223,7 +225,7 @@ func (client *APIClient) sendRequest(method string, endpoint string, body io.Rea
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 
-	httpClient := &http.Client{}
+	httpClient := &http.Client{Transport: getCustomTransport()}
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -255,4 +257,14 @@ func ValidateURL(s string) error {
 		return errors.Errorf("unsupported protocol scheme %q", u.Scheme)
 	}
 	return nil
+}
+
+func getCustomTransport() *http.Transport {
+	// it is not possible to use the default Proxy Environment because
+	// of https://github.com/golang/go/issues/24135
+	dialer := proxy.FromEnvironment()
+	dialContext := func(ctx context.Context, network, address string) (net.Conn, error) {
+		return dialer.Dial(network, address)
+	}
+	return &http.Transport{DialContext: dialContext}
 }
