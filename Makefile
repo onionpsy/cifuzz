@@ -101,12 +101,12 @@ lint: deps/dev
 	golangci-lint run
 
 .PHONY: fmt
-fmt:
+fmt: deps/dev
 	command -v goimports-reviser || go install github.com/incu6us/goimports-reviser/v2@latest
 	find . -type f -name "*.go" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -file-path
 
 .PHONY: fmt/check
-fmt/check:
+fmt/check: deps/dev
 	command -v goimports-reviser || go install github.com/incu6us/goimports-reviser/v2@latest
 	@DIFF=$$(find . -type f -name "*.go" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -list-diff -file-path); \
 	# Exit if the find command failed \
