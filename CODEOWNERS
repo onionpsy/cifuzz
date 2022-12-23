@@ -1,10 +1,12 @@
 /tools/cmake @fmeum
 /tools/replayer @fmeum
 
+/docs/assets/tapes @MarkusZoppelt
+
 /.github @jochil
 /docs @jochil 
-/docs/assets/tapes @MarkusZoppelt
 /examples @jochil
 /pkg/coverage @jochil
 /pkg/dependencies @jochil
 /pkg/desktop @jochil
+/pkg/java @jochil

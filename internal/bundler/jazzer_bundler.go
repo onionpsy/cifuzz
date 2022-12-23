@@ -1,10 +1,6 @@
 package bundler
 
 import (
-	"archive/zip"
-	"bytes"
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -18,6 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/artifact"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
+	"code-intelligence.com/cifuzz/pkg/java"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -236,49 +233,15 @@ func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
 		return "", errors.WithStack(err)
 	}
 
-	// create jar archive
-	jarPath := filepath.Join(fuzzerPath, "manifest.jar")
-	jarFile, err := os.Create(jarPath)
+	// entries for the MANIFEST.MF
+	entries := map[string]string{
+		"Jazzer-Fuzz-Target-Class": targetClass,
+	}
+
+	jarPath, err := java.CreateManifestJar(entries, fuzzerPath)
 	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	defer jarFile.Close()
-	jarWriter := zip.NewWriter(jarFile)
-	defer jarWriter.Close()
-
-	// create explicit parent directory in zip file
-	fh := &zip.FileHeader{
-		Name: "META-INF/",
-	}
-	fh.SetMode(0o755)
-	_, err = jarWriter.CreateHeader(fh)
-	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
-	// add manifest file
-	fh = &zip.FileHeader{
-		Name: filepath.Join("META-INF", "MANIFEST.MF"),
-	}
-	fh.SetMode(0o644)
-	manifestFile, err := jarWriter.CreateHeader(fh)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	// create & write content to manifest file
-	manifest := fmt.Sprintf("Jazzer-Fuzz-Target-Class: %s", targetClass)
-
-	_, err = io.Copy(manifestFile, bytes.NewBufferString(manifest))
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	err = jarWriter.Close()
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	log.Debugf("Created manifest.jar at %s", jarPath)
 	return jarPath, nil
 }

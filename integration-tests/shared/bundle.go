@@ -266,7 +266,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.FileExists(t, manifestFilePath)
 	content, err = os.ReadFile(manifestFilePath)
 	require.NoError(t, err)
-	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase", string(content))
+	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase\n", string(content))
 }
 
 func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
@@ -361,7 +361,7 @@ func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.FileExists(t, manifestFilePath)
 	content, err = os.ReadFile(manifestFilePath)
 	require.NoError(t, err)
-	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase", string(content))
+	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase\n", string(content))
 }
 
 func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, args ...string) (*artifact.Metadata, string) {
