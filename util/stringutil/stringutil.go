@@ -120,3 +120,22 @@ func MaxLen(elems []string) int {
 	}
 	return res
 }
+
+// Splits a given string after n bytes (not characters)
+func SplitAfterNBytes(s string, n int) []string {
+	if n <= 0 {
+		panic(fmt.Sprintf("invalid chunk size %d for string splitting", n))
+	}
+
+	var chunks []string
+	// step over the input string in chunks of n
+	for i := 0; i < len(s); i += n {
+		// make sure the right window border is not out of range
+		if i+n < len(s) {
+			chunks = append(chunks, s[i:i+n])
+		} else {
+			chunks = append(chunks, s[i:])
+		}
+	}
+	return chunks
+}
