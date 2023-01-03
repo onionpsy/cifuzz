@@ -66,43 +66,10 @@ jobs:
       - name: Install cifuzz
         run: make install
 
-      - name: Run CMake Example
-        run: |
-          cd examples/cmake
-          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behavior"
-          cat fuzzing.log | grep -E "Findings:\s+2"
-
-      - name: Run Other Build System Example
-        run: |
-          cd examples/other
-          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behavior"
-          cat fuzzing.log | grep -E "Findings:\s+2"
-
-      - name: Run Maven Example
-        run: |
-          cd examples/maven
-          cifuzz run com.example.FuzzTestCase -v 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "Remote Code Execution"
-          cat fuzzing.log | grep -E "Findings:\s+1"
-
-      - name: Run Gradle Example
-        run: |
-          cd examples/gradle
-          cifuzz run com.example.FuzzTestCase 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "Remote Code Execution"
-          cat fuzzing.log | grep -E "Findings:\s+1"
-
-      - name: Run Bazel Example
-        run: |
-          cd examples/bazel
-          cifuzz run -v src:explore_me_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behavior"
-          cat fuzzing.log | grep -E "Findings:\s+2"
+      - name: Run cifuzz examples
+        uses: ./.github/actions/run_cifuzz
+        with:
+          os: ${{ matrix.container }}
 
   # In general it would be nice to use windows container for testing this,
   # but by now they are not available for windows based github runner
@@ -123,60 +90,7 @@ jobs:
       - name: Install cifuzz
         run: make install 
 
-      - name: Run CMake Example (MacOS)
-        if: contains(matrix.os, 'macos')
-        run: |
-          cd examples/cmake
-          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behavior"
-          cat fuzzing.log | grep -E "Findings:\s+2"
-        shell: bash
-
-      - name: Run CMake Example (Windows)
-        if: contains(matrix.os, 'windows')
-        run: |
-          cd examples/cmake
-          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
-          # we are not testing for the ubsan finding
-          # as we currently do not support ubsan on windows
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep -E "Findings:\s+1"
-        shell: bash
-
-      - name: Run Other Build System Example (MacOS)
-        if: contains(matrix.os, 'macos')
-        run: |
-          cd examples/other
-          cifuzz run -v my_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behavior"
-          cat fuzzing.log | grep -E "Findings:\s+2"
-        shell: bash
-
-      - name: Run Bazel Example (MacOS)
-        if: contains(matrix.os, 'macos')
-        run: |
-          cd examples/bazel
-          cifuzz run -v src:explore_me_fuzz_test 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "heap buffer overflow"
-          cat fuzzing.log | grep "undefined behavior"
-          cat fuzzing.log | grep -E "Findings:\s+2"
-        shell: bash
-
-      - name: Run Maven Example
-        run: |
-          cd examples/maven
-          cifuzz run -v com.example.FuzzTestCase -v 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "Remote Code Execution"
-          cat fuzzing.log | grep -E "Findings:\s+1"
-        shell: bash
-
-      - name: Run Gradle Example
-        run: |
-          cd examples/gradle
-          cifuzz run -v com.example.FuzzTestCase 2>&1 | tee fuzzing.log
-          cat fuzzing.log | grep "Remote Code Execution"
-          cat fuzzing.log | grep -E "Findings:\s+1"
-        shell: bash
-
+      - name: Run cifuzz examples
+        uses: ./.github/actions/run_cifuzz
+        with:
+          os: ${{ matrix.os }}
