@@ -70,3 +70,19 @@ rd /s %APPDATA%/cifuzz
 reg delete "HKLM\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
 reg delete "HKCU\Software\Kitware\CMake\Packages\cifuzz" /f 2> nul
 ```
+
+
+## Using a pre-release installer
+
+The [Installer Pipeline](https://github.com/CodeIntelligenceTesting/cifuzz/actions/workflows/pipeline_installer.yml)
+creates installers (for all supported operating systems) for every 
+change on the `main` branch and can also be used on other branches too.
+
+To use one of these installers the following steps have to be executed:
+1. Download the `cifuzz_installer` artifact from the successful pipeline run 
+2. Unpack the artifact, for example with `unzip cifuzz_installer.zip` 
+3. Chose the installer for your operating system and run it
+```
+chmod u+x cifuzz_installer_linux
+./cifuzz_installer_linux
+```
