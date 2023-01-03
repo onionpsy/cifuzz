@@ -31,7 +31,7 @@ application {
     mainClass = 'com.github.CodeIntelligenceTesting.cifuzz.App'
 }
 
-tasks.named('test') {
+test {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
