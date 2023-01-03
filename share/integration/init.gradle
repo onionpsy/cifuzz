@@ -20,7 +20,7 @@ allprojects {
     // we need to set the exec file output path explicitly to make sure we find
     // the file in the `cifuzzReport` tasks
     def execFile = layout.buildDirectory.file("jacaco/cifuzz.exec").get().asFile
-    def fuzzTest = project.findProperty("cifuzz.fuzztest")
+    def fuzzTest = project.findProperty("cifuzz.fuzztest") ?: "*"
 
     tasks.register("cifuzzTest", Test) {
         useJUnitPlatform()
@@ -42,11 +42,11 @@ allprojects {
         // So we have to set them by hand and trigger the report generation by calling
         // `generate()`
         executionData execFile
-        classDirectories.from files(project.sourceSets.main.output)
-        sourceDirectories.from files(project.sourceSets.main.java.srcDirs)
+        classDirectories?.from files(project.sourceSets.main.output)
+        sourceDirectories?.from files(project.sourceSets.main.java.srcDirs)
 
         def output = project.findProperty("cifuzz.report.output") ?: layout.buildDirectory.dir("reports/cifuzz").get().toString()
-        def format = project.findProperty("cifuzz.report.format")
+        def format = project.findProperty("cifuzz.report.format") ?: "html"
         reports {
             html.enabled = format != "jacocoxml"
             html.outputLocation = file("$output/html")
