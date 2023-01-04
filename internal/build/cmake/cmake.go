@@ -301,6 +301,7 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 		"--config", cmakeBuildConfiguration,
 		"--component", "cifuzz_internal_deps_"+fuzzTest,
 	)
+	log.Debugf("Command: %s", cmd.String())
 	stdout, err := cmd.Output()
 	if err != nil {
 		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
