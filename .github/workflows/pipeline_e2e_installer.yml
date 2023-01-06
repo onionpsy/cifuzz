@@ -41,14 +41,8 @@ jobs:
         if: contains(matrix.os, 'macos')
         # please make sure this is in sync with the README.md / installation docs
         run: |
-          brew install cmake llvm@11 lcov openjdk maven gradle
+          brew install llvm@11 
           LLVM_PATH=$(brew --prefix llvm@11)
-          LLVM_VERSION=11.1.0
-          ls -lah $LLVM_PATH/lib/clang/
-          echo "SDKROOT=$(xcrun --sdk macosx --show-sdk-path)" >> $GITHUB_ENV
-          echo "CPATH=$LLVM_PATH/lib/clang/$LLVM_VERSION/include/" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$LLVM_PATH/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$LLVM_PATH/include" >> $GITHUB_ENV
           echo "CC=$LLVM_PATH/bin/clang" >> $GITHUB_ENV
           echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
           echo "PATH=$PATH:$LLVM_PATH/bin" >> $GITHUB_ENV
