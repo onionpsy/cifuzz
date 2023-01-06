@@ -134,5 +134,5 @@ func (cov *MavenCoverageGenerator) Generate() (string, error) {
 		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
 	}
 
-	return filepath.Join(cov.OutputPath, "index.html"), nil
+	return cov.OutputPath, nil
 }

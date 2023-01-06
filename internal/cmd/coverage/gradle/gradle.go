@@ -134,5 +134,5 @@ func (cov *GradleCoverageGenerator) Generate() (string, error) {
 		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
 	}
 
-	return filepath.Join(cov.OutputPath, "html", "index.html"), nil
+	return filepath.Join(cov.OutputPath, "html"), nil
 }
