@@ -19,7 +19,7 @@ allprojects {
 
     // we need to set the exec file output path explicitly to make sure we find
     // the file in the `cifuzzReport` tasks
-    def execFile = layout.buildDirectory.file("jacaco/cifuzz.exec").get().asFile
+    def execFile = layout.buildDirectory.file("jacoco/cifuzz.exec").get().asFile
     def fuzzTest = project.findProperty("cifuzz.fuzztest") ?: "*"
 
     tasks.register("cifuzzTest", Test) {
@@ -49,9 +49,9 @@ allprojects {
         def format = project.findProperty("cifuzz.report.format") ?: "html"
         reports {
             html.enabled = format != "jacocoxml"
-            html.outputLocation = file("$output/html")
+            html.destination = file("$output/html")
             xml.required = true
-            xml.outputLocation = file("$output/jacoco.xml")
+            xml.destination = file("$output/jacoco.xml")
         }
 
         generate()
