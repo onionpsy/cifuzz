@@ -25,6 +25,7 @@ func TestMain(m *testing.M) {
 	testOut = bytes.NewBuffer([]byte{})
 	oldOut := log.Output
 	log.Output = testOut
+	viper.Set("interactive", "false")
 	viper.Set("verbose", true)
 
 	m.Run()

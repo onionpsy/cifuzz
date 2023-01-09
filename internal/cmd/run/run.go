@@ -18,6 +18,8 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
 
+	"code-intelligence.com/cifuzz/internal/access_tokens"
+	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/bazel"
 	"code-intelligence.com/cifuzz/internal/build/cmake"
@@ -26,9 +28,11 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/cmd/run/report_handler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
+	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -169,6 +173,19 @@ depends on the build system configured for the project.
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Bind viper keys to flags. We can't do this in the New
+			// function, because that would re-bind viper keys which
+			// were bound to the flags of other commands before.
+			bindFlags()
+
+			var err error
+			interactive := viper.GetBool("interactive")
+
+			err = askForSaaSDialog(interactive)
+			if err != nil {
+				return cmdutils.WrapSilentError(err)
+			}
+
 			// Check correct number of fuzz test args (exactly one)
 			var lenFuzzTestArgs int
 			var argsToPass []string
@@ -183,12 +200,7 @@ depends on the build system configured for the project.
 				return cmdutils.WrapIncorrectUsageError(errors.New(msg))
 			}
 
-			// Bind viper keys to flags. We can't do this in the New
-			// function, because that would re-bind viper keys which
-			// were bound to the flags of other commands before.
-			bindFlags()
-
-			err := config.FindAndParseProjectConfig(opts)
+			err = config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
@@ -212,6 +224,7 @@ depends on the build system configured for the project.
 		cmdutils.AddBuildOnlyFlag,
 		cmdutils.AddDictFlag,
 		cmdutils.AddEngineArgFlag,
+		cmdutils.AddInteractiveFlag,
 		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
@@ -432,7 +445,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		log.Debugf("Executable: %s", buildResult.Executable)
 	}
 
-	err := os.MkdirAll(buildResult.GeneratedCorpus, 0755)
+	err := os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -572,7 +585,6 @@ func (c *runCmd) checkDependencies() error {
 		return cmdutils.WrapSilentError(depsErr)
 	}
 	return nil
-
 }
 
 func executeRunner(runner runner) error {
@@ -654,4 +666,87 @@ func countCorpusEntries(seedCorpusDirs []string) (uint, error) {
 		numSeeds += seedsInDir
 	}
 	return numSeeds, nil
+}
+
+func getAuthStatus() (bool, error) {
+	// check if user is authenticated
+
+	servers := access_tokens.GetServerURLs()
+	if len(servers) == 0 {
+		return false, nil
+	}
+
+	// assume that the first server is the one we want to check
+	server := servers[0]
+
+	// Obtain the API access token
+	token := login.GetToken(server)
+
+	if token == "" {
+		return false, nil
+	}
+
+	// Token might be invalid, so try to authenticate with it
+	apiClient := api.APIClient{Server: server}
+	err := login.CheckValidToken(&apiClient, token)
+	if err != nil {
+		err := errors.Errorf(`Failed to authenticate with the configured API access token.
+It's possible that the token has been revoked. Please try again after
+removing the token from %s.`, access_tokens.GetTokenFilePath())
+		log.Warn(err.Error())
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+// askForSaaSDialog ask users if they want to use a SaaS backend
+// if they are not authenticated
+func askForSaaSDialog(interactive bool) error {
+	cont := !interactive
+
+	authenticated, err := getAuthStatus()
+	if err != nil && interactive {
+		authenticated = false
+		// the token is invalid, so we should ask the user if they want to continue the fuzzing run
+		cont, err = dialog.Confirm("Do you want to continue anyway? (Results will not be synced!)", false)
+		if err != nil {
+			return err
+		}
+		if !cont {
+			return errors.New("Fuzzing aborted")
+		}
+	}
+	if authenticated {
+		cont = true
+	}
+
+	if authenticated {
+		log.Infof(`✓ You are authenticated.
+Your results will be synced to the remote fuzzing server at %s`, access_tokens.GetServerURLs()[0])
+	} else if !cont {
+		log.Notef(`Do you want to persist your findings on a remote fuzzing server?
+Authenticate with a backend to get more insights.`)
+
+		wishOptions := map[string]string{
+			"Yes":  "Yes",
+			"Skip": "Skip",
+		}
+		wishToAuthenticate, err := dialog.Select("Do you want to authenticate?", wishOptions, false)
+		if err != nil {
+			return err
+		}
+
+		if wishToAuthenticate == "Yes" {
+			defaultServer := "https://app.code-intelligence.com"
+			apiClient := api.APIClient{Server: defaultServer}
+			_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
