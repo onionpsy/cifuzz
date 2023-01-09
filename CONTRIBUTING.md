@@ -61,15 +61,6 @@ make install
 brew install git cmake llvm lcov go openjdk maven gradle bazelisk
 ```
 
-> Unfortunately, there is a bug in Bazel < 6 on macOS. However, if you set the
-`USE_BAZEL_VERSION` environment variable, bazelisk will pick that up and use
-the correct version accordingly. E.g., put this in your .zshrc:
-
-```zsh
-export USE_BAZEL_VERSION=6.0.0-pre.20221020.1
-```
-
-
 Finally, add the following to your `~/.zshrc` or `~/.bashrc` to use the correct version of
 LLVM:
 ```bash
