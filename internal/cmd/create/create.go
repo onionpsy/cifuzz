@@ -144,7 +144,7 @@ to keep them close to the tested code - just like regular unit tests.`)
 
 // getTestType returns the test type (selected by argument or input dialog)
 func (c *createCmd) getTestType() (config.FuzzTestType, error) {
-	userSelectedType, err := dialog.Select("Select type of the fuzz test", supportedTestTypes)
+	userSelectedType, err := dialog.Select("Select type of the fuzz test", supportedTestTypes, true)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

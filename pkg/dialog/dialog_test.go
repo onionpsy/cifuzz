@@ -31,7 +31,7 @@ func TestSelect(t *testing.T) {
 		"Item No3": "item3",
 		"Item No4": "item4",
 	}
-	userInput, err := Select("Test", items)
+	userInput, err := Select("Test", items, true)
 	require.NoError(t, err)
 	assert.Equal(t, "item2", userInput)
 }

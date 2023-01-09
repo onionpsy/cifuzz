@@ -325,7 +325,7 @@ func (c *runRemoteCmd) selectProject(projects []*api.Project) (string, error) {
 		return "", cmdutils.WrapSilentError(err)
 	}
 
-	projectName, err := dialog.Select("Select the project you want to start a fuzzing run for", items)
+	projectName, err := dialog.Select("Select the project you want to start a fuzzing run for", items, true)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
