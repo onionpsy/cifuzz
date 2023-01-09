@@ -62,6 +62,14 @@ func Get(target string) string {
 	return accessTokens[target]
 }
 
+func GetServerURLs() []string {
+	var serverURLs []string
+	for target := range accessTokens {
+		serverURLs = append(serverURLs, target)
+	}
+	return serverURLs
+}
+
 func GetTokenFilePath() string {
 	return accessTokensFilePath
 }
