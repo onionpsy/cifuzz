@@ -182,7 +182,7 @@ depends on the build system configured for the project.
 			interactive := viper.GetBool("interactive")
 
 			if interactive && os.Getenv("CIFUZZ_PRERELEASE") != "" && os.Getenv("CI") == "" {
-				err = askForSaaSDialog()
+				err = showServerConnectionDialog()
 				if err != nil {
 					return cmdutils.WrapSilentError(err)
 				}
@@ -703,9 +703,9 @@ removing the token from %s.`, access_tokens.GetTokenFilePath())
 	return true, nil
 }
 
-// askForSaaSDialog ask users if they want to use a SaaS backend
+// showServerConnectionDialog ask users if they want to use a SaaS backend
 // if they are not authenticated
-func askForSaaSDialog() error {
+func showServerConnectionDialog() error {
 	cont := true
 
 	authenticated, err := getAuthStatus()
