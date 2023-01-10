@@ -728,8 +728,8 @@ func askForSaaSDialog(interactive bool) error {
 		log.Infof(`✓ You are authenticated.
 Your results will be synced to the remote fuzzing server at %s`, access_tokens.GetServerURLs()[0])
 	} else if !cont {
-		log.Notef(`Do you want to persist your findings on a remote fuzzing server?
-Authenticate with a backend to get more insights.`)
+		log.Notef(`Do you want to persist your findings?
+Authenticate with the CI Fuzz Server to get more insights.`)
 
 		wishOptions := map[string]string{
 			"Yes":  "Yes",
