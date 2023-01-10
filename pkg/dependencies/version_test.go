@@ -113,13 +113,13 @@ func TestClangVersion_AllEnv(t *testing.T) {
 	assert.Equal(t, ccVersion, version)
 }
 
-func TestClangVersion_CXXMissing(t *testing.T) {
-	ccVersion := semver.MustParse("10.0.0")
+func TestClangVersion_CCMissing(t *testing.T) {
+	cxxVersion := semver.MustParse("10.0.0")
 	pathVersion := semver.MustParse("1.0.0")
 	mockCheck := func(path string, key Key) (*semver.Version, error) {
 		switch path {
-		case "CC/clang":
-			return ccVersion, nil
+		case "CC/clang++":
+			return cxxVersion, nil
 		case "path/clang":
 			return pathVersion, nil
 		}
@@ -129,8 +129,8 @@ func TestClangVersion_CXXMissing(t *testing.T) {
 	finderMock := &mocks.RunfilesFinderMock{}
 	finderMock.On("ClangPath").Return("path/clang", nil)
 
-	t.Setenv("CC", "CC/clang")
-	t.Setenv("CXX", "")
+	t.Setenv("CC", "")
+	t.Setenv("CXX", "CC/clang++")
 
 	keys := []Key{CLANG}
 	dep := getDeps(keys)[CLANG]
@@ -139,7 +139,7 @@ func TestClangVersion_CXXMissing(t *testing.T) {
 	version, err := clangVersion(dep, mockCheck)
 	require.NoError(t, err)
 
-	assert.Equal(t, pathVersion, version)
+	assert.Equal(t, cxxVersion, version)
 }
 
 func TestClangVersion_CCFilename(t *testing.T) {

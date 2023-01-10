@@ -9,6 +9,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 type RunfilesFinderImpl struct {
@@ -20,7 +23,7 @@ func (f RunfilesFinderImpl) CIFuzzIncludePath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) ClangPath() (string, error) {
-	path, err := exec.LookPath("clang")
+	path, err := f.llvmToolPath("clang")
 	return path, errors.WithStack(err)
 }
 
@@ -34,17 +37,17 @@ func (f RunfilesFinderImpl) CMakePresetsPath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) LLVMCovPath() (string, error) {
-	path, err := exec.LookPath("llvm-cov")
-	return path, errors.WithStack(err)
+	path, err := f.llvmToolPath("llvm-cov")
+	return path, err
 }
 
 func (f RunfilesFinderImpl) LLVMProfDataPath() (string, error) {
-	path, err := exec.LookPath("llvm-profdata")
+	path, err := f.llvmToolPath("llvm-profdata")
 	return path, errors.WithStack(err)
 }
 
 func (f RunfilesFinderImpl) LLVMSymbolizerPath() (string, error) {
-	path, err := exec.LookPath("llvm-symbolizer")
+	path, err := f.llvmToolPath("llvm-symbolizer")
 	return path, errors.WithStack(err)
 }
 
@@ -150,4 +153,28 @@ func (f RunfilesFinderImpl) findFollowSymlinks(relativePath string) (string, err
 	}
 
 	return resolvedPath, nil
+}
+
+func (f RunfilesFinderImpl) llvmToolPath(name string) (string, error) {
+	var err error
+	var path string
+	env := os.Environ()
+
+	clangPath := envutil.GetEnvWithPathSubstring(env, "CC", "clang")
+	if clangPath == "" {
+		clangPath = envutil.GetEnvWithPathSubstring(env, "CXX", "clang++")
+	}
+	if clangPath != "" {
+		path = filepath.Join(filepath.Dir(clangPath), name)
+		found, err := fileutil.Exists(path)
+		if err != nil {
+			return "", err
+		}
+		if found {
+			return path, nil
+		}
+	}
+
+	path, err = exec.LookPath(name)
+	return path, errors.WithStack(err)
 }

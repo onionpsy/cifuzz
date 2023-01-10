@@ -261,9 +261,12 @@ func (i *CIFuzzBuilder) BuildProcessWrapper() error {
 	}()
 
 	// Build process wrapper
-	compiler := os.Getenv("CC")
+	compiler := envutil.GetEnvWithPathSubstring(os.Environ(), "CC", "clang")
 	if compiler == "" {
-		compiler = "clang"
+		compiler, err = exec.LookPath("clang")
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	dest := filepath.Join(i.libDir(), "process_wrapper")
 	cmd := exec.Command(compiler, "-o", dest, "process_wrapper.c")

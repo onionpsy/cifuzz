@@ -66,7 +66,7 @@ var deps = Dependencies{
 			if err != nil {
 				return nil, err
 			}
-			log.Debugf("Found llvm-cov version %s in PATH: %s", version, path)
+			log.Debugf("Found llvm-cov version %s in: %s", version, path)
 			return version, nil
 		},
 		Installed: func(dep *Dependency) bool {
@@ -85,7 +85,7 @@ var deps = Dependencies{
 			if err != nil {
 				return false
 			}
-			log.Debugf("Found llvm-profdata in PATH: %s", path)
+			log.Debugf("Found llvm-profdata in: %s", path)
 			return true
 		},
 	},
@@ -101,7 +101,7 @@ var deps = Dependencies{
 			if err != nil {
 				return nil, err
 			}
-			log.Debugf("Found llvm-symbolizer version %s in PATH: %s", version, path)
+			log.Debugf("Found llvm-symbolizer version %s in: %s", version, path)
 			return version, nil
 		},
 		Installed: func(dep *Dependency) bool {

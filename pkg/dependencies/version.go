@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
+	"code-intelligence.com/cifuzz/util/envutil"
 )
 
 /*
@@ -46,63 +45,57 @@ func clangCheck(path string, key Key) (*semver.Version, error) {
 
 // returns the currently installed clang version
 func clangVersion(dep *Dependency, clangCheck execCheck) (*semver.Version, error) {
-	// as we have up to three sources for a clang instance we take
-	// the lowest version we find
-	var minVersion *semver.Version
+	var clangVersion *semver.Version
+	env := os.Environ()
 
-	// first we check if the environment variables CC and CXX are set
-	// and contain a valid version number if not, we also check the
+	// First we check if the environment variables CC and CXX are set
+	// and contain a valid version number. If both contain a valid version
+	// number, we return the smallest one. If both are not set, we also check the
 	// clang available in the path
-	checkPath := false
-
-	if cc, found := os.LookupEnv("CC"); found && cc != "" {
-		if strings.Contains(path.Base(cc), "clang") {
-			ccVersion, err := clangCheck(cc, dep.Key)
-			if err != nil {
-				return nil, err
-			}
-			log.Debugf("Found clang version %s in CC: %s", ccVersion.String(), cc)
-			minVersion = ccVersion
-		} else {
-			log.Warn("No clang found in CC")
-			checkPath = true
+	cc := envutil.GetEnvWithPathSubstring(env, "CC", "clang")
+	if cc != "" {
+		ccVersion, err := clangCheck(cc, dep.Key)
+		if err != nil {
+			return nil, err
 		}
+		log.Debugf("Found clang version %s in CC: %s", ccVersion.String(), cc)
+		clangVersion = ccVersion
 	} else {
-		checkPath = true
+		log.Warn("No clang found in CC")
 	}
 
-	if cxx, found := os.LookupEnv("CXX"); found && cxx != "" {
-		if strings.Contains(path.Base(cxx), "clang") {
-			cxxVersion, err := clangCheck(cxx, dep.Key)
-			if err != nil {
-				return nil, err
-			}
-			log.Debugf("Found clang version %s in CXX: %s", cxxVersion.String(), cxx)
-			if minVersion == nil || minVersion.GreaterThan(cxxVersion) {
-				minVersion = cxxVersion
-			}
-
-		} else {
-			log.Warn("No clang found in CXX")
-			checkPath = true
+	cxx := envutil.GetEnvWithPathSubstring(env, "CXX", "clang++")
+	if cxx != "" {
+		cxxVersion, err := clangCheck(cxx, dep.Key)
+		if err != nil {
+			return nil, err
+		}
+		log.Debugf("Found clang++ version %s in CXX: %s", cxxVersion.String(), cxx)
+		if clangVersion == nil || clangVersion.GreaterThan(cxxVersion) {
+			clangVersion = cxxVersion
+		}
+		if !clangVersion.Equal(cxxVersion) {
+			log.Warn(`clang and clang++ versions are different.
+Other llvm tools like llvm-cov are selected based on the smaller version.`)
 		}
 	} else {
-		checkPath = true
+		log.Warn("No clang++ found in CXX")
 	}
 
-	if checkPath {
+	if clangVersion == nil {
 		path, err := dep.finder.ClangPath()
 		if err != nil {
 			return nil, err
 		}
 		pathVersion, err := clangCheck(path, dep.Key)
-		log.Debugf("Found clang version %s in PATH: %s", pathVersion.String(), path)
-		if minVersion == nil || minVersion.GreaterThan(pathVersion) {
-			minVersion = pathVersion
+		if err != nil {
+			return nil, err
 		}
+		log.Debugf("Found clang version %s in PATH: %s", pathVersion.String(), path)
+		clangVersion = pathVersion
 	}
 
-	return minVersion, nil
+	return clangVersion, nil
 
 }
 

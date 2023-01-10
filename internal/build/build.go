@@ -3,7 +3,6 @@ package build
 import (
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -58,13 +57,13 @@ func CommonBuildEnv() ([]string, error) {
 		// Set the C/C++ compiler to clang/clang++ (if not already set),
 		// which is needed to build a  binary with fuzzing instrumentation
 		// gcc doesn't have -fsanitize=fuzzer.
-		if val, ok := envutil.LookupEnv(env, "CC"); !ok || !strings.HasPrefix(path.Base(val), "clang") {
+		if val := envutil.GetEnvWithPathSubstring(env, "CC", "clang"); val == "" {
 			env, err = envutil.Setenv(env, "CC", "clang")
 			if err != nil {
 				return nil, err
 			}
 		}
-		if val, ok := envutil.LookupEnv(env, "CXX"); !ok || !strings.HasPrefix(path.Base(val), "clang++") {
+		if val := envutil.GetEnvWithPathSubstring(env, "CXX", "clang++"); val == "" {
 			env, err = envutil.Setenv(env, "CXX", "clang++")
 			if err != nil {
 				return nil, err
