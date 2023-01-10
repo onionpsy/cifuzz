@@ -168,6 +168,16 @@ func AddProjectDirFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddResolveSourceFileFlag(cmd *cobra.Command) func() {
+	cmd.Flags().BoolP("resolve", "r", false,
+		"Argument of the command is a path to a source file instead of a test identifier.\n"+
+			"The path can be either absolute or relative to the current working directory and \n"+
+			"will be resolved to the identifier of the corresponding fuzz test.")
+	return func() {
+		ViperMustBindPFlag("resolveSourceFilePath", cmd.Flags().Lookup("resolve"))
+	}
+}
+
 func AddProjectFlag(cmd *cobra.Command) func() {
 	// TODO: Make the project name more accessible in the web app (currently
 	//       it's only shown in the URL)

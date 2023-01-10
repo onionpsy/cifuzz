@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
+	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dialog"
@@ -36,7 +37,8 @@ type remoteRunOpts struct {
 	// Fields which are not configurable via viper (i.e. via cifuzz.yaml
 	// and CIFUZZ_* environment variables), by setting
 	// mapstructure:"-"
-	BundlePath string `mapstructure:"-"`
+	BundlePath            string `mapstructure:"-"`
+	ResolveSourceFilePath bool
 }
 
 func (opts *remoteRunOpts) Validate() error {
@@ -116,7 +118,13 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
 			}
-			opts.FuzzTests = args
+
+			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
+			}
+			opts.FuzzTests = fuzzTests
 
 			if opts.ProjectName != "" && !strings.HasPrefix(opts.ProjectName, "projects/") {
 				opts.ProjectName = "projects/" + opts.ProjectName
@@ -175,6 +183,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddServerFlag,
 		cmdutils.AddTimeoutFlag,
+		cmdutils.AddResolveSourceFileFlag,
 	)
 	cmd.Flags().StringVar(&opts.BundlePath, "bundle", "", "Path of an existing bundle to start a remote run with.")
 

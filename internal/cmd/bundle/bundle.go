@@ -12,6 +12,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -134,7 +135,13 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 				return cmdutils.WrapSilentError(err)
 			}
 
-			opts.FuzzTests = args
+			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				log.Print(err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+			opts.FuzzTests = fuzzTests
+
 			if isOSIndependent {
 				log.Warnf("WARNING: Bundling for %s is experimental and is currently not supported for remote runs.",
 					opts.BuildSystem)
@@ -160,6 +167,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddTimeoutFlag,
+		cmdutils.AddResolveSourceFileFlag,
 	)
 	cmd.Flags().StringVarP(&opts.OutputPath, "output", "o", "", "Output path of the bundle (.tar.gz)")
 

@@ -5,7 +5,7 @@
       "label": "cifuzz coverage (current test)",
       "type": "shell",
       "command": "cifuzz",
-      "args": ["coverage", "--preset=vscode", "${fileBasenameNoExtension}"],
+      "args": ["coverage", "--preset=vscode", "-r", "${fileBasename}"],
       "problemMatcher": []
     }
   ]

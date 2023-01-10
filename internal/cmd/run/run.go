@@ -29,6 +29,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmd/run/report_handler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
+	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
@@ -40,18 +41,19 @@ import (
 )
 
 type runOptions struct {
-	BuildSystem    string        `mapstructure:"build-system"`
-	BuildCommand   string        `mapstructure:"build-command"`
-	NumBuildJobs   uint          `mapstructure:"build-jobs"`
-	Dictionary     string        `mapstructure:"dict"`
-	EngineArgs     []string      `mapstructure:"engine-args"`
-	SeedCorpusDirs []string      `mapstructure:"seed-corpus-dirs"`
-	Timeout        time.Duration `mapstructure:"timeout"`
-	Interactive    bool          `mapstructure:"interactive"`
-	Server         string        `mapstructure:"server"`
-	UseSandbox     bool          `mapstructure:"use-sandbox"`
-	PrintJSON      bool          `mapstructure:"print-json"`
-	BuildOnly      bool          `mapstructure:"build-only"`
+	BuildSystem           string        `mapstructure:"build-system"`
+	BuildCommand          string        `mapstructure:"build-command"`
+	NumBuildJobs          uint          `mapstructure:"build-jobs"`
+	Dictionary            string        `mapstructure:"dict"`
+	EngineArgs            []string      `mapstructure:"engine-args"`
+	SeedCorpusDirs        []string      `mapstructure:"seed-corpus-dirs"`
+	Timeout               time.Duration `mapstructure:"timeout"`
+	Interactive           bool          `mapstructure:"interactive"`
+	Server                string        `mapstructure:"server"`
+	UseSandbox            bool          `mapstructure:"use-sandbox"`
+	PrintJSON             bool          `mapstructure:"print-json"`
+	BuildOnly             bool          `mapstructure:"build-only"`
+	ResolveSourceFilePath bool
 
 	ProjectDir string
 	fuzzTest   string
@@ -200,7 +202,13 @@ depends on the build system configured for the project.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			opts.fuzzTest = args[0]
+			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
+			}
+			opts.fuzzTest = fuzzTests[0]
+
 			opts.argsToPass = argsToPass
 			return opts.validate()
 		},
@@ -223,6 +231,7 @@ depends on the build system configured for the project.
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddTimeoutFlag,
 		cmdutils.AddUseSandboxFlag,
+		cmdutils.AddResolveSourceFileFlag,
 	}
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
 		funcs = append(funcs, cmdutils.AddServerFlag, cmdutils.AddInteractiveFlag)

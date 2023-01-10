@@ -39,6 +39,8 @@ type Opts struct {
 	Stderr     io.Writer `mapstructure:"-"`
 
 	tempDir string `mapstructure:"-"`
+
+	ResolveSourceFilePath bool
 }
 
 func (opts *Opts) Validate() error {

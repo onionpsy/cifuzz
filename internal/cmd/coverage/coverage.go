@@ -20,6 +20,7 @@ import (
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
 	mavenCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/maven"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/coverage"
@@ -30,14 +31,15 @@ import (
 )
 
 type coverageOptions struct {
-	OutputFormat   string   `mapstructure:"format"`
-	OutputPath     string   `mapstructure:"output"`
-	BuildSystem    string   `mapstructure:"build-system"`
-	BuildCommand   string   `mapstructure:"build-command"`
-	NumBuildJobs   uint     `mapstructure:"build-jobs"`
-	SeedCorpusDirs []string `mapstructure:"seed-corpus-dirs"`
-	UseSandbox     bool     `mapstructure:"use-sandbox"`
-	Preset         string
+	OutputFormat          string   `mapstructure:"format"`
+	OutputPath            string   `mapstructure:"output"`
+	BuildSystem           string   `mapstructure:"build-system"`
+	BuildCommand          string   `mapstructure:"build-command"`
+	NumBuildJobs          uint     `mapstructure:"build-jobs"`
+	SeedCorpusDirs        []string `mapstructure:"seed-corpus-dirs"`
+	UseSandbox            bool     `mapstructure:"use-sandbox"`
+	Preset                string
+	ResolveSourceFilePath bool
 
 	ProjectDir string
 	fuzzTest   string
@@ -123,7 +125,13 @@ or a lcov trace file.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			opts.fuzzTest = args[0]
+			fuzzTest, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
+			}
+			opts.fuzzTest = fuzzTest[0]
+
 			return opts.validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -141,6 +149,7 @@ or a lcov trace file.
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddUseSandboxFlag,
 		cmdutils.AddPresetFlag,
+		cmdutils.AddResolveSourceFileFlag,
 	)
 	// This flag is not supposed to be called by a user
 	err := cmd.Flags().MarkHidden("preset")
