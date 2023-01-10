@@ -181,8 +181,8 @@ depends on the build system configured for the project.
 			var err error
 			interactive := viper.GetBool("interactive")
 
-			if os.Getenv("CIFUZZ_PRERELEASE") != "" && os.Getenv("CI") == "" {
-				err = askForSaaSDialog(interactive)
+			if interactive && os.Getenv("CIFUZZ_PRERELEASE") != "" && os.Getenv("CI") == "" {
+				err = askForSaaSDialog()
 				if err != nil {
 					return cmdutils.WrapSilentError(err)
 				}
@@ -705,11 +705,11 @@ removing the token from %s.`, access_tokens.GetTokenFilePath())
 
 // askForSaaSDialog ask users if they want to use a SaaS backend
 // if they are not authenticated
-func askForSaaSDialog(interactive bool) error {
-	cont := !interactive
+func askForSaaSDialog() error {
+	cont := true
 
 	authenticated, err := getAuthStatus()
-	if err != nil && interactive {
+	if err != nil {
 		authenticated = false
 		// the token is invalid, so we should ask the user if they want to continue the fuzzing run
 		cont, err = dialog.Confirm("Do you want to continue anyway? (Results will not be synced!)", false)
@@ -727,7 +727,7 @@ func askForSaaSDialog(interactive bool) error {
 	if authenticated {
 		log.Infof(`✓ You are authenticated.
 Your results will be synced to the remote fuzzing server at %s`, access_tokens.GetServerURLs()[0])
-	} else if !cont {
+	} else if cont {
 		log.Notef(`Do you want to persist your findings?
 Authenticate with the CI Fuzz Server to get more insights.`)
 
