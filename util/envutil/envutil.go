@@ -3,6 +3,7 @@ package envutil
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -125,4 +126,17 @@ func QuotedEnv(env []string) []string {
 func QuotedCommandWithEnv(args []string, env []string) string {
 	quotedStrings := append(QuotedEnv(env), stringutil.QuotedStrings(args)...)
 	return strings.Join(quotedStrings, " ")
+}
+
+// GetEnvWithPathSubstring retrieves the value of the environment
+// variable named by the key in env.
+// It returns the value, which will be empty if the variable is not
+// present or if the last element of the path does not contain the
+// given substring.
+func GetEnvWithPathSubstring(env []string, key string, substring string) string {
+	value, found := LookupEnv(env, key)
+	if found && strings.Contains(filepath.Base(value), substring) {
+		return value
+	}
+	return ""
 }

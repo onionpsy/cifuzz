@@ -1,6 +1,7 @@
 package envutil
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -56,4 +57,17 @@ func TestCopy(t *testing.T) {
 	res, err := Copy(dst, src)
 	require.NoError(t, err)
 	require.Equal(t, []string{"BAO=bab", "BAR=bar", "FOO=foo"}, res)
+}
+
+func TestGetEnvWithPathSubstring(t *testing.T) {
+	value := filepath.Join("foo", "bar")
+	env := []string{"foo=" + value}
+
+	// Check with valid substring
+	res := GetEnvWithPathSubstring(env, "foo", "bar")
+	require.Equal(t, value, res)
+
+	// Check with invalid substring
+	res = GetEnvWithPathSubstring(env, "foo", "foo")
+	require.Equal(t, "", res)
 }
