@@ -94,6 +94,12 @@ func New() *cobra.Command {
 		Use:   "coverage [flags] <fuzz test>",
 		Short: "Generate coverage report for fuzz test",
 		Long: `This command generates a coverage report for a fuzz test.
+
+The inputs found in the inputs directory of the fuzz test are used in
+addition to optional input directories specified with the seed-corpus flag.
+More details about the build system specific inputs directory location
+can be found in the help message of the run command.
+
 The output can be displayed in the browser or written as a HTML 
 or a lcov trace file.
 

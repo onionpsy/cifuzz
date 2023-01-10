@@ -141,6 +141,12 @@ depends on the build system configured for the project.
 
     cifuzz run my_fuzz_test -- -G Ninja
 
+  The inputs found in the directory
+
+    <fuzz test>_inputs
+
+  are used as a starting point for the fuzzing run.
+
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Bazel") + `
   <fuzz test> is the name of the cc_fuzz_test target as defined in your
   BUILD file, either as a relative or absolute Bazel label.
@@ -153,12 +159,24 @@ depends on the build system configured for the project.
 
     cifuzz run my_fuzz_test -- --sandbox_debug
 
+  The inputs found in the directory
+
+    <fuzz test>_inputs
+
+  are used as a starting point for the fuzzing run.
+
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Maven/Gradle") + `
   <fuzz test> is the name of the class containing the fuzz test.
 
   Command completion for the <fuzz test> argument is supported.
 
   The --build-command flag is ignored.
+
+  The inputs found in the directory
+
+    src/test/resources/.../<fuzz test>Inputs
+
+  are used as a starting point for the fuzzing run.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Other build systems") + `
   <fuzz test> is either the path or basename of the fuzz test executable
@@ -173,6 +191,12 @@ depends on the build system configured for the project.
 
     echo "build-command: make clean && make \$FUZZ_TEST" >> cifuzz.yaml
     cifuzz run my_fuzz_test
+
+  The inputs found in the directory
+			
+    <fuzz test>_inputs
+
+  are used as a starting point for the fuzzing run.
 
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,

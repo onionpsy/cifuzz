@@ -84,6 +84,12 @@ func newWithOptions(opts *remoteRunOpts) *cobra.Command {
 bundle and uploads that to a CI Fuzz Server instance to start a remote
 fuzzing run.
 
+The inputs found in the inputs directory of the fuzz test are also added
+to the bundle in addition to optional input directories specified with
+the seed-corpus flag.
+More details about the build system specific inputs directory location
+can be found in the help message of the run command.
+
 If the --bundle flag is used, building and bundling is skipped and the
 specified bundle is uploaded to start a remote fuzzing run instead.
 

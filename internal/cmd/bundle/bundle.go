@@ -52,8 +52,16 @@ func newWithOptions(opts *options) *cobra.Command {
 		Short: "Bundles fuzz tests into an archive",
 		Long: `This command bundles all runtime artifacts required by the 
 given fuzz tests into a self-contained archive (bundle) that can be executed 
-by a CI Fuzz Server instance. The usage of this command depends on the build
-system configured for the project.
+by a CI Fuzz Server instance.
+
+The inputs found in the inputs directory of the fuzz test are also added
+to the bundle in addition to optional input directories specified with
+the seed-corpus flag.
+More details about the build system specific inputs directory location
+can be found in the help message of the run command.
+
+The usage of this command depends on the build system
+configured for the project.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("CMake") + `
   <fuzz test> is the name of the fuzz test defined in the add_fuzz_test
@@ -80,6 +88,8 @@ system configured for the project.
   Command completion for the <fuzz test> argument is supported.
 
   The --build-command flag is ignored.
+
+  If no fuzz tests are specified, all fuzz tests are added to the bundle.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Other build systems") + `
   <fuzz test> is either the path or basename of the fuzz test executable
