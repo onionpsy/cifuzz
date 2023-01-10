@@ -181,9 +181,11 @@ depends on the build system configured for the project.
 			var err error
 			interactive := viper.GetBool("interactive")
 
-			err = askForSaaSDialog(interactive)
-			if err != nil {
-				return cmdutils.WrapSilentError(err)
+			if os.Getenv("CIFUZZ_PRERELEASE") != "" && os.Getenv("CI") == "" {
+				err = askForSaaSDialog(interactive)
+				if err != nil {
+					return cmdutils.WrapSilentError(err)
+				}
 			}
 
 			// Check correct number of fuzz test args (exactly one)
