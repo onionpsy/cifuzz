@@ -47,6 +47,8 @@ type runOptions struct {
 	EngineArgs     []string      `mapstructure:"engine-args"`
 	SeedCorpusDirs []string      `mapstructure:"seed-corpus-dirs"`
 	Timeout        time.Duration `mapstructure:"timeout"`
+	Interactive    bool          `mapstructure:"interactive"`
+	Server         string        `mapstructure:"server"`
 	UseSandbox     bool          `mapstructure:"use-sandbox"`
 	PrintJSON      bool          `mapstructure:"print-json"`
 	BuildOnly      bool          `mapstructure:"build-only"`
@@ -178,16 +180,6 @@ depends on the build system configured for the project.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
-			var err error
-			interactive := viper.GetBool("interactive")
-
-			if interactive && os.Getenv("CIFUZZ_PRERELEASE") != "" && os.Getenv("CI") == "" {
-				err = showServerConnectionDialog()
-				if err != nil {
-					return cmdutils.WrapSilentError(err)
-				}
-			}
-
 			// Check correct number of fuzz test args (exactly one)
 			var lenFuzzTestArgs int
 			var argsToPass []string
@@ -202,7 +194,7 @@ depends on the build system configured for the project.
 				return cmdutils.WrapIncorrectUsageError(errors.New(msg))
 			}
 
-			err = config.FindAndParseProjectConfig(opts)
+			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
@@ -220,20 +212,22 @@ depends on the build system configured for the project.
 
 	// Note: If a flag should be configurable via cifuzz.yaml as well,
 	// bind it to viper in the PreRunE function.
-	bindFlags = cmdutils.AddFlags(cmd,
+	funcs := []func(cmd *cobra.Command) func(){
 		cmdutils.AddBuildCommandFlag,
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddBuildOnlyFlag,
 		cmdutils.AddDictFlag,
 		cmdutils.AddEngineArgFlag,
-		cmdutils.AddInteractiveFlag,
 		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddTimeoutFlag,
 		cmdutils.AddUseSandboxFlag,
-	)
-
+	}
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		funcs = append(funcs, cmdutils.AddServerFlag, cmdutils.AddInteractiveFlag)
+	}
+	bindFlags = cmdutils.AddFlags(cmd, funcs...)
 	return cmd
 }
 
@@ -241,6 +235,13 @@ func (c *runCmd) run() error {
 	err := c.checkDependencies()
 	if err != nil {
 		return err
+	}
+
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		err = c.setupSync()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create a temporary directory which the builder can use to create
@@ -589,6 +590,36 @@ func (c *runCmd) checkDependencies() error {
 	return nil
 }
 
+func (c *runCmd) setupSync() error {
+	interactive := viper.GetBool("interactive")
+
+	if os.Getenv("CI") != "" {
+		interactive = false
+	}
+
+	authenticated, err := getAuthStatus(c.opts.Server)
+	if err != nil {
+		return cmdutils.WrapSilentError(err)
+	}
+
+	if authenticated {
+		log.Infof(`✓ You are authenticated.
+Your results will be synced to the remote fuzzing server at %s`, c.opts.Server)
+	} else if !interactive {
+		log.Warn(`You are not authenticated with a remote fuzzing server.
+Your results will not be synced to a remote fuzzing server.`)
+	}
+
+	if interactive && !authenticated {
+		// establish server connection to check user auth
+		err = showServerConnectionDialog(c.opts.Server)
+		if err != nil {
+			return cmdutils.WrapSilentError(err)
+		}
+	}
+	return nil
+}
+
 func executeRunner(runner runner) error {
 	// Handle cleanup (terminating the fuzzer process) when receiving
 	// termination signals
@@ -670,17 +701,7 @@ func countCorpusEntries(seedCorpusDirs []string) (uint, error) {
 	return numSeeds, nil
 }
 
-func getAuthStatus() (bool, error) {
-	// check if user is authenticated
-
-	servers := access_tokens.GetServerURLs()
-	if len(servers) == 0 {
-		return false, nil
-	}
-
-	// assume that the first server is the one we want to check
-	server := servers[0]
-
+func getAuthStatus(server string) (bool, error) {
 	// Obtain the API access token
 	token := login.GetToken(server)
 
@@ -705,48 +726,24 @@ removing the token from %s.`, access_tokens.GetTokenFilePath())
 
 // showServerConnectionDialog ask users if they want to use a SaaS backend
 // if they are not authenticated
-func showServerConnectionDialog() error {
-	cont := true
+func showServerConnectionDialog(server string) error {
+	log.Notef(`Do you want to persist your findings?
+Authenticate with the CI Fuzz Server (%s) to get more insights.`, server)
 
-	authenticated, err := getAuthStatus()
+	wishOptions := map[string]string{
+		"Yes":  "Yes",
+		"Skip": "Skip",
+	}
+	wishToAuthenticate, err := dialog.Select("Do you want to authenticate?", wishOptions, false)
 	if err != nil {
-		authenticated = false
-		// the token is invalid, so we should ask the user if they want to continue the fuzzing run
-		cont, err = dialog.Confirm("Do you want to continue anyway? (Results will not be synced!)", false)
-		if err != nil {
-			return err
-		}
-		if !cont {
-			return errors.New("Fuzzing aborted")
-		}
-	}
-	if authenticated {
-		cont = true
+		return err
 	}
 
-	if authenticated {
-		log.Infof(`✓ You are authenticated.
-Your results will be synced to the remote fuzzing server at %s`, access_tokens.GetServerURLs()[0])
-	} else if cont {
-		log.Notef(`Do you want to persist your findings?
-Authenticate with the CI Fuzz Server to get more insights.`)
-
-		wishOptions := map[string]string{
-			"Yes":  "Yes",
-			"Skip": "Skip",
-		}
-		wishToAuthenticate, err := dialog.Select("Do you want to authenticate?", wishOptions, false)
+	if wishToAuthenticate == "Yes" {
+		apiClient := api.APIClient{Server: server}
+		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient)
 		if err != nil {
 			return err
-		}
-
-		if wishToAuthenticate == "Yes" {
-			defaultServer := "https://app.code-intelligence.com"
-			apiClient := api.APIClient{Server: defaultServer}
-			_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
