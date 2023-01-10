@@ -10,7 +10,8 @@ In general there are two ways to run your fuzz test:
 
 2. As a **regression test**, by invoking it through your IDE/editor or by directly
    executing the replayer binary. This will run the fuzz test on all inputs stored 
-   in the`<fuzz-test-name>_inputs` next to the fuzz test. 
+   in the default inputs directory of the fuzz test (the build system specific
+   locations can be found in `cifuzz run --help`).
 
 The regression test mode can be used to test that inputs which previously resulted 
 in findings do not result in findings anymore. 
