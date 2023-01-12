@@ -203,7 +203,7 @@ func GetBuildDirectory(projectDir string) (string, error) {
 	if result == nil {
 		return "", errors.New("Unable to parse gradle build directory from init script.")
 	}
-	buildDir := result[1]
+	buildDir := strings.TrimSpace(result[1])
 
 	return buildDir, nil
 }
