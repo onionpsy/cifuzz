@@ -186,7 +186,7 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 }
 
 func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string) (string, error) {
-	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s:run", artifact.ResourceName), token)
+	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s:run", artifact.ResourceName), nil, token)
 	if err != nil {
 		return "", err
 	}
@@ -221,9 +221,9 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	return campaignRunName, nil
 }
 
-func (client *APIClient) sendRequest(method, endpoint, token string) (*http.Response, error) {
+func (client *APIClient) sendRequest(method string, endpoint string, body io.Reader, token string) (*http.Response, error) {
 	url := fmt.Sprintf("%s/%s", client.Server, endpoint)
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -238,7 +238,7 @@ func (client *APIClient) sendRequest(method, endpoint, token string) (*http.Resp
 }
 
 func (client *APIClient) ListProjects(token string) ([]*Project, error) {
-	resp, err := client.sendRequest("GET", "v1/projects", token)
+	resp, err := client.sendRequest("GET", "v1/projects", nil, token)
 	if err != nil {
 		return nil, err
 	}
