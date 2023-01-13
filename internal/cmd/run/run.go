@@ -629,6 +629,16 @@ func (c *runCmd) setupSync() error {
 
 	if os.Getenv("CI") != "" {
 		interactive = false
+
+	// Check if the server option is a valid URL
+	err := api.ValidateURL(c.opts.Server)
+	if err != nil {
+		// See if prefixing https:// makes it a valid URL
+		err = api.ValidateURL("https://" + c.opts.Server)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("server %q is not a valid URL", c.opts.Server))
+		}
+		c.opts.Server = "https://" + c.opts.Server
 	}
 
 	authenticated, err := getAuthStatus(c.opts.Server)
