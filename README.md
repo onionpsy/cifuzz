@@ -140,7 +140,7 @@ choco install cmake llvm
 <details>
  <summary>C/C++ with Bazel</summary>
 
-* [Bazel >= 5.3.2](https://bazel.build/install)
+* [Bazel >= 5.3.2 (>=6.0.0 on macOS)](https://bazel.build/install)
 * Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
   is needed for Bazel's coverage feature.
