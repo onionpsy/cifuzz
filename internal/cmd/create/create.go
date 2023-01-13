@@ -204,6 +204,8 @@ and $FUZZ_TEST_LDFLAGS to the linker.`)
 func (c *createCmd) checkDependencies() {
 	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
+	case config.BuildSystemBazel:
+		deps = []dependencies.Key{dependencies.BAZEL}
 	case config.BuildSystemCMake:
 		deps = []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}
 	case config.BuildSystemOther:

@@ -326,6 +326,7 @@ func (c *coverageCmd) checkDependencies() error {
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
 		deps = []dependencies.Key{
+			dependencies.BAZEL,
 			dependencies.GENHTML,
 		}
 	case config.BuildSystemCMake:

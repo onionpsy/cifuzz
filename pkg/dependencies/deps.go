@@ -20,6 +20,7 @@ For installation instruction see:
 type Key string
 
 const (
+	BAZEL           Key = "bazel"
 	CLANG           Key = "clang"
 	CMAKE           Key = "cmake"
 	LLVM_COV        Key = "llvm-cov"

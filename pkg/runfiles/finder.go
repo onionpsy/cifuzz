@@ -18,6 +18,11 @@ type RunfilesFinderImpl struct {
 	InstallDir string
 }
 
+func (f RunfilesFinderImpl) BazelPath() (string, error) {
+	path, err := exec.LookPath("bazel")
+	return path, errors.WithStack(err)
+}
+
 func (f RunfilesFinderImpl) CIFuzzIncludePath() (string, error) {
 	return f.findFollowSymlinks("include")
 }

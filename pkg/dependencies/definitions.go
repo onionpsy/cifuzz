@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 	"strings"
 
 	"github.com/Masterminds/semver"
@@ -16,6 +17,14 @@ type Dependencies map[Key]*Dependency
 
 // List of all known dependencies
 var deps = Dependencies{
+	BAZEL: {
+		Key:        BAZEL,
+		MinVersion: getMinVersionBazel(),
+		GetVersion: bazelVersion,
+		Installed: func(dep *Dependency) bool {
+			return dep.checkFinder(dep.finder.BazelPath)
+		},
+	},
 	CLANG: {
 		Key:        CLANG,
 		MinVersion: *semver.MustParse("11.0.0"),
@@ -151,6 +160,14 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.GradlePath)
 		},
 	},
+}
+
+func getMinVersionBazel() semver.Version {
+	if runtime.GOOS == "darwin" {
+		return *semver.MustParse("6.0.0")
+	}
+
+	return *semver.MustParse("5.3.2")
 }
 
 // CIFuzzBazelCommit is the commit of the

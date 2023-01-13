@@ -548,21 +548,19 @@ func (c *runCmd) printFinalMetrics(generatedCorpus, seedCorpus string) error {
 }
 
 func (c *runCmd) checkDependencies() error {
-	var depsErr error
+	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
-		deps := []dependencies.Key{
+		deps = []dependencies.Key{
 			dependencies.CLANG,
 			dependencies.LLVM_SYMBOLIZER,
 			dependencies.CMAKE,
 		}
-		depsErr = dependencies.Check(deps)
 	case config.BuildSystemMaven:
-		deps := []dependencies.Key{
+		deps = []dependencies.Key{
 			dependencies.JAVA,
 			dependencies.MAVEN,
 		}
-		depsErr = dependencies.Check(deps)
 	case config.BuildSystemGradle:
 		// First check if gradle wrapper exists and check for gradle in path otherwise
 		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
@@ -575,23 +573,26 @@ func (c *runCmd) checkDependencies() error {
 			return nil
 		}
 
-		deps := []dependencies.Key{
+		deps = []dependencies.Key{
 			dependencies.JAVA,
 			dependencies.GRADLE,
 		}
-		depsErr = dependencies.Check(deps)
 	case config.BuildSystemOther:
-		deps := []dependencies.Key{
+		deps = []dependencies.Key{
 			dependencies.CLANG,
 			dependencies.LLVM_SYMBOLIZER,
 		}
-		depsErr = dependencies.Check(deps)
 	case config.BuildSystemBazel:
-		// When bazel is used, all dependencies are managed via bazel
-		return nil
+		// All dependencies are managed via bazel but it should be checked
+		// that the correct bazel version is installed
+		deps = []dependencies.Key{
+			dependencies.BAZEL,
+		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
+
+	depsErr := dependencies.Check(deps)
 	if depsErr != nil {
 		log.Error(depsErr)
 		return cmdutils.WrapSilentError(depsErr)

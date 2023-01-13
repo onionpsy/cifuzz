@@ -25,9 +25,24 @@ var (
 	cmakeRegex = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
 	llvmRegex  = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
 	javaRegex  = regexp.MustCompile(`(?m)version \"(?P<version>\d+(\.\d+\.\d+)?)\"`)
+	bazelRegex = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
 )
 
 type execCheck func(string, Key) (*semver.Version, error)
+
+func bazelVersion(dep *Dependency) (*semver.Version, error) {
+	path, err := exec.LookPath("bazel")
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := getVersionFromCommand(path, []string{"--version"}, bazelRegex, dep.Key)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("Found Bazel version %s in PATH: %s", version, path)
+	return version, nil
+}
 
 // ClangVersion returns the version of the clang/clang++ executable at the given path.
 func ClangVersion(path string) (*semver.Version, error) {

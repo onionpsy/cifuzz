@@ -12,6 +12,11 @@ type RunfilesFinderMock struct {
 
 var _ runfiles.RunfilesFinder = (*RunfilesFinderMock)(nil)
 
+func (m *RunfilesFinderMock) BazelPath() (string, error) {
+	args := m.Called()
+	return args.String(0), args.Error(1)
+}
+
 func (m *RunfilesFinderMock) CIFuzzIncludePath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
