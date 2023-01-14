@@ -38,6 +38,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type runOptions struct {
@@ -270,8 +271,10 @@ func (c *runCmd) run() error {
 		return err
 	}
 
+	uploadFindings := false
+
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		err = c.setupSync()
+		uploadFindings, err = c.setupSync()
 		if err != nil {
 			return err
 		}
@@ -320,6 +323,14 @@ func (c *runCmd) run() error {
 	err = c.printFinalMetrics(buildResult.GeneratedCorpus, buildResult.SeedCorpus)
 	if err != nil {
 		return err
+	}
+
+	// check if there are findings that should be uploaded
+	if uploadFindings && len(c.reportHandler.Findings) > 0 {
+		err = c.uploadFindings(c.opts.fuzzTest, c.opts.NumBuildJobs)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -624,11 +635,15 @@ func (c *runCmd) checkDependencies() error {
 	return nil
 }
 
-func (c *runCmd) setupSync() error {
+// setupSync initiates user dialog and returns if findings should be synced
+func (c *runCmd) setupSync() (bool, error) {
+	willSync := true
 	interactive := viper.GetBool("interactive")
 
 	if os.Getenv("CI") != "" {
 		interactive = false
+		willSync = false
+	}
 
 	// Check if the server option is a valid URL
 	err := api.ValidateURL(c.opts.Server)
@@ -643,24 +658,63 @@ func (c *runCmd) setupSync() error {
 
 	authenticated, err := getAuthStatus(c.opts.Server)
 	if err != nil {
-		return cmdutils.WrapSilentError(err)
+		return false, cmdutils.WrapSilentError(err)
 	}
 
 	if authenticated {
+		willSync = true
 		log.Infof(`✓ You are authenticated.
 Your results will be synced to the remote fuzzing server at %s`, c.opts.Server)
 	} else if !interactive {
+		willSync = false
 		log.Warn(`You are not authenticated with a remote fuzzing server.
 Your results will not be synced to a remote fuzzing server.`)
 	}
 
 	if interactive && !authenticated {
 		// establish server connection to check user auth
-		err = showServerConnectionDialog(c.opts.Server)
+		willSync, err = showServerConnectionDialog(c.opts.Server)
 		if err != nil {
-			return cmdutils.WrapSilentError(err)
+			return false, cmdutils.WrapSilentError(err)
 		}
 	}
+	return willSync, nil
+}
+
+func (c *runCmd) uploadFindings(fuzzTarget string, numBuildJobs uint) error {
+	// get projects from server
+	apiClient := api.APIClient{Server: c.opts.Server}
+	token := access_tokens.Get(c.opts.Server)
+	if token == "" {
+		return errors.New("No access token found")
+	}
+	projects, err := apiClient.ListProjects(token)
+	if err != nil {
+		return err
+	}
+
+	// ask user to select project
+	project, err := c.selectProject(projects)
+	if err != nil {
+		return cmdutils.WrapSilentError(err)
+	}
+
+	// create campaign run on server for selected project
+	campaignRunName, fuzzingRunName, err := apiClient.CreateCampaignRun(project, token, fuzzTarget, numBuildJobs)
+	if err != nil {
+		return err
+	}
+
+	// upload findings
+	for _, finding := range c.reportHandler.Findings {
+		err = apiClient.UploadFinding(project, fuzzTarget, campaignRunName, fuzzingRunName, finding, token)
+		if err != nil {
+			return err
+		}
+	}
+	log.Notef("Uploaded %d findings to CI Fuzz Server at: %s", len(c.reportHandler.Findings), c.opts.Server)
+	log.Infof("You can view the findings at %s/dashboard/%s/findings", c.opts.Server, campaignRunName)
+
 	return nil
 }
 
@@ -769,8 +823,8 @@ removing the token from %s.`, access_tokens.GetTokenFilePath())
 }
 
 // showServerConnectionDialog ask users if they want to use a SaaS backend
-// if they are not authenticated
-func showServerConnectionDialog(server string) error {
+// if they are not authenticated and returns their wish to authenticate
+func showServerConnectionDialog(server string) (bool, error) {
 	log.Notef(`Do you want to persist your findings?
 Authenticate with the CI Fuzz Server (%s) to get more insights.`, server)
 
@@ -780,16 +834,60 @@ Authenticate with the CI Fuzz Server (%s) to get more insights.`, server)
 	}
 	wishToAuthenticate, err := dialog.Select("Do you want to authenticate?", wishOptions, false)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if wishToAuthenticate == "Yes" {
 		apiClient := api.APIClient{Server: server}
 		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
-	return nil
+	return wishToAuthenticate == "Yes", nil
+}
+
+func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
+	// Let the user select a project
+	var displayNames []string
+	var names []string
+	for _, p := range projects {
+		displayNames = append(displayNames, p.DisplayName)
+		names = append(names, p.Name)
+	}
+	maxLen := stringutil.MaxLen(displayNames)
+	items := map[string]string{}
+	for i := range displayNames {
+		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
+		items[key] = names[i]
+	}
+
+	// add option to create a new project
+	items["Create a new project"] = "<<new>>"
+
+	projectName, err := dialog.Select("Select the project you want to upload your findings to", items, false)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	if projectName == "<<new>>" {
+		apiClient := api.APIClient{Server: c.opts.Server}
+
+		// ask user for project name
+		projectName, err = dialog.Input("Enter the name of the project you want to create: ")
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		token := access_tokens.Get(c.opts.Server)
+		project, err := apiClient.CreateProject(projectName, token)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		return project.Name, nil
+	}
+
+	return projectName, nil
 }

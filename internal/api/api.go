@@ -453,7 +453,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		return "", "", errors.WithStack(err)
 	}
 
-	log.Infof("Creating campaign run: %s\n", string(body))
+	log.Debugf("Creating campaign run: %s\n", string(body))
 
 	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s/campaign_runs", project), bytes.NewReader(body), token)
 	if err != nil {
@@ -490,7 +490,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 		return errors.WithStack(err)
 	}
 
-	log.Infof("Uploading finding: %s\n", string(body))
+	log.Debugf("Uploading finding: %s\n", string(body))
 
 	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s/findings", project), bytes.NewReader(body), token)
 	if err != nil {
