@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -35,6 +36,8 @@ type Campaign struct {
 // run name is used to identify the campaign run in the API for consecutive
 // calls.
 func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, numBuildJobs uint) (string, string, error) {
+	fuzzTarget = base64.URLEncoding.EncodeToString([]byte(fuzzTarget))
+
 	// generate a short random string to use as the campaign run name
 	randBytes := make([]byte, 8)
 	_, err := rand.Read(randBytes)
