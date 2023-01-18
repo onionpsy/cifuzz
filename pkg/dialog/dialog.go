@@ -1,11 +1,8 @@
 package dialog
 
 import (
-	"bufio"
-	"fmt"
 	"os"
 	"sort"
-	"strings"
 
 	"atomicgo.dev/keyboard/keys"
 	"github.com/pkg/errors"
@@ -81,14 +78,12 @@ func Confirm(message string, defaultValue bool) (bool, error) {
 }
 
 func Input(message string) (string, error) {
-	// TODO: change to pterm once spinner issue is fixed
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(message)
-	text, err := reader.ReadString('\n')
+	input := pterm.DefaultInteractiveTextInput.WithDefaultText(message)
+	result, err := input.Show()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	return strings.TrimSpace(text), nil
+	return result, nil
 }
 
 func ReadSecret(message string, file *os.File) (string, error) {

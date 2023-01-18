@@ -902,7 +902,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 		apiClient := api.APIClient{Server: c.opts.Server}
 
 		// ask user for project name
-		projectName, err = dialog.Input("Enter the name of the project you want to create: ")
+		projectName, err = dialog.Input("Enter the name of the project you want to create")
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
