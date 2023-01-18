@@ -51,6 +51,7 @@ type runOptions struct {
 	Timeout               time.Duration `mapstructure:"timeout"`
 	Interactive           bool          `mapstructure:"interactive"`
 	Server                string        `mapstructure:"server"`
+	Project               string        `mapstructure:"project"`
 	UseSandbox            bool          `mapstructure:"use-sandbox"`
 	PrintJSON             bool          `mapstructure:"print-json"`
 	BuildOnly             bool          `mapstructure:"build-only"`
@@ -259,7 +260,11 @@ depends on the build system configured for the project.
 		cmdutils.AddResolveSourceFileFlag,
 	}
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		funcs = append(funcs, cmdutils.AddServerFlag, cmdutils.AddInteractiveFlag)
+		funcs = append(funcs,
+			cmdutils.AddServerFlag,
+			cmdutils.AddProjectFlag,
+			cmdutils.AddInteractiveFlag,
+		)
 	}
 	bindFlags = cmdutils.AddFlags(cmd, funcs...)
 	return cmd
@@ -688,15 +693,37 @@ func (c *runCmd) uploadFindings(fuzzTarget string, numBuildJobs uint) error {
 	if token == "" {
 		return errors.New("No access token found")
 	}
+
 	projects, err := apiClient.ListProjects(token)
 	if err != nil {
 		return err
 	}
 
-	// ask user to select project
-	project, err := c.selectProject(projects)
-	if err != nil {
-		return cmdutils.WrapSilentError(err)
+	project := c.opts.Project
+	if project == "" {
+		// ask user to select project
+		project, err = c.selectProject(projects)
+		if err != nil {
+			return cmdutils.WrapSilentError(err)
+		}
+	} else {
+		// check if project exists on server
+		found := false
+		project = "projects/" + project
+		for _, p := range projects {
+			if p.Name == project {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			message := fmt.Sprintf(`Project %s does not exist on server %s.
+Findings have *not* been uploaded. Please check the 'project' entry in your cifuzz.yml.`, project, c.opts.Server)
+			log.Error(errors.New(message))
+			err = errors.Errorf(message)
+			return cmdutils.WrapSilentError(err)
+		}
 	}
 
 	// create campaign run on server for selected project
