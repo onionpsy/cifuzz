@@ -891,7 +891,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 	}
 
 	// add option to create a new project
-	items["Create a new project"] = "<<new>>"
+	items["<Create a new project>"] = "<<new>>"
 
 	projectName, err := dialog.Select("Select the project you want to upload your findings to", items, false)
 	if err != nil {

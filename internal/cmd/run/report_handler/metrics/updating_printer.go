@@ -39,6 +39,9 @@ func NewUpdatingPrinter(output io.Writer) (*UpdatingPrinter, error) {
 	p.ticker = time.NewTicker(time.Second)
 	go func() {
 		for range p.ticker.C {
+			if !p.SpinnerPrinter.IsActive {
+				break
+			}
 			p.Update()
 		}
 	}()
