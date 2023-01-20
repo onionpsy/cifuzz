@@ -24,16 +24,39 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
 	handleListProjects := func(w http.ResponseWriter, req *http.Request) {
 		_, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
-		_, err = fmt.Fprint(w, `{"projects": []}`)
+		_, err = fmt.Fprint(w, `{"projects": [
+        {
+            "name": "projects/my_fuzz_test-bac40407",
+            "display_name": "my_fuzz_test",
+            "location": {
+                "git_path": {}
+            },
+            "owner_username": "users/55",
+            "contact_username": "users/55"
+        }]}`)
 		require.NoError(t, err)
 	}
 
-	handleUpload := func(w http.ResponseWriter, req *http.Request) {
+	handleUploadArtifact := func(w http.ResponseWriter, req *http.Request) {
 		_, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
 		_, err = fmt.Fprintf(w, `{"display-name": "test-artifacts", "resource-name": "%s"}`, artifactsName)
 		require.NoError(t, err)
 		server.ArtifactsUploaded = true
+	}
+
+	handleCreateCampaignRun := func(w http.ResponseWriter, req *http.Request) {
+		_, err := io.ReadAll(req.Body)
+		require.NoError(t, err)
+		_, err = fmt.Fprintf(w, "{}")
+		require.NoError(t, err)
+	}
+
+	handleUploadFinding := func(w http.ResponseWriter, req *http.Request) {
+		_, err := io.ReadAll(req.Body)
+		require.NoError(t, err)
+		_, err = fmt.Fprintf(w, "{}")
+		require.NoError(t, err)
 	}
 
 	handleStartRun := func(w http.ResponseWriter, req *http.Request) {
@@ -50,7 +73,9 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/projects", handleListProjects)
-	mux.HandleFunc(fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName), handleUpload)
+	mux.HandleFunc(fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), handleCreateCampaignRun)
+	mux.HandleFunc(fmt.Sprintf("/v1/projects/%s/findings", projectName), handleUploadFinding)
+	mux.HandleFunc(fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName), handleUploadArtifact)
 	mux.HandleFunc(fmt.Sprintf("/v1/%s:run", artifactsName), handleStartRun)
 	mux.HandleFunc("/", handleDefault)
 
