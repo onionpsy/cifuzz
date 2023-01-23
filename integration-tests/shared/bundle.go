@@ -269,7 +269,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase\n", string(content))
 }
 
-func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
+func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args ...string) {
 	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
 	require.NoError(t, err)
 	defer fileutil.Cleanup(tempDir)
@@ -342,7 +342,12 @@ func TestBundleGradle(t *testing.T, dir string, cifuzz string, args ...string) {
 	jarPattern := filepath.Join(archiveDir, "runtime_deps", "*.jar")
 	jarMatches, err := zglob.Glob(jarPattern)
 	require.NoError(t, err)
-	assert.Equal(t, 17, len(jarMatches))
+	switch lang {
+	case "java":
+		assert.Equal(t, 17, len(jarMatches))
+	case "kotlin":
+		assert.Equal(t, 15, len(jarMatches))
+	}
 
 	classPattern := filepath.Join(archiveDir, "runtime_deps", "**", "*.class")
 	classMatches, err := zglob.Glob(classPattern)
