@@ -28,7 +28,6 @@ type CoverageOptions struct {
 	NumJobs      uint
 	Stdout       io.Writer
 	Stderr       io.Writer
-	TempDir      string
 	Verbose      bool
 }
 

@@ -26,7 +26,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -207,11 +206,6 @@ func (c *coverageCmd) run() error {
 
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
-		tmpDir, err := os.MkdirTemp("", "bazel-coverage-")
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer fileutil.Cleanup(tmpDir)
 		reportPath, err = bazelCoverage.GenerateCoverageReport(&bazelCoverage.CoverageOptions{
 			FuzzTest:     c.opts.fuzzTest,
 			OutputFormat: c.opts.OutputFormat,
@@ -221,7 +215,6 @@ func (c *coverageCmd) run() error {
 			NumJobs:      c.opts.NumBuildJobs,
 			Stdout:       c.OutOrStdout(),
 			Stderr:       c.ErrOrStderr(),
-			TempDir:      tmpDir,
 			Verbose:      viper.GetBool("verbose"),
 		})
 	case config.BuildSystemCMake, config.BuildSystemOther:
