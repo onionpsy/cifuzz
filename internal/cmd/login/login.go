@@ -107,7 +107,7 @@ func (c *loginCmd) run() error {
 
 	err = errors.Errorf(`No API access token provided. Please pass a valid token via stdin or run
 in interactive mode. You can generate a token here:
-%s/dashboard/settings/account/tokens?create.`+"\n", c.opts.Server)
+%s/dashboard/settings/account/tokens?create&origin=cli.`+"\n", c.opts.Server)
 	return cmdutils.WrapIncorrectUsageError(err)
 }
 

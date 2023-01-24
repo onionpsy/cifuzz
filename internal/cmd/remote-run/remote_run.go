@@ -311,7 +311,7 @@ func (c *runRemoteCmd) run() error {
 		//       of the fuzz target.
 		log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
 
-    %s/dashboard/%s/overview
+    %s/dashboard/%s/overview?origin=cli
 
 `, c.opts.Server, campaignRunName)
 	}

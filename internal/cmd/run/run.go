@@ -740,7 +740,7 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 		}
 	}
 	log.Notef("Uploaded %d findings to CI Fuzz Server at: %s", len(c.reportHandler.Findings), c.opts.Server)
-	log.Infof("You can view the findings at %s/dashboard/%s/findings", c.opts.Server, campaignRunName)
+	log.Infof("You can view the findings at %s/dashboard/%s/findings?origin=cli", c.opts.Server, campaignRunName)
 
 	return nil
 }

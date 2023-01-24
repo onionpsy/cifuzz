@@ -27,7 +27,7 @@ func GetToken(server string) string {
 }
 
 func ReadTokenInteractively(server string) (string, error) {
-	log.Printf("You need an API access token which can be generated here:\n%s/dashboard/settings/account/tokens?create", server)
+	log.Printf("You need an API access token which can be generated here:\n%s/dashboard/settings/account/tokens?create&origin=cli", server)
 
 	openBrowser, err := dialog.Confirm("Open browser to generate a new token?", true)
 	if err != nil {
@@ -35,7 +35,7 @@ func ReadTokenInteractively(server string) (string, error) {
 	}
 
 	if openBrowser {
-		err = browser.OpenURL(server + "/dashboard/settings/account/tokens?create")
+		err = browser.OpenURL(server + "/dashboard/settings/account/tokens?create&origin=cli")
 		if err != nil {
 			log.Errorf(err, "Failed to open browser: %v", err)
 		}
