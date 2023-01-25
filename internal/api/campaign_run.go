@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -45,8 +46,16 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		return "", "", errors.WithStack(err)
 	}
 
+	fuzzingRunName, err := url.JoinPath(project, "fuzzing_runs", fmt.Sprintf("cifuzz-fuzzing-run-%s", hex.EncodeToString(randBytes)))
+	if err != nil {
+		return "", "", err
+	}
+	fuzzTargetConfigName, err := url.JoinPath(project, "fuzz_targets", fuzzTarget)
+	if err != nil {
+		return "", "", err
+	}
 	fuzzingRun := FuzzingRun{
-		Name:        project + "/fuzzing_runs/cifuzz-fuzzing-run-" + hex.EncodeToString(randBytes),
+		Name:        fuzzingRunName,
 		DisplayName: "cifuzz-fuzzing-run",
 		Status:      "SUCCEEDED",
 		FuzzerRunConfigurations: FuzzerRunConfigurations{
@@ -54,7 +63,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 			NumberOfJobs: 4,
 		},
 		FuzzTargetConfig: FuzzTargetConfig{
-			Name: project + "/fuzz_targets/" + fuzzTarget,
+			Name: fuzzTargetConfigName,
 			CAPI: CAPI{
 				API: API{
 					RelativePath: fuzzTarget,
@@ -62,8 +71,13 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 			},
 		},
 	}
+
+	campaignRunName, err := url.JoinPath(project, "campaign_runs", fmt.Sprintf("cifuzz-campaign-run-%s", hex.EncodeToString(randBytes)))
+	if err != nil {
+		return "", "", err
+	}
 	campaignRun := CampaignRun{
-		Name:        project + "/campaign_runs/cifuzz-campaign-run-" + hex.EncodeToString(randBytes),
+		Name:        campaignRunName,
 		DisplayName: "cifuzz-campaign-run",
 		Campaign: Campaign{
 			MaxRunTime: "120s",
@@ -83,7 +97,11 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 
 	log.Debugf("Creating campaign run: %s\n", string(body))
 
-	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s/campaign_runs", project), bytes.NewReader(body), token)
+	url, err := url.JoinPath("/v1", project, "campaign_runs")
+	if err != nil {
+		return "", "", err
+	}
+	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
 	if err != nil {
 		return "", "", err
 	}

@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -660,6 +661,13 @@ func (c *runCmd) setupSync() (bool, error) {
 		}
 		c.opts.Server = "https://" + c.opts.Server
 	}
+
+	// normalize server URL
+	url, err := url.JoinPath(c.opts.Server)
+	if err != nil {
+		return false, cmdutils.WrapSilentError(err)
+	}
+	c.opts.Server = url
 
 	authenticated, err := getAuthStatus(c.opts.Server)
 	if err != nil {

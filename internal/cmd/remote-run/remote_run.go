@@ -2,6 +2,7 @@ package remote_run
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -154,6 +155,13 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				}
 				opts.Server = "https://" + opts.Server
 			}
+
+			// normalize server URL
+			url, err := url.JoinPath(opts.Server)
+			if err != nil {
+				return err
+			}
+			opts.Server = url
 
 			// Print warning that flags which only effect the build of
 			// the bundle are ignored when an existing bundle is specified
@@ -309,11 +317,13 @@ func (c *runRemoteCmd) run() error {
 		//       shows details about the run, but currently details are only
 		//       shown on the "<fuzz target>/edit" page, which lists all runs
 		//       of the fuzz target.
+		url, err := url.JoinPath(c.opts.Server, "dashboard", campaignRunName, "overview?origin=cli")
+		if err != nil {
+			return err
+		}
 		log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
-
-    %s/dashboard/%s/overview?origin=cli
-
-`, c.opts.Server, campaignRunName)
+    %s
+`, url)
 	}
 
 	return nil

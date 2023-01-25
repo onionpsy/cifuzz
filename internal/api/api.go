@@ -138,7 +138,10 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 	routines.Go(func() error {
 		defer r.Close()
 		defer cancelSignalHandler()
-		url := fmt.Sprintf("%s/v2/%s/artifacts/import", client.Server, projectName)
+		url, err := url.JoinPath(client.Server, "v2", projectName, "artifacts", "import")
+		if err != nil {
+			return errors.WithStack(err)
+		}
 		req, err := http.NewRequestWithContext(routinesCtx, "POST", url, r)
 		if err != nil {
 			return errors.WithStack(err)
@@ -182,7 +185,11 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 }
 
 func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string) (string, error) {
-	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s:run", artifact.ResourceName), nil, token)
+	url, err := url.JoinPath("/v1", artifact.ResourceName+":run")
+	if err != nil {
+		return "", err
+	}
+	resp, err := client.sendRequest("POST", url, nil, token)
 	if err != nil {
 		return "", err
 	}
@@ -218,7 +225,10 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 }
 
 func (client *APIClient) sendRequest(method string, endpoint string, body io.Reader, token string) (*http.Response, error) {
-	url := fmt.Sprintf("%s/%s", client.Server, endpoint)
+	url, err := url.JoinPath(client.Server, endpoint)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -133,7 +134,11 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 
 	log.Debugf("Uploading finding: %s\n", string(body))
 
-	resp, err := client.sendRequest("POST", fmt.Sprintf("v1/%s/findings", project), bytes.NewReader(body), token)
+	url, err := url.JoinPath("/v1", project, "findings")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
 	if err != nil {
 		return err
 	}

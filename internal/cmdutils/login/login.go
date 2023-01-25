@@ -1,7 +1,7 @@
 package login
 
 import (
-	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/pkg/browser"
@@ -27,7 +27,12 @@ func GetToken(server string) string {
 }
 
 func ReadTokenInteractively(server string) (string, error) {
-	log.Printf("You need an API access token which can be generated here:\n%s/dashboard/settings/account/tokens?create&origin=cli", server)
+	url, err := url.JoinPath(server, "/dashboard/settings/account/tokens?create&origin=cli")
+	if err != nil {
+		return "", err
+	}
+
+	log.Printf("You need an API access token which can be generated here:\n%s", url)
 
 	openBrowser, err := dialog.Confirm("Open browser to generate a new token?", true)
 	if err != nil {
@@ -35,13 +40,13 @@ func ReadTokenInteractively(server string) (string, error) {
 	}
 
 	if openBrowser {
-		err = browser.OpenURL(server + "/dashboard/settings/account/tokens?create&origin=cli")
+		err = browser.OpenURL(url)
 		if err != nil {
 			log.Errorf(err, "Failed to open browser: %v", err)
 		}
 	}
 
-	token, err := dialog.ReadSecret(fmt.Sprintf("Paste your access token:"), os.Stdin)
+	token, err := dialog.ReadSecret("Paste your access token:", os.Stdin)
 	if err != nil {
 		return "", err
 	}

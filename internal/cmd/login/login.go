@@ -3,6 +3,7 @@ package login
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 
@@ -60,6 +61,13 @@ To learn more, visit https://www.code-intelligence.com.`,
 				}
 				opts.Server = "https://" + opts.Server
 			}
+
+			// normalize server URL
+			url, err := url.JoinPath(opts.Server)
+			if err != nil {
+				return err
+			}
+			opts.Server = url
 
 			apiClient := &api.APIClient{Server: opts.Server}
 			cmd := loginCmd{opts: opts, apiClient: apiClient}
