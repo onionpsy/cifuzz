@@ -1,6 +1,6 @@
 module code-intelligence.com/cifuzz
 
-go 1.18
+go 1.19
 
 require (
 	atomicgo.dev/keyboard v0.2.9
