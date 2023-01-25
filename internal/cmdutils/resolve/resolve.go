@@ -106,7 +106,7 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 			return "", errNoFuzzTest
 		}
 
-		fuzzTest, err := cmdutils.ConstructJavaFuzzTestIdentifier(pathToFile, testDir)
+		fuzzTest, err := cmdutils.ConstructJVMFuzzTestIdentifier(pathToFile, testDir)
 		if err != nil {
 			return "", err
 		}

@@ -200,3 +200,13 @@ func TestDetermineBuildSystem_Other(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, BuildSystemOther, buildSystem)
 }
+
+func TestTestTypeFileNameExtension(t *testing.T) {
+	ext, found := TestTypeFileNameExtension(JAVA)
+	assert.True(t, found)
+	assert.Equal(t, ".java", ext)
+
+	ext, found = TestTypeFileNameExtension(KOTLIN)
+	assert.True(t, found)
+	assert.Equal(t, ".kt", ext)
+}

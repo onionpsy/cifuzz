@@ -8,6 +8,13 @@ const (
 	KOTLIN FuzzTestType = "kotlin"
 )
 
+type GradleBuildLanguage string
+
+const (
+	G_GROOVY GradleBuildLanguage = "groovy"
+	G_KOTLIN GradleBuildLanguage = "kotlin"
+)
+
 type Engine string
 
 const (

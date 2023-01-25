@@ -33,7 +33,7 @@ func (opts *createOpts) Validate() error {
 	}
 
 	if !opts.Interactive && opts.testType == "" {
-		err := errors.New("Missing argument [cpp|java]")
+		err := errors.New("Missing argument [cpp|java|kotlin]")
 		return cmdutils.WrapIncorrectUsageError(err)
 	}
 

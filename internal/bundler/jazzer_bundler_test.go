@@ -13,6 +13,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -161,20 +162,20 @@ public class Baz {
 `), 0o644)
 	require.NoError(t, err)
 
-	fuzzTests, err := listFuzzTests(tempDir)
+	fuzzTests, err := cmdutils.ListJVMFuzzTests(tempDir)
 	require.NoError(t, err)
 	require.ElementsMatchf(t, []string{
 		"com.example.FuzzTest", "org.example.foo.Bar",
 	}, fuzzTests, "Expected to find fuzz test in %s", tempDir)
 }
 
-func TestListFuzzTests_DoesNotExist(t *testing.T) {
+func TestListJVMFuzzTests_DoesNotExist(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "bundle-*")
 	require.NoError(t, err)
 	defer fileutil.Cleanup(tempDir)
 	require.NoError(t, err)
 
-	fuzzTests, err := listFuzzTests(tempDir)
+	fuzzTests, err := cmdutils.ListJVMFuzzTests(tempDir)
 	require.NoError(t, err)
 	require.Empty(t, fuzzTests)
 }

@@ -40,7 +40,6 @@ var projectConfigTemplate string
 
 // CreateProjectConfig creates a new project config in the given directory
 func CreateProjectConfig(configDir string) (string, error) {
-
 	// try to open the target file, returns error if already exists
 	configpath := filepath.Join(configDir, projectConfigFile)
 	f, err := os.OpenFile(configpath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
@@ -169,6 +168,31 @@ func DetermineBuildSystem(projectDir string) (string, error) {
 	}
 
 	return BuildSystemOther, nil
+}
+
+func DetermineGradleBuildLanguage(projectDir string) (GradleBuildLanguage, error) {
+	kts, err := fileutil.Exists(filepath.Join(projectDir, "build.gradle.kts"))
+	if err != nil {
+		return "", err
+	}
+	if kts {
+		return G_KOTLIN, nil
+	}
+
+	return G_GROOVY, nil
+}
+
+func TestTypeFileNameExtension(testType FuzzTestType) (string, bool) {
+	fileNameExtension := map[FuzzTestType]string{
+		JAVA:   ".java",
+		KOTLIN: ".kt",
+	}
+
+	extension, found := fileNameExtension[testType]
+	if !found {
+		return "", false
+	}
+	return extension, true
 }
 
 func FindConfigDir() (string, error) {

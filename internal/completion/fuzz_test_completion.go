@@ -49,7 +49,8 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 	case config.BuildSystemCMake:
 		return validCMakeFuzzTests(conf.ProjectDir)
 	case config.BuildSystemMaven, config.BuildSystemGradle:
-		return validJavaFuzzTests(toComplete, conf.ProjectDir)
+		return validJVMFuzzTests(conf.ProjectDir, toComplete)
+
 	case config.BuildSystemOther:
 		// For other build systems, the <fuzz test> argument must be
 		// the path to the fuzz test executable, so we use file
@@ -163,40 +164,14 @@ func validCMakeFuzzTests(projectDir string) ([]string, cobra.ShellCompDirective)
 	return res, cobra.ShellCompDirectiveNoFileComp
 }
 
-func validJavaFuzzTests(toComplete string, projectDir string) ([]string, cobra.ShellCompDirective) {
-	var res []string
-
-	testDir := filepath.Join(projectDir, "src", "test", "java")
-	completionPrefix := filepath.Join(
-		testDir,
-		strings.ReplaceAll(toComplete, ".", string(os.PathSeparator)),
-	)
-
-	err := filepath.WalkDir(testDir, func(path string, d fs.DirEntry, err error) error {
-		if !strings.HasPrefix(path, completionPrefix) {
-			return nil
-		}
-
-		if !d.IsDir() {
-			if filepath.Ext(path) != ".java" {
-				return nil
-			}
-
-			classFilePath, err := cmdutils.ConstructJavaFuzzTestIdentifier(path, testDir)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			res = append(res, classFilePath)
-		}
-
-		return nil
-	})
+// validJVMFuzzTests returns a list of valid JVM fuzz test identifiers
+// (i.e. the fully qualified class name of the fuzz test)
+func validJVMFuzzTests(projectDir string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	fuzzTests, err := cmdutils.ListJVMFuzzTestsWithFilter(projectDir, toComplete)
 	if err != nil {
-		log.Error(err, err.Error())
 		return nil, cobra.ShellCompDirectiveError
 	}
-
-	return res, cobra.ShellCompDirectiveNoFileComp
+	return fuzzTests, cobra.ShellCompDirectiveNoFileComp
 }
 
 // findBazelBuildFiles returns the paths to all BUILD.bazel and BUILD files

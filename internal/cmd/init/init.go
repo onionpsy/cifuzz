@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -26,7 +25,7 @@ var cmakeSetup string
 var mavenSetup string
 
 //go:embed instructions/gradle
-var gradleSetup string
+var gradleGroovySetup string
 
 //go:embed instructions/gradlekotlin
 var gradleKotlinSetup string
@@ -125,11 +124,16 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 	case config.BuildSystemMaven:
 		log.Print(mavenSetup)
 	case config.BuildSystemGradle:
-		kts, _ := fileutil.Exists(filepath.Join(dir, "build.gradle.kts"))
-		if kts {
+		gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(dir)
+		if err != nil {
+			log.Debug(err)
+			return
+		}
+		switch gradleBuildLanguage {
+		case config.G_GROOVY:
+			log.Print(gradleGroovySetup)
+		case config.G_KOTLIN:
 			log.Print(gradleKotlinSetup)
-		} else {
-			log.Print(gradleSetup)
 		}
 	}
 }
