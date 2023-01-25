@@ -1,11 +1,13 @@
 linters:
   disable-all: true
   enable:
-    - staticcheck
-    - govet
-    - gocritic
     - errcheck
+    - gocritic
+    - govet
     - nonamedreturns
+    - staticcheck
+  presets:
+    - unused
 
 linters-settings:
   staticcheck:
@@ -23,3 +25,5 @@ linters-settings:
       - commentFormatting
       - ifElseChain
       - singleCaseSwitch
+
+args: --timeout=3m
