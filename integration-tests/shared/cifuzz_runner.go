@@ -103,6 +103,11 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		"--engine-arg=-seed=1",
 		"--engine-arg=-runs=1000000"},
 		opts.Args...)
+
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		args = append(args, "--interactive=false")
+	}
+
 	cmd := executil.CommandContext(
 		runCtx,
 		r.CIFuzzPath,
