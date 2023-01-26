@@ -136,9 +136,22 @@ func TestIntegration_CMake(t *testing.T) {
 	t.Run("remoteRun", func(t *testing.T) {
 		testRemoteRun(t, cifuzzRunner)
 	})
+
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		t.Run("runWithUpload", func(t *testing.T) {
+			testRunWithUpload(t, cifuzzRunner)
+		})
+	}
 }
 
 func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Skip this test if we're running on a PRERELEASE pipeline, because
+	// we might append additional arguments to the command, which might
+	// cause this test to fail.
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		t.Skip("skipping testRunWithAdditionalArgs")
+	}
+
 	// Run cmake and expect it to fail because we passed it a non-existent flag
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Args: []string{"--", "--non-existent-flag"},
@@ -409,4 +422,12 @@ func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRemoteRun(t, testdata, cifuzz)
+}
+
+func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	t.Parallel()
+
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	shared.TestRunWithUpload(t, testdata, cifuzz)
 }
