@@ -184,11 +184,7 @@ func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
 	log.Debugf("Command: %s", cmd.String())
 	err := cmd.Run()
 	if err != nil {
-		// It's expected that maven might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return cmdutils.ErrSilent
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	return nil
@@ -206,11 +202,7 @@ func GetBuildDirectory(projectDir string) (string, error) {
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
 	if err != nil {
-		// It's expected that maven might fail due to user configuration, so we
-		// print the error without the stack trace.
-		err = cmdutils.WrapExecError(err, cmd)
-		log.Error(err)
-		return "", cmdutils.ErrSilent
+		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	return string(output), nil

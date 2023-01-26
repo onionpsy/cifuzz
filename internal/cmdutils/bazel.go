@@ -30,11 +30,7 @@ func EvaluateBazelTargetPatterns(patterns []string) ([]string, error) {
 	log.Debugf("Command: %s", cmd.String())
 	out, err := cmd.Output()
 	if err != nil {
-		// It's expected that bazel might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, ErrSilent
+		return nil, WrapExecError(errors.WithStack(err), cmd)
 	}
 	lines := strings.Split(strings.ReplaceAll(strings.TrimSpace(string(out)), "\r\n", "\n"), "\n")
 	for _, line := range lines {

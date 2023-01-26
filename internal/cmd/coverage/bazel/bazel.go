@@ -117,22 +117,14 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
-		// It's expected that bazel might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return "", cmdutils.ErrSilent
+		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	// Get the path of the created lcov report
 	cmd = exec.Command("bazel", "info", "output_path")
 	out, err := cmd.Output()
 	if err != nil {
-		// It's expected that bazel might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return "", cmdutils.ErrSilent
+		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 	bazelOutputDir := strings.TrimSpace(string(out))
 	lcovReport := filepath.Join(bazelOutputDir, "_coverage", "_coverage_report.dat")

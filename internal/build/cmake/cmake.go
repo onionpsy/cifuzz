@@ -180,11 +180,7 @@ func (b *Builder) Configure() error {
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
-		// It's expected that cmake might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return cmdutils.ErrSilent
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 	return nil
 }
@@ -218,11 +214,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
-		// It's expected that cmake might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	if b.BuildOnly {
@@ -315,11 +307,7 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 	)
 	stdout, err := cmd.Output()
 	if err != nil {
-		// It's expected that cmake might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	var resolvedDeps []string

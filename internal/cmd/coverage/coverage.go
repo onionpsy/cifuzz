@@ -260,6 +260,14 @@ func (c *coverageCmd) run() error {
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
 	if err != nil {
+		var execErr *cmdutils.ExecError
+		if errors.As(err, &execErr) {
+			// It is expected that some commands might fail due to user
+			// configuration so we print the error without the stack trace
+			// (in non-verbose mode) and silence it
+			log.Error(err)
+			return cmdutils.ErrSilent
+		}
 		return err
 	}
 

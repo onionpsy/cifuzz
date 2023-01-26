@@ -144,11 +144,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
-		// It's expected that the build command might fail, so we print
-		// the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	executable, err := b.findFuzzTestExecutable(fuzzTest)
@@ -156,9 +152,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		return nil, err
 	}
 	if executable == "" {
-		err := errors.Errorf("Could not find executable for fuzz test %q", fuzzTest)
-		log.Error(err)
-		return nil, cmdutils.WrapSilentError(err)
+		return nil, cmdutils.WrapExecError(errors.Errorf("Could not find executable for fuzz test %q", fuzzTest), cmd)
 	}
 
 	// For the build system type "other", we expect the default seed corpus next

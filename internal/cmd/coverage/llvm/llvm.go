@@ -280,16 +280,12 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 	log.Debugf("Command: %s", envutil.QuotedCommandWithEnv(cmd.Args, env))
 	err = cmd.Run()
 	if err != nil {
-		// Print the stderr output of the fuzzer to provide users with
+		// Add stderr output of the fuzzer to provide users with
 		// the context of this error even without verbose mode.
 		if !viper.GetBool("verbose") {
-			log.Print(errStream.String())
+			err = errors.Errorf("%v\n %s", err, errStream.String())
 		}
-		// It's expected that the fuzz test executable might fail, so we
-		// print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
-		log.Error(err)
-		return cmdutils.ErrSilent
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 	}
 	return err
 }

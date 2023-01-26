@@ -96,11 +96,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	log.Debugf("Command: %s", cmd.String())
 	_, err = cmd.Output()
 	if err != nil {
-		// It's expected that gradle might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	deps, err := b.getDependencies()
@@ -134,11 +130,7 @@ func (b *Builder) getDependencies() ([]string, error) {
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
 	if err != nil {
-		// It's expected that gradle might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return nil, cmdutils.ErrSilent
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 	classpath := classpathRegex.FindStringSubmatch(string(output))
 	deps := strings.Split(strings.TrimSpace(classpath[1]), string(os.PathListSeparator))
@@ -193,11 +185,7 @@ func GetBuildDirectory(projectDir string) (string, error) {
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
 	if err != nil {
-		// It's expected that gradle might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		log.Error(err)
-		return "", cmdutils.ErrSilent
+		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 	result := buildDirRegex.FindStringSubmatch(string(output))
 	if result == nil {

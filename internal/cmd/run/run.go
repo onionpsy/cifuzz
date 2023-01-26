@@ -296,6 +296,14 @@ func (c *runCmd) run() error {
 
 	buildResult, err := c.buildFuzzTest()
 	if err != nil {
+		var execErr *cmdutils.ExecError
+		if errors.As(err, &execErr) {
+			// It is expected that some commands might fail due to user
+			// configuration so we print the error without the stack trace
+			// (in non-verbose mode) and silence it
+			log.Error(err)
+			return cmdutils.ErrSilent
+		}
 		return err
 	}
 
@@ -536,8 +544,6 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		cmd := exec.Command("bazel", "info", "install_base")
 		out, err := cmd.Output()
 		if err != nil {
-			// It's expected that bazel might fail due to user configuration,
-			// so we print the error without the stack trace.
 			err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 			log.Error(err)
 			return cmdutils.ErrSilent
@@ -793,7 +799,7 @@ func executeRunner(runner runner) error {
 	var execErr *cmdutils.ExecError
 	if errors.As(err, &execErr) {
 		// It's expected that libFuzzer might fail due to user
-		// configuration, so we print the error without the stack trace.
+		// configuration, so we print the error without the stack trace
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)
 	}

@@ -161,7 +161,20 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 		RunE: func(c *cobra.Command, args []string) error {
 			opts.Stdout = c.OutOrStdout()
 			opts.Stderr = c.OutOrStderr()
-			return bundler.New(&opts.Opts).Bundle()
+
+			err := bundler.New(&opts.Opts).Bundle()
+			if err != nil {
+				var execErr *cmdutils.ExecError
+				if errors.As(err, &execErr) {
+					// It is expected that some commands might fail due to user
+					// configuration so we print the error without the stack trace
+					// (in non-verbose mode) and silence it
+					log.Error(err)
+					return cmdutils.ErrSilent
+				}
+				return err
+			}
+			return nil
 		},
 	}
 

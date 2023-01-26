@@ -62,11 +62,7 @@ func (cov *MavenCoverageGenerator) runMavenCommand(args []string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		// It's expected that maven might fail due to user configuration,
-		// so we print the error without the stack trace.
-		err = cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
-		log.Error(err)
-		return cmdutils.ErrSilent
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 	}
 	return nil
 }
