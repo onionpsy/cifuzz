@@ -86,3 +86,25 @@ jobs:
           # figure out which output belongs to which test.
           command: make test/integration/sequential
           shell: bash
+
+  prerelease_tests:
+    name: test with CIFUZZ_PRERELEASE (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup VM for cifuzz
+        uses: ./.github/actions/vm_setup
+        with:
+          os: ubuntu-latest
+
+      - name: Set prerelease flag
+        run: echo "CIFUZZ_PRERELEASE=true" >> $GITHUB_ENV
+
+      - name: Run unit tests
+        run: make test/unit
+        shell: bash
+
+      - name: Run integration tests
+        run: make test/integration
+        shell: bash
