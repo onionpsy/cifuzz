@@ -54,7 +54,6 @@ type Builder struct {
 	*BuilderOptions
 	env      []string
 	buildDir string
-	finder   runfiles.RunfilesFinder
 }
 
 func NewBuilder(opts *BuilderOptions) (*Builder, error) {
@@ -132,6 +131,9 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		// Allow the build command to figure out if it's executed for a
 		// coverage build
 		buildCommandEnv, err = envutil.Setenv(buildCommandEnv, "CIFUZZ_COVERAGE_BUILD", "1")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Run the build command
@@ -158,7 +160,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	// For the build system type "other", we expect the default seed corpus next
 	// to the fuzzer executable.
 	seedCorpus := executable + "_inputs"
-	runtimeDeps, err := b.findSharedLibraries(fuzzTest)
+	runtimeDeps, err := b.findSharedLibraries()
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +346,7 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 
 var sharedLibraryRegex = regexp.MustCompile(`^.+\.((so)|(dylib))(\.\d\w*)*$`)
 
-func (b *Builder) findSharedLibraries(fuzzTest string) ([]string, error) {
+func (b *Builder) findSharedLibraries() ([]string, error) {
 	// TODO: Only return those libraries which are actually used, and which
 	//       might live outside of the project directory, by parsing the
 	//       shared object dependencies of the executable (we could use

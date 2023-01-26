@@ -380,6 +380,7 @@ func runAndAssertTests(t *testing.T, buildDir string, buildType string, expected
 	assert.Equal(t, expectedTestStatus, actualTestStatus)
 }
 
+// nolint:unparam
 func runInDir(t *testing.T, dir, command string, args ...string) []byte {
 	return runInDirWithExpectedStatus(t, false, dir, command, args...)
 }

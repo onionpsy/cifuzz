@@ -149,6 +149,7 @@ func TestDetermineBuildSystem_CMake(t *testing.T) {
 	defer fileutil.Cleanup(projectDir)
 
 	err = os.WriteFile(filepath.Join(projectDir, "CMakeLists.txt"), []byte{}, 0644)
+	require.NoError(t, err, "Failed to create CMakeLists.txt")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
 	assert.Equal(t, BuildSystemCMake, buildSystem)
@@ -160,6 +161,7 @@ func TestDetermineBuildSystem_Maven(t *testing.T) {
 	defer fileutil.Cleanup(projectDir)
 
 	err = os.WriteFile(filepath.Join(projectDir, "pom.xml"), []byte{}, 0644)
+	require.NoError(t, err, "Failed to create pom.xml")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
 	assert.Equal(t, BuildSystemMaven, buildSystem)
@@ -171,6 +173,7 @@ func TestDetermineBuildSystem_GradleGroovy(t *testing.T) {
 	defer fileutil.Cleanup(projectDir)
 
 	err = os.WriteFile(filepath.Join(projectDir, "build.gradle"), []byte{}, 0644)
+	require.NoError(t, err, "Failed to create build.gradle")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
 	assert.Equal(t, BuildSystemGradle, buildSystem)
@@ -182,6 +185,7 @@ func TestDetermineBuildSystem_GradleKotlin(t *testing.T) {
 	defer fileutil.Cleanup(projectDir)
 
 	err = os.WriteFile(filepath.Join(projectDir, "build.gradle.kts"), []byte{}, 0644)
+	require.NoError(t, err, "Failed to create build.gradle.kts")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
 	assert.Equal(t, BuildSystemGradle, buildSystem)

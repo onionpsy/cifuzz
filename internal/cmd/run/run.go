@@ -536,20 +536,17 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		}
 	}
 
-	readOnlyBindings := []string{buildResult.BuildDir}
 	if c.opts.BuildSystem == config.BuildSystemBazel {
 		// The install base directory contains e.g. the script generated
 		// by bazel via --script_path and must therefore be accessible
 		// inside the sandbox.
 		cmd := exec.Command("bazel", "info", "install_base")
-		out, err := cmd.Output()
+		err := cmd.Run()
 		if err != nil {
 			err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 			log.Error(err)
 			return cmdutils.ErrSilent
 		}
-		installBase := strings.TrimSpace(string(out))
-		readOnlyBindings = append(readOnlyBindings, installBase)
 	}
 
 	runnerOpts := &libfuzzer.RunnerOptions{

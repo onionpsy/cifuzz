@@ -114,6 +114,7 @@ func (p *parser) parseSourceLocation(logs []string) ([]*StackFrame, error) {
 }
 
 func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
+	var err error
 	matches, found := regexutil.FindNamedGroupsMatch(framePattern, line)
 	if !found && p.SupportJazzer {
 		matches, found = regexutil.FindNamedGroupsMatch(framePatternJava, line)
@@ -125,10 +126,7 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 		return nil, nil
 	}
 
-	sourceFile, err := p.validateSourceFile(matches["source_file"])
-	if err != nil {
-		return nil, err
-	}
+	sourceFile := p.validateSourceFile(matches["source_file"])
 	if sourceFile == "" {
 		// Not a valid source file, ignore this stack frame
 		return nil, nil
@@ -165,7 +163,7 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 	}, nil
 }
 
-func (p *parser) validateSourceFile(path string) (string, error) {
+func (p *parser) validateSourceFile(path string) string {
 	var err error
 
 	// To make the stack trace more useful when the finding is shared
@@ -200,7 +198,7 @@ func (p *parser) validateSourceFile(path string) (string, error) {
 		//    the stack frames from those source files are the same, the
 		//    root cause of the findings is probably also the same, so
 		//    it makes sense to deduplicate them.
-		return "", nil
+		return ""
 	}
 
 	if p.SupportJazzer {
@@ -210,12 +208,12 @@ func (p *parser) validateSourceFile(path string) (string, error) {
 		javaPrefixes := []string{"java.base", "java.lang"}
 		for _, prefix := range javaPrefixes {
 			if strings.Contains(path, prefix) {
-				return "", nil
+				return ""
 			}
 		}
 	}
 
-	return path, nil
+	return path
 }
 
 func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
@@ -224,10 +222,7 @@ func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
 		return nil, nil
 	}
 
-	sourceFile, err := p.validateSourceFile(matches["source_file"])
-	if err != nil {
-		return nil, err
-	}
+	sourceFile := p.validateSourceFile(matches["source_file"])
 	if sourceFile == "" {
 		// Not a valid source file, ignore this stack frame
 		return nil, nil

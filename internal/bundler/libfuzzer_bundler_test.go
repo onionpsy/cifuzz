@@ -94,7 +94,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		RuntimeDeps: runtimeDeps,
 		ProjectDir:  projectDir,
 	}
-	fuzzers, systemDeps, err = b.assembleArtifacts(buildResult)
+	fuzzers, _, err = b.assembleArtifacts(buildResult)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(fuzzers))

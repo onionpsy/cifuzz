@@ -77,16 +77,6 @@ func (b *libfuzzerBundler) bundle() ([]*archive.Fuzzer, error) {
 		return nil, err
 	}
 
-	// TODO: Do not hardcode these values.
-	sanitizers := []string{"address"}
-	// UBSan is not supported by MSVC
-	// TODO: Not needed anymore when sanitizers are configurable,
-	//       then we do want to fail if the user explicitly asked for
-	//       UBSan.
-	if runtime.GOOS != "windows" {
-		sanitizers = append(sanitizers, "undefined")
-	}
-
 	buildResults, err := b.buildAllVariants()
 	if err != nil {
 		return nil, err

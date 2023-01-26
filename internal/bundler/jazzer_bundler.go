@@ -61,7 +61,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 	for _, buildResult := range buildResults {
 		log.Printf("build dir: %s\n", buildResult.BuildDir)
 		// copy seeds for every fuzz test
-		archiveSeedsDir, err := b.copySeeds(buildResult)
+		archiveSeedsDir, err := b.copySeeds()
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 	return fuzzers, nil
 }
 
-func (b *jazzerBundler) copySeeds(buildResult *build.Result) (string, error) {
+func (b *jazzerBundler) copySeeds() (string, error) {
 	// Add seeds from user-specified seed corpus dirs (if any)
 	// to the seeds directory in the archive
 	// TODO: Isn't this missing the seed corpus from the build result?

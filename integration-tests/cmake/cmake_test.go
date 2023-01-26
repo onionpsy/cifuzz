@@ -60,8 +60,8 @@ func TestIntegration_CMake(t *testing.T) {
 	// Execute the create command
 	outputPath := filepath.Join("src", "parser", "parser_fuzz_test.cpp")
 	linesToAdd = cifuzzRunner.Command(t, "create", &shared.CommandOptions{
-		Args: []string{"cpp", "--output", outputPath}},
-	)
+		Args: []string{"cpp", "--output", outputPath},
+	})
 
 	// Check that the fuzz test was created in the correct directory
 	fuzzTestPath := filepath.Join(dir, outputPath)
@@ -92,16 +92,6 @@ func TestIntegration_CMake(t *testing.T) {
 	// Add dependency on parser lib to CMakeLists.txt
 	cmakeLists := filepath.Join(filepath.Dir(fuzzTestPath), "CMakeLists.txt")
 	shared.AppendLines(t, cmakeLists, []string{"target_link_libraries(parser_fuzz_test PRIVATE parser)"})
-
-	// Run the fuzz test and check that it finds the undefined behavior
-	// (unless we're running on Windows, in which case UBSan is not
-	// supported) and the use-after-free.
-	expectedOutputs := []*regexp.Regexp{
-		regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
-	}
-	if runtime.GOOS != "windows" {
-		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
-	}
 
 	t.Run("runBuildOnly", func(t *testing.T) {
 		cifuzzRunner.Run(t, &shared.RunOptions{Args: []string{"--build-only"}})
@@ -146,7 +136,6 @@ func TestIntegration_CMake(t *testing.T) {
 	t.Run("remoteRun", func(t *testing.T) {
 		testRemoteRun(t, cifuzzRunner)
 	})
-
 }
 
 func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
@@ -163,7 +152,16 @@ func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) 
 func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
-	var expectedOutputs []*regexp.Regexp
+
+	// Run the fuzz test and check that it finds the undefined behavior
+	// (unless we're running on Windows, in which case UBSan is not
+	// supported) and the use-after-free.
+	expectedOutputs := []*regexp.Regexp{
+		regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
+	}
+	if runtime.GOOS != "windows" {
+		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
+	}
 
 	// Check that Minijail is used (if running on Linux, because Minijail
 	// is only supported on Linux)
@@ -396,7 +394,8 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 	assert.Subset(t, []uint{
 		// Lines after the three crashes. Whether these are covered depends on implementation details of the coverage
 		// instrumentation, so we conservatively assume they aren't covered.
-		21, 31, 41},
+		21, 31, 41,
+	},
 		uncoveredLines)
 }
 
