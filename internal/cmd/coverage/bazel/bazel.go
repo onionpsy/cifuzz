@@ -19,7 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/util/envutil"
 )
 
-type CoverageOptions struct {
+type CoverageGenerator struct {
 	FuzzTest     string
 	OutputFormat string
 	OutputPath   string
@@ -31,7 +31,7 @@ type CoverageOptions struct {
 	Verbose      bool
 }
 
-func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
+func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	var err error
 
 	// The cc_fuzz_test rule defines multiple bazel targets: If the
@@ -40,31 +40,18 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	// allow users to specify either "foo" or "foo_bin", so we check
 	// if the fuzz test name  with a "_bin" suffix removed is a valid
 	// target and use that in that case.
-	if strings.HasSuffix(opts.FuzzTest, "_bin") {
-		trimmedLabel := strings.TrimSuffix(opts.FuzzTest, "_bin")
+	if strings.HasSuffix(cov.FuzzTest, "_bin") {
+		trimmedLabel := strings.TrimSuffix(cov.FuzzTest, "_bin")
 		cmd := exec.Command("bazel", "query", trimmedLabel)
 		err = cmd.Run()
 		if err == nil {
-			opts.FuzzTest = trimmedLabel
+			cov.FuzzTest = trimmedLabel
 		}
 	}
 
-	env, err := build.CommonBuildEnv()
+	commonFlags, err := cov.getBazelCommandFlags()
 	if err != nil {
-		return "", err
-	}
-
-	// To avoid part of the loading and/or analysis phase to rerun, we
-	// use the same flags for all bazel commands (except for those which
-	// are not supported by all bazel commands we use).
-	commonFlags := []string{
-		"--repo_env=CC=" + envutil.Getenv(env, "CC"),
-		"--repo_env=CXX" + envutil.Getenv(env, "CXX"),
-		// Don't use the LLVM from Xcode
-		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
-	}
-	if opts.NumJobs != 0 {
-		commonFlags = append(commonFlags, "--jobs", fmt.Sprint(opts.NumJobs))
+		return err
 	}
 
 	// Flags which should only be used for bazel run because they are
@@ -89,90 +76,85 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 		coverageFlags = append(coverageFlags, "--subcommands")
 	}
 
-	llvmCov, err := runfiles.Finder.LLVMCovPath()
-	if err != nil {
-		return "", err
-	}
-	llvmProfData, err := runfiles.Finder.LLVMProfDataPath()
-	if err != nil {
-		return "", err
-	}
-	commonFlags = append(commonFlags,
-		"--repo_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1",
-		"--repo_env=BAZEL_LLVM_COV="+llvmCov,
-		"--repo_env=BAZEL_LLVM_PROFDATA="+llvmProfData,
-		"--repo_env=GCOV="+llvmProfData,
-	)
-
 	args := []string{"coverage"}
 	args = append(args, commonFlags...)
 	args = append(args, coverageFlags...)
-	args = append(args, opts.FuzzTest)
+	args = append(args, cov.FuzzTest)
 
 	cmd := exec.Command("bazel", args...)
 	// Redirect the build command's stdout to stderr to only have
 	// reports printed to stdout
-	cmd.Stdout = opts.Stderr
-	cmd.Stderr = opts.Stderr
+	cmd.Stdout = cov.Stderr
+	cmd.Stderr = cov.Stderr
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
-		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
+	return nil
+}
+
+func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 	// Get the path of the created lcov report
-	cmd = exec.Command("bazel", "info", "output_path")
+	cmd := exec.Command("bazel", "info", "output_path")
 	out, err := cmd.Output()
 	if err != nil {
 		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 	bazelOutputDir := strings.TrimSpace(string(out))
-	lcovReport := filepath.Join(bazelOutputDir, "_coverage", "_coverage_report.dat")
+	reportPath := filepath.Join(bazelOutputDir, "_coverage", "_coverage_report.dat")
 
-	log.Debugf("Parsing lcov report %s", lcovReport)
-	lcovReportContent, err := os.ReadFile(lcovReport)
+	log.Debugf("Parsing lcov report %s", reportPath)
+
+	lcovReportContent, err := os.ReadFile(reportPath)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 	reportReader := strings.NewReader(string(lcovReportContent))
-	summary.ParseLcov(reportReader).PrintTable(opts.Stderr)
+	summary.ParseLcov(reportReader).PrintTable(cov.Stderr)
 
-	if opts.OutputFormat == "lcov" {
-		if opts.OutputPath == "" {
-			path, err := bazel.PathFromLabel(opts.FuzzTest, commonFlags)
+	commonFlags, err := cov.getBazelCommandFlags()
+	if err != nil {
+		return "", err
+	}
+
+	if cov.OutputFormat == "lcov" {
+		if cov.OutputPath == "" {
+			path, err := bazel.PathFromLabel(cov.FuzzTest, commonFlags)
 			if err != nil {
 				return "", err
 			}
 			name := strings.ReplaceAll(path, "/", "-")
-			opts.OutputPath = name + ".coverage.lcov"
+			cov.OutputPath = name + ".coverage.lcov"
 		}
 		// We don't use copy.Copy here to be able to set the permissions
 		// to 0o644 before umask - copy.Copy just copies the permissions
 		// from the source file, which has permissions 555 like all
 		// files created by bazel.
-		content, err := os.ReadFile(lcovReport)
+		content, err := os.ReadFile(reportPath)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		err = os.WriteFile(opts.OutputPath, content, 0o644)
+		err = os.WriteFile(cov.OutputPath, content, 0o644)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		return opts.OutputPath, nil
+		return cov.OutputPath, nil
 	}
 
 	// If no output path was specified, create the coverage report in a
 	// temporary directory
-	if opts.OutputPath == "" {
+	if cov.OutputPath == "" {
 		outputDir, err := os.MkdirTemp("", "coverage-")
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		path, err := bazel.PathFromLabel(opts.FuzzTest, commonFlags)
+		path, err := bazel.PathFromLabel(cov.FuzzTest, commonFlags)
 		if err != nil {
 			return "", err
 		}
-		opts.OutputPath = filepath.Join(outputDir, path)
+		cov.OutputPath = filepath.Join(outputDir, path)
 	}
 
 	// Create an HTML report via genhtml
@@ -180,10 +162,10 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	args = []string{"--prefix", opts.ProjectDir, "--output", opts.OutputPath, lcovReport}
+	args := []string{"--prefix", cov.ProjectDir, "--output", cov.OutputPath, reportPath}
 
 	cmd = exec.Command(genHTML, args...)
-	cmd.Dir = opts.ProjectDir
+	cmd.Dir = cov.ProjectDir
 	cmd.Stderr = os.Stderr
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
@@ -191,5 +173,41 @@ func GenerateCoverageReport(opts *CoverageOptions) (string, error) {
 		return "", errors.WithStack(err)
 	}
 
-	return opts.OutputPath, nil
+	return cov.OutputPath, nil
+}
+
+// getBazelCommandFlags returns flags to be used when executing a bazel command
+// to avoid part of the loading and/or analysis phase to rerun.
+func (cov *CoverageGenerator) getBazelCommandFlags() ([]string, error) {
+	env, err := build.CommonBuildEnv()
+	if err != nil {
+		return nil, err
+	}
+
+	flags := []string{
+		"--repo_env=CC=" + envutil.Getenv(env, "CC"),
+		"--repo_env=CXX" + envutil.Getenv(env, "CXX"),
+		// Don't use the LLVM from Xcode
+		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
+	}
+	if cov.NumJobs != 0 {
+		flags = append(flags, "--jobs", fmt.Sprint(cov.NumJobs))
+	}
+
+	llvmCov, err := runfiles.Finder.LLVMCovPath()
+	if err != nil {
+		return nil, err
+	}
+	llvmProfData, err := runfiles.Finder.LLVMProfDataPath()
+	if err != nil {
+		return nil, err
+	}
+	flags = append(flags,
+		"--repo_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1",
+		"--repo_env=BAZEL_LLVM_COV="+llvmCov,
+		"--repo_env=BAZEL_LLVM_PROFDATA="+llvmProfData,
+		"--repo_env=GCOV="+llvmProfData,
+	)
+
+	return flags, nil
 }

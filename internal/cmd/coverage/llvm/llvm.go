@@ -31,7 +31,7 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-type LLVMCoverageGenerator struct {
+type CoverageGenerator struct {
 	OutputFormat   string
 	OutputPath     string
 	BuildSystem    string
@@ -41,9 +41,8 @@ type LLVMCoverageGenerator struct {
 	UseSandbox     bool
 	FuzzTest       string
 	ProjectDir     string
-
-	StdOut io.Writer
-	StdErr io.Writer
+	StdOut         io.Writer
+	StdErr         io.Writer
 
 	buildResult    *build.Result
 	tmpDir         string
@@ -51,8 +50,7 @@ type LLVMCoverageGenerator struct {
 	runfilesFinder runfiles.RunfilesFinder
 }
 
-func (cov *LLVMCoverageGenerator) Generate() (string, error) {
-
+func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	// ensure a finder is set
 	if cov.runfilesFinder == nil {
 		cov.runfilesFinder = runfiles.Finder
@@ -61,21 +59,26 @@ func (cov *LLVMCoverageGenerator) Generate() (string, error) {
 	var err error
 	cov.tmpDir, err = os.MkdirTemp("", "llvm-coverage-")
 	if err != nil {
-		return "", errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	cov.outputDir = filepath.Join(cov.tmpDir, "output")
 	err = os.Mkdir(cov.outputDir, 0o755)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	defer fileutil.Cleanup(cov.tmpDir)
 
 	err = cov.build()
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	err = cov.run()
+	return nil
+}
+
+func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
+	defer fileutil.Cleanup(cov.tmpDir)
+
+	err := cov.run()
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && cov.UseSandbox {
@@ -91,7 +94,7 @@ func (cov *LLVMCoverageGenerator) Generate() (string, error) {
 	return reportPath, nil
 }
 
-func (cov *LLVMCoverageGenerator) build() error {
+func (cov *CoverageGenerator) build() error {
 	switch cov.BuildSystem {
 	case config.BuildSystemCMake:
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
@@ -147,7 +150,7 @@ func (cov *LLVMCoverageGenerator) build() error {
 	return errors.New("unknown build system")
 }
 
-func (cov *LLVMCoverageGenerator) run() error {
+func (cov *CoverageGenerator) run() error {
 	log.Infof("Running %s on corpus", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(cov.FuzzTest))
 	log.Debugf("Executable: %s", cov.buildResult.Executable)
 
@@ -230,7 +233,7 @@ func (cov *LLVMCoverageGenerator) run() error {
 	return cov.runFuzzer(append(args, "-merge=1"), append([]string{emptyDir}, corpusDirs...), env)
 }
 
-func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []string, env []string) error {
+func (cov *CoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []string, env []string) error {
 	var err error
 	args := []string{cov.buildResult.Executable}
 	args = append(args, preCorpusArgs...)
@@ -290,7 +293,7 @@ func (cov *LLVMCoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs [
 	return err
 }
 
-func (cov *LLVMCoverageGenerator) report() (string, error) {
+func (cov *CoverageGenerator) report() (string, error) {
 	err := cov.indexRawProfile()
 	if err != nil {
 		return "", err
@@ -321,7 +324,7 @@ func (cov *LLVMCoverageGenerator) report() (string, error) {
 	return reportPath, nil
 }
 
-func (cov *LLVMCoverageGenerator) indexRawProfile() error {
+func (cov *CoverageGenerator) indexRawProfile() error {
 	rawProfileFiles, err := cov.rawProfileFiles()
 	if err != nil {
 		return err
@@ -349,7 +352,7 @@ func (cov *LLVMCoverageGenerator) indexRawProfile() error {
 	return nil
 }
 
-func (cov *LLVMCoverageGenerator) rawProfilePattern(supportsContinuousMode bool) string {
+func (cov *CoverageGenerator) rawProfilePattern(supportsContinuousMode bool) string {
 	// Use "%m" instead of a fixed path to support coverage of shared
 	// libraries: Each executable or library generates its own profile
 	// file, all of which we have to merge in the end. By using "%m",
@@ -366,7 +369,7 @@ func (cov *LLVMCoverageGenerator) rawProfilePattern(supportsContinuousMode bool)
 	return filepath.Join(cov.outputDir, basePattern)
 }
 
-func (cov *LLVMCoverageGenerator) generateHTMLReport() (string, error) {
+func (cov *CoverageGenerator) generateHTMLReport() (string, error) {
 	args := []string{"export", "-format=lcov"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
@@ -417,7 +420,7 @@ func (cov *LLVMCoverageGenerator) generateHTMLReport() (string, error) {
 	return cov.OutputPath, nil
 }
 
-func (cov *LLVMCoverageGenerator) runLlvmCov(args []string) (string, error) {
+func (cov *CoverageGenerator) runLlvmCov(args []string) (string, error) {
 	llvmCov, err := cov.runfilesFinder.LLVMCovPath()
 	if err != nil {
 		return "", err
@@ -451,7 +454,7 @@ func (cov *LLVMCoverageGenerator) runLlvmCov(args []string) (string, error) {
 	return string(output), nil
 }
 
-func (cov *LLVMCoverageGenerator) generateLcovReport() (string, error) {
+func (cov *CoverageGenerator) generateLcovReport() (string, error) {
 	args := []string{"export", "-format=lcov"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
@@ -482,7 +485,7 @@ func (cov *LLVMCoverageGenerator) generateLcovReport() (string, error) {
 	return outputPath, nil
 }
 
-func (cov *LLVMCoverageGenerator) lcovReportSummary() (string, error) {
+func (cov *CoverageGenerator) lcovReportSummary() (string, error) {
 	args := []string{"export", "-format=lcov", "-summary-only"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
@@ -497,7 +500,7 @@ func (cov *LLVMCoverageGenerator) lcovReportSummary() (string, error) {
 	return output, nil
 }
 
-func (cov *LLVMCoverageGenerator) getIgnoreCIFuzzIncludesArgs() ([]string, error) {
+func (cov *CoverageGenerator) getIgnoreCIFuzzIncludesArgs() ([]string, error) {
 	cifuzzIncludePath, err := cov.runfilesFinder.CIFuzzIncludePath()
 	if err != nil {
 		return nil, err
@@ -505,22 +508,22 @@ func (cov *LLVMCoverageGenerator) getIgnoreCIFuzzIncludesArgs() ([]string, error
 	return []string{"-ignore-filename-regex=" + regexp.QuoteMeta(cifuzzIncludePath) + "/.*"}, nil
 }
 
-func (cov *LLVMCoverageGenerator) rawProfileFiles() ([]string, error) {
+func (cov *CoverageGenerator) rawProfileFiles() ([]string, error) {
 	files, err := filepath.Glob(filepath.Join(cov.outputDir, "*.profraw"))
 	return files, errors.WithStack(err)
 }
 
-func (cov *LLVMCoverageGenerator) indexedProfilePath() string {
+func (cov *CoverageGenerator) indexedProfilePath() string {
 	return filepath.Join(cov.tmpDir, filepath.Base(cov.buildResult.Executable)+".profdata")
 }
 
-func (cov *LLVMCoverageGenerator) executableName() string {
+func (cov *CoverageGenerator) executableName() string {
 	return filepath.Base(cov.buildResult.Executable)
 }
 
 // Returns an llvm-cov -arch flag indicating the preferred architecture of the given object on macOS, where objects can
 // be "universal", that is, contain versions for multiple architectures.
-func (cov *LLVMCoverageGenerator) archFlagIfNeeded(object string) (string, error) {
+func (cov *CoverageGenerator) archFlagIfNeeded(object string) (string, error) {
 	if runtime.GOOS != "darwin" {
 		// Only macOS uses universal binaries that bundle multiple architectures.
 		return "", nil
@@ -554,7 +557,7 @@ func (cov *LLVMCoverageGenerator) archFlagIfNeeded(object string) (string, error
 	return "", errors.Errorf("failed to parse Mach-O file %q: %q (as universal binary), %q", object, fatErr, err)
 }
 
-func (cov *LLVMCoverageGenerator) cpuToArchFlag(cpu macho.Cpu) (string, error) {
+func (cov *CoverageGenerator) cpuToArchFlag(cpu macho.Cpu) (string, error) {
 	switch cpu {
 	case macho.CpuArm64:
 		return "-arch=arm64", nil

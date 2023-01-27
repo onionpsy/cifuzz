@@ -21,21 +21,84 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-type MavenCoverageGenerator struct {
+type CoverageGenerator struct {
 	OutputFormat string
 	OutputPath   string
 	FuzzTest     string
 	ProjectDir   string
-
-	Parallel maven.ParallelOptions
-
-	StdOut io.Writer
-	StdErr io.Writer
+	Parallel     maven.ParallelOptions
+	StdOut       io.Writer
+	StdErr       io.Writer
 
 	runfilesFinder runfiles.RunfilesFinder
 }
 
-func (cov *MavenCoverageGenerator) runMavenCommand(args []string) error {
+func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
+	// ensure a finder is set
+	if cov.runfilesFinder == nil {
+		cov.runfilesFinder = runfiles.Finder
+	}
+
+	mavenTestArgs := []string{
+		// Maven tests fail if fuzz tests fail, so we ignore the error here.
+		// We still want to generate the coverage report, so use this flag:
+		"-Dmaven.test.failure.ignore=true",
+		"-Djazzer.hooks=false",
+		"-Pcifuzz",
+		fmt.Sprintf("-Dtest=%s", cov.FuzzTest),
+		"test",
+	}
+	if cov.Parallel.Enabled {
+		mavenTestArgs = append(mavenTestArgs, "-T")
+		if cov.Parallel.NumJobs != 0 {
+			mavenTestArgs = append(mavenTestArgs, fmt.Sprint(cov.Parallel.NumJobs))
+		} else {
+			// Use one thread per cpu core
+			mavenTestArgs = append(mavenTestArgs, "1C")
+		}
+	}
+	err := cov.runMavenCommand(mavenTestArgs)
+	if err != nil {
+		return err
+	}
+
+	if cov.OutputPath == "" {
+		// We are using the .cifuzz-build directory
+		// because the build directory is unknown at this point
+		cov.OutputPath = filepath.Join(cov.ProjectDir, ".cifuzz-build", "report")
+	}
+	mavenReportArgs := []string{
+		"-Pcifuzz",
+		"jacoco:report",
+		fmt.Sprintf("-Dcifuzz.report.output=%s", cov.OutputPath),
+	}
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML")
+	} else {
+		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML,HTML")
+	}
+
+	return cov.runMavenCommand(mavenReportArgs)
+}
+
+func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
+	reportPath := filepath.Join(cov.OutputPath, "jacoco.xml")
+	reportFile, err := os.Open(reportPath)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer reportFile.Close()
+	summary.ParseJacocoXML(reportFile).PrintTable(cov.StdErr)
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	}
+
+	return cov.OutputPath, nil
+}
+
+func (cov *CoverageGenerator) runMavenCommand(args []string) error {
 	mavenCmd, err := cov.runfilesFinder.MavenPath()
 	if err != nil {
 		return err
@@ -65,70 +128,4 @@ func (cov *MavenCoverageGenerator) runMavenCommand(args []string) error {
 		return cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 	}
 	return nil
-}
-
-func (cov *MavenCoverageGenerator) Generate() (string, error) {
-	// ensure a finder is set
-	if cov.runfilesFinder == nil {
-		cov.runfilesFinder = runfiles.Finder
-	}
-
-	mavenTestArgs := []string{
-		// Maven tests fail if fuzz tests fail, so we ignore the error here.
-		// We still want to generate the coverage report, so use this flag:
-		"-Dmaven.test.failure.ignore=true",
-		"-Djazzer.hooks=false",
-		"-Pcifuzz",
-		fmt.Sprintf("-Dtest=%s", cov.FuzzTest),
-		"test",
-	}
-	if cov.Parallel.Enabled {
-		mavenTestArgs = append(mavenTestArgs, "-T")
-		if cov.Parallel.NumJobs != 0 {
-			mavenTestArgs = append(mavenTestArgs, fmt.Sprint(cov.Parallel.NumJobs))
-		} else {
-			// Use one thread per cpu core
-			mavenTestArgs = append(mavenTestArgs, "1C")
-		}
-	}
-	err := cov.runMavenCommand(mavenTestArgs)
-	if err != nil {
-		return "", err
-	}
-
-	if cov.OutputPath == "" {
-		// We using the .cifuzz-build directory
-		// because the build directory is unknown at this point
-		cov.OutputPath = filepath.Join(cov.ProjectDir, ".cifuzz-build", "report")
-	}
-	mavenReportArgs := []string{
-		"-Pcifuzz",
-		"jacoco:report",
-		fmt.Sprintf("-Dcifuzz.report.output=%s", cov.OutputPath),
-	}
-
-	if cov.OutputFormat == coverage.FormatJacocoXML {
-		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML")
-	} else {
-		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML,HTML")
-	}
-
-	err = cov.runMavenCommand(mavenReportArgs)
-	if err != nil {
-		return "", err
-	}
-
-	reportPath := filepath.Join(cov.OutputPath, "jacoco.xml")
-	reportFile, err := os.Open(reportPath)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	defer reportFile.Close()
-	summary.ParseJacocoXML(reportFile).PrintTable(cov.StdErr)
-
-	if cov.OutputFormat == coverage.FormatJacocoXML {
-		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
-	}
-
-	return cov.OutputPath, nil
 }

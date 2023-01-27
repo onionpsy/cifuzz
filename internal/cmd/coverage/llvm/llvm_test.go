@@ -68,7 +68,7 @@ func TestLLVM(t *testing.T) {
 			var bOut bytes.Buffer
 			outBuf := io.Writer(&bOut)
 
-			testLLVM := &LLVMCoverageGenerator{
+			testLLVM := &CoverageGenerator{
 				OutputFormat:   tc.format,
 				BuildSystem:    "other",
 				BuildCommand:   "make clean && make $FUZZ_TEST",
@@ -80,7 +80,9 @@ func TestLLVM(t *testing.T) {
 				runfilesFinder: finderMock,
 			}
 
-			reportPath, err := testLLVM.Generate()
+			err = testLLVM.BuildFuzzTestForCoverage()
+			require.NoError(t, err)
+			reportPath, err := testLLVM.GenerateCoverageReport()
 			require.NoError(t, err)
 
 			if tc.format == "lcov" {

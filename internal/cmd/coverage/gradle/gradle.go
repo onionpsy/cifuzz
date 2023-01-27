@@ -21,7 +21,7 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-type GradleCoverageGenerator struct {
+type CoverageGenerator struct {
 	OutputFormat string
 	OutputPath   string
 	FuzzTest     string
@@ -35,7 +35,67 @@ type GradleCoverageGenerator struct {
 	runfilesFinder runfiles.RunfilesFinder
 }
 
-func (cov *GradleCoverageGenerator) runGradleCommand(args []string) error {
+func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
+	// ensure a finder is set
+	if cov.runfilesFinder == nil {
+		cov.runfilesFinder = runfiles.Finder
+	}
+
+	gradleTestArgs := []string{
+		"cifuzzTest",
+		fmt.Sprintf("-Pcifuzz.fuzztest=%s", cov.FuzzTest),
+	}
+	if cov.Parallel.Enabled {
+		gradleTestArgs = append(gradleTestArgs, "--parallel")
+	}
+	err := cov.runGradleCommand(gradleTestArgs)
+	if err != nil {
+		return err
+	}
+
+	if cov.OutputPath == "" {
+		buildDir, err := gradle.GetBuildDirectory(cov.ProjectDir)
+		if err != nil {
+			return err
+		}
+		cov.OutputPath = filepath.Join(buildDir, "reports", "cifuzz")
+	}
+
+	// Make sure that directory exists, otherwise the command for --format=jacocoxml will fail
+	err = os.MkdirAll(cov.OutputPath, 0700)
+	if err != nil {
+		return err
+	}
+
+	gradleReportArgs := []string{
+		"cifuzzReport",
+		fmt.Sprintf("-Pcifuzz.report.output=%s", cov.OutputPath),
+	}
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		gradleReportArgs = append(gradleReportArgs, fmt.Sprintf("-Pcifuzz.report.format=%s", coverage.FormatJacocoXML))
+	}
+
+	return cov.runGradleCommand(gradleReportArgs)
+}
+
+func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
+	reportPath := filepath.Join(cov.OutputPath, "jacoco.xml")
+	reportFile, err := os.Open(reportPath)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer reportFile.Close()
+	summary.ParseJacocoXML(reportFile).PrintTable(cov.StdErr)
+
+	if cov.OutputFormat == coverage.FormatJacocoXML {
+		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	}
+
+	return filepath.Join(cov.OutputPath, "html"), nil
+}
+
+func (cov *CoverageGenerator) runGradleCommand(args []string) error {
 	gradleCmd, err := gradle.GetGradleCommand(cov.ProjectDir)
 	if err != nil {
 		return err
@@ -69,66 +129,6 @@ func (cov *GradleCoverageGenerator) runGradleCommand(args []string) error {
 	if err != nil {
 		return cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 	}
+
 	return nil
-}
-
-func (cov *GradleCoverageGenerator) Generate() (string, error) {
-	// ensure a finder is set
-	if cov.runfilesFinder == nil {
-		cov.runfilesFinder = runfiles.Finder
-	}
-
-	gradleTestArgs := []string{
-		"cifuzzTest",
-		fmt.Sprintf("-Pcifuzz.fuzztest=%s", cov.FuzzTest),
-	}
-	if cov.Parallel.Enabled {
-		gradleTestArgs = append(gradleTestArgs, "--parallel")
-	}
-	err := cov.runGradleCommand(gradleTestArgs)
-	if err != nil {
-		return "", err
-	}
-
-	if cov.OutputPath == "" {
-		buildDir, err := gradle.GetBuildDirectory(cov.ProjectDir)
-		if err != nil {
-			return "", err
-		}
-		cov.OutputPath = filepath.Join(buildDir, "reports", "cifuzz")
-	}
-
-	// Make sure that directory exists, otherwise the command for --format=jacocoxml will fail
-	err = os.MkdirAll(cov.OutputPath, 0700)
-	if err != nil {
-		return "", err
-	}
-
-	gradleReportArgs := []string{
-		"cifuzzReport",
-		fmt.Sprintf("-Pcifuzz.report.output=%s", cov.OutputPath),
-	}
-
-	if cov.OutputFormat == coverage.FormatJacocoXML {
-		gradleReportArgs = append(gradleReportArgs, fmt.Sprintf("-Pcifuzz.report.format=%s", coverage.FormatJacocoXML))
-	}
-
-	err = cov.runGradleCommand(gradleReportArgs)
-	if err != nil {
-		return "", err
-	}
-
-	reportPath := filepath.Join(cov.OutputPath, "jacoco.xml")
-	reportFile, err := os.Open(reportPath)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	defer reportFile.Close()
-	summary.ParseJacocoXML(reportFile).PrintTable(cov.StdErr)
-
-	if cov.OutputFormat == coverage.FormatJacocoXML {
-		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
-	}
-
-	return filepath.Join(cov.OutputPath, "html"), nil
 }

@@ -29,6 +29,11 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
+type Generator interface {
+	BuildFuzzTestForCoverage() error
+	GenerateCoverageReport() (string, error)
+}
+
 type coverageOptions struct {
 	OutputFormat          string   `mapstructure:"format"`
 	OutputPath            string   `mapstructure:"output"`
@@ -39,9 +44,9 @@ type coverageOptions struct {
 	UseSandbox            bool     `mapstructure:"use-sandbox"`
 	Preset                string
 	ResolveSourceFilePath bool
+	ProjectDir            string
 
-	ProjectDir string
-	fuzzTest   string
+	fuzzTest string
 }
 
 func (opts *coverageOptions) validate() error {
@@ -202,11 +207,10 @@ func (c *coverageCmd) run() error {
 		}
 	}
 
-	var reportPath string
-
+	var gen Generator
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
-		reportPath, err = bazelCoverage.GenerateCoverageReport(&bazelCoverage.CoverageOptions{
+		gen = &bazelCoverage.CoverageGenerator{
 			FuzzTest:     c.opts.fuzzTest,
 			OutputFormat: c.opts.OutputFormat,
 			OutputPath:   c.opts.OutputPath,
@@ -216,9 +220,9 @@ func (c *coverageCmd) run() error {
 			Stdout:       c.OutOrStdout(),
 			Stderr:       c.ErrOrStderr(),
 			Verbose:      viper.GetBool("verbose"),
-		})
+		}
 	case config.BuildSystemCMake, config.BuildSystemOther:
-		gen := &llvmCoverage.LLVMCoverageGenerator{
+		gen = &llvmCoverage.CoverageGenerator{
 			OutputFormat:   c.opts.OutputFormat,
 			OutputPath:     c.opts.OutputPath,
 			BuildSystem:    c.opts.BuildSystem,
@@ -231,9 +235,8 @@ func (c *coverageCmd) run() error {
 			StdOut:         c.OutOrStdout(),
 			StdErr:         c.OutOrStderr(),
 		}
-		reportPath, err = gen.Generate()
 	case config.BuildSystemGradle:
-		gen := &gradleCoverage.GradleCoverageGenerator{
+		gen = &gradleCoverage.CoverageGenerator{
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
@@ -242,9 +245,8 @@ func (c *coverageCmd) run() error {
 			}, StdOut: c.OutOrStdout(),
 			StdErr: c.OutOrStderr(),
 		}
-		reportPath, err = gen.Generate()
 	case config.BuildSystemMaven:
-		gen := &mavenCoverage.MavenCoverageGenerator{
+		gen = &mavenCoverage.CoverageGenerator{
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
@@ -255,10 +257,11 @@ func (c *coverageCmd) run() error {
 			StdOut: c.OutOrStdout(),
 			StdErr: c.OutOrStderr(),
 		}
-		reportPath, err = gen.Generate()
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
+
+	err = gen.BuildFuzzTestForCoverage()
 	if err != nil {
 		var execErr *cmdutils.ExecError
 		if errors.As(err, &execErr) {
@@ -268,6 +271,10 @@ func (c *coverageCmd) run() error {
 			log.Error(err)
 			return cmdutils.ErrSilent
 		}
+		return err
+	}
+	reportPath, err := gen.GenerateCoverageReport()
+	if err != nil {
 		return err
 	}
 
