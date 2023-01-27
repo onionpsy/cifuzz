@@ -6,16 +6,16 @@ BASE_URL="https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/down
 # detect os to get the correct url for the installer
 case $(uname -s) in 
   Linux*)
-    INSTALLER="cifuzz_installer_linux" ;;
+    INSTALLER="cifuzz_installer_linux_amd64" ;;
 
   Windows*|MINGW*|MSYS*|CYGWIN*)  
-    INSTALLER="cifuzz_installer_windows.exe" ;;
+    INSTALLER="cifuzz_installer_windows_amd64.exe" ;;
 
   Darwin*)
     if [ "$(uname -m)" = 'arm64' ]; then
-      INSTALLER="cifuzz_installer_darwin_arm64"
+      INSTALLER="cifuzz_installer_macOS_arm64"
     else
-      INSTALLER="cifuzz_installer_darwin"
+      INSTALLER="cifuzz_installer_macOS_amd64"
     fi ;;
 
   *) 
