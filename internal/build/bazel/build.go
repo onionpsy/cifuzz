@@ -176,9 +176,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	args = append(args, binLabels...)
 
 	cmd = exec.Command("bazel", args...)
-	// Redirect the build command's stdout to stderr to only have
-	// reports printed to stdout
-	cmd.Stdout = b.Stderr
+	cmd.Stdout = b.Stdout
 	cmd.Stderr = b.Stderr
 	if err != nil {
 		return nil, err
@@ -313,9 +311,7 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 	args = append(args, labels...)
 
 	cmd := exec.Command("bazel", args...)
-	// Redirect the build command's stdout to stderr to only have
-	// reports printed to stdout
-	cmd.Stdout = b.Stderr
+	cmd.Stdout = b.Stdout
 	cmd.Stderr = b.Stderr
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()

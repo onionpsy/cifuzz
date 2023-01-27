@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -61,6 +62,9 @@ type runOptions struct {
 	ProjectDir string
 	fuzzTest   string
 	argsToPass []string
+
+	buildStdout io.Writer
+	buildStderr io.Writer
 }
 
 func (opts *runOptions) validate() error {
@@ -237,6 +241,18 @@ depends on the build system configured for the project.
 			opts.fuzzTest = fuzzTests[0]
 
 			opts.argsToPass = argsToPass
+
+			opts.buildStdout = cmd.OutOrStdout()
+			opts.buildStderr = cmd.OutOrStderr()
+			if cmdutils.ShouldLogBuildToFile() {
+				opts.buildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
+				if err != nil {
+					log.Errorf(err, "Failed to setup logging: %v", err.Error())
+					return cmdutils.WrapSilentError(err)
+				}
+				opts.buildStderr = opts.buildStdout
+			}
+
 			return opts.validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -351,6 +367,24 @@ func (c *runCmd) run() error {
 }
 
 func (c *runCmd) buildFuzzTest() (*build.Result, error) {
+	var err error
+
+	if cmdutils.ShouldLogBuildToFile() {
+		log.CreateCurrentProgressSpinner(nil, log.BuildInProgressMsg)
+		defer func(err *error) {
+			if *err != nil {
+				log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BuildInProgressErrorMsg)
+				printErr := cmdutils.PrintBuildLogOnStdout()
+				if printErr != nil {
+					log.Error(printErr)
+				}
+			} else {
+				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BuildInProgressSuccessMsg)
+				log.Info(cmdutils.GetMsgPathToBuildLog())
+			}
+		}(&err)
+	}
+
 	// TODO: Do not hardcode these values.
 	sanitizers := []string{"address"}
 	// UBSan is not supported by MSVC
@@ -378,30 +412,35 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		// if the fuzz test name appended with "_bin" is a valid target
 		// and use that in that case
 		cmd := exec.Command("bazel", "query", c.opts.fuzzTest+"_bin")
-		err := cmd.Run()
+		err = cmd.Run()
 		if err == nil {
 			c.opts.fuzzTest += "_bin"
 		}
 
-		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
+		var builder *bazel.Builder
+		builder, err = bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Args:       c.opts.argsToPass,
 			NumJobs:    c.opts.NumBuildJobs,
-			Stdout:     c.OutOrStdout(),
-			Stderr:     c.ErrOrStderr(),
+			Stdout:     c.opts.buildStdout,
+			Stderr:     c.opts.buildStderr,
 			TempDir:    c.tempDir,
 			Verbose:    viper.GetBool("verbose"),
 		})
 		if err != nil {
 			return nil, err
 		}
-		buildResults, err := builder.BuildForRun([]string{c.opts.fuzzTest})
+
+		var buildResults []*build.Result
+		buildResults, err = builder.BuildForRun([]string{c.opts.fuzzTest})
 		if err != nil {
 			return nil, err
 		}
 		return buildResults[0], nil
+
 	case config.BuildSystemCMake:
-		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
+		var builder *cmake.Builder
+		builder, err = cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Args:       c.opts.argsToPass,
 			Sanitizers: sanitizers,
@@ -409,8 +448,8 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,
 			},
-			Stdout:    c.OutOrStdout(),
-			Stderr:    c.ErrOrStderr(),
+			Stdout:    c.opts.buildStdout,
+			Stderr:    c.opts.buildStderr,
 			BuildOnly: c.opts.BuildOnly,
 		})
 		if err != nil {
@@ -420,56 +459,67 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		buildResults, err := builder.Build([]string{c.opts.fuzzTest})
+
+		var buildResults []*build.Result
+		buildResults, err = builder.Build([]string{c.opts.fuzzTest})
 		if err != nil {
 			return nil, err
 		}
+
 		if c.opts.BuildOnly {
 			return nil, nil
 		}
 		return buildResults[0], nil
+
 	case config.BuildSystemMaven:
 		if len(c.opts.argsToPass) > 0 {
 			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
-		builder, err := maven.NewBuilder(&maven.BuilderOptions{
+		var builder *maven.Builder
+		builder, err = maven.NewBuilder(&maven.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Parallel: maven.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,
 			},
-			Stdout: c.OutOrStdout(),
-			Stderr: c.OutOrStderr(),
+			Stdout: c.opts.buildStdout,
+			Stderr: c.opts.buildStderr,
 		})
 		if err != nil {
 			return nil, err
 		}
-		buildResult, err := builder.Build(c.opts.fuzzTest)
+
+		var buildResult *build.Result
+		buildResult, err = builder.Build(c.opts.fuzzTest)
 		if err != nil {
 			return nil, err
 		}
 		return buildResult, err
+
 	case config.BuildSystemGradle:
 		if len(c.opts.argsToPass) > 0 {
 			log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
-		builder, err := gradle.NewBuilder(&gradle.BuilderOptions{
+		var builder *gradle.Builder
+		builder, err = gradle.NewBuilder(&gradle.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
 			Parallel: gradle.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,
 			},
-			Stdout: c.OutOrStdout(),
-			Stderr: c.OutOrStderr(),
+			Stdout: c.opts.buildStdout,
+			Stderr: c.opts.buildStderr,
 		})
 		if err != nil {
 			return nil, err
 		}
-		buildResult, err := builder.Build(c.opts.fuzzTest)
+
+		var buildResult *build.Result
+		buildResult, err = builder.Build(c.opts.fuzzTest)
 		if err != nil {
 			return nil, err
 		}
@@ -480,17 +530,20 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
-		builder, err := other.NewBuilder(&other.BuilderOptions{
+		var builder *other.Builder
+		builder, err = other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   c.opts.ProjectDir,
 			BuildCommand: c.opts.BuildCommand,
 			Sanitizers:   sanitizers,
-			Stdout:       c.OutOrStdout(),
-			Stderr:       c.ErrOrStderr(),
+			Stdout:       c.opts.buildStdout,
+			Stderr:       c.opts.buildStderr,
 		})
 		if err != nil {
 			return nil, err
 		}
-		buildResult, err := builder.Build(c.opts.fuzzTest)
+
+		var buildResult *build.Result
+		buildResult, err = builder.Build(c.opts.fuzzTest)
 		if err != nil {
 			return nil, err
 		}
@@ -543,6 +596,8 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		cmd := exec.Command("bazel", "info", "install_base")
 		err := cmd.Run()
 		if err != nil {
+			// It's expected that bazel might fail due to user configuration,
+			// so we print the error without the stack trace.
 			err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
 			log.Error(err)
 			return cmdutils.ErrSilent

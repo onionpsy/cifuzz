@@ -138,8 +138,6 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 
 	// Run the build command
 	cmd := exec.Command("/bin/sh", "-c", b.BuildCommand)
-	// Redirect the build command's stdout to stderr to only have
-	// reports printed to stdout
 	cmd.Stdout = b.Stdout
 	cmd.Stderr = b.Stderr
 	cmd.Env = buildCommandEnv

@@ -48,6 +48,20 @@ func log(style pterm.Style, icon string, a ...any) {
 	if ActiveUpdatingPrinter != nil {
 		ActiveUpdatingPrinter.Clear()
 	}
+
+	// If a progress spinner is currently running, we have to stop it,
+	// then print the log and start it again to have a clean output
+	// If we don't do this, the spinner will remain on the console
+	// between the logs
+	if currentProgressSpinner != nil {
+		// We only need to set this if we have to restart the spinner
+		currentProgressSpinner.RemoveWhenDone = true
+		_ = currentProgressSpinner.Stop()
+		_, _ = fmt.Fprint(Output, s)
+		currentProgressSpinner, _ = currentProgressSpinner.Start(currentProgressSpinner.Text)
+		return
+	}
+
 	_, _ = fmt.Fprint(Output, s)
 }
 

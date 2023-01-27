@@ -170,9 +170,7 @@ func (b *Builder) Configure() error {
 	args = append(args, b.ProjectDir)
 
 	cmd := exec.Command("cmake", args...)
-	// Redirect the build command's stdout to stderr to only have
-	// reports printed to stdout
-	cmd.Stdout = b.Stderr
+	cmd.Stdout = b.Stdout
 	cmd.Stderr = b.Stderr
 	cmd.Env = b.env
 	cmd.Dir = buildDir
@@ -206,9 +204,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 	}
 
 	cmd := exec.Command("cmake", flags...)
-	// Redirect the build command's stdout to stderr to only have
-	// reports printed to stdout
-	cmd.Stdout = b.Stderr
+	cmd.Stdout = b.Stdout
 	cmd.Stderr = b.Stderr
 	cmd.Env = b.env
 	log.Debugf("Command: %s", cmd.String())
