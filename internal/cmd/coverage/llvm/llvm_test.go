@@ -75,8 +75,8 @@ func TestLLVM(t *testing.T) {
 				UseSandbox:     false,
 				FuzzTest:       "my_fuzz_test",
 				ProjectDir:     tmpDir,
-				StdOut:         outBuf,
-				StdErr:         os.Stderr,
+				BuildStdout:    outBuf,
+				Stderr:         os.Stderr,
 				runfilesFinder: finderMock,
 			}
 

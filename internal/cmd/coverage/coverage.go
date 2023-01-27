@@ -46,7 +46,9 @@ type coverageOptions struct {
 	ResolveSourceFilePath bool
 	ProjectDir            string
 
-	fuzzTest string
+	fuzzTest    string
+	buildStdout io.Writer
+	buildStderr io.Writer
 }
 
 func (opts *coverageOptions) validate() error {
@@ -142,6 +144,17 @@ or a lcov trace file.
 			}
 			opts.fuzzTest = fuzzTest[0]
 
+			opts.buildStdout = cmd.OutOrStdout()
+			opts.buildStderr = cmd.OutOrStderr()
+			if cmdutils.ShouldLogBuildToFile() {
+				opts.buildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
+				if err != nil {
+					log.Errorf(err, "Failed to setup logging: %v", err.Error())
+					return cmdutils.WrapSilentError(err)
+				}
+				opts.buildStderr = opts.buildStdout
+			}
+
 			return opts.validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -182,6 +195,10 @@ func (c *coverageCmd) run() error {
 		return err
 	}
 
+	if cmdutils.ShouldLogBuildToFile() {
+		log.CreateCurrentProgressSpinner(nil, log.BuildInProgressMsg)
+	}
+
 	log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
 
 	if c.opts.Preset == "vscode" {
@@ -219,6 +236,8 @@ func (c *coverageCmd) run() error {
 			NumJobs:      c.opts.NumBuildJobs,
 			Stdout:       c.OutOrStdout(),
 			Stderr:       c.ErrOrStderr(),
+			BuildStdout:  c.opts.buildStdout,
+			BuildStderr:  c.opts.buildStderr,
 			Verbose:      viper.GetBool("verbose"),
 		}
 	case config.BuildSystemCMake, config.BuildSystemOther:
@@ -232,8 +251,9 @@ func (c *coverageCmd) run() error {
 			UseSandbox:     c.opts.UseSandbox,
 			FuzzTest:       c.opts.fuzzTest,
 			ProjectDir:     c.opts.ProjectDir,
-			StdOut:         c.OutOrStdout(),
-			StdErr:         c.OutOrStderr(),
+			Stderr:         c.OutOrStderr(),
+			BuildStdout:    c.opts.buildStdout,
+			BuildStderr:    c.opts.buildStderr,
 		}
 	case config.BuildSystemGradle:
 		gen = &gradleCoverage.CoverageGenerator{
@@ -242,8 +262,10 @@ func (c *coverageCmd) run() error {
 			ProjectDir: c.opts.ProjectDir,
 			Parallel: gradle.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
-			}, StdOut: c.OutOrStdout(),
-			StdErr: c.OutOrStderr(),
+			},
+			Stderr:      c.OutOrStderr(),
+			BuildStdout: c.opts.buildStdout,
+			BuildStderr: c.opts.buildStderr,
 		}
 	case config.BuildSystemMaven:
 		gen = &mavenCoverage.CoverageGenerator{
@@ -254,8 +276,9 @@ func (c *coverageCmd) run() error {
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,
 			},
-			StdOut: c.OutOrStdout(),
-			StdErr: c.OutOrStderr(),
+			Stderr:      c.OutOrStderr(),
+			BuildStdout: c.opts.buildStdout,
+			BuildStderr: c.opts.buildStderr,
 		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
@@ -263,6 +286,14 @@ func (c *coverageCmd) run() error {
 
 	err = gen.BuildFuzzTestForCoverage()
 	if err != nil {
+		if cmdutils.ShouldLogBuildToFile() {
+			log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BuildInProgressErrorMsg)
+			printErr := cmdutils.PrintBuildLogOnStdout()
+			if printErr != nil {
+				log.Error(printErr)
+			}
+		}
+
 		var execErr *cmdutils.ExecError
 		if errors.As(err, &execErr) {
 			// It is expected that some commands might fail due to user
@@ -273,6 +304,12 @@ func (c *coverageCmd) run() error {
 		}
 		return err
 	}
+
+	if cmdutils.ShouldLogBuildToFile() {
+		log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BuildInProgressSuccessMsg)
+		log.Info(cmdutils.GetMsgPathToBuildLog())
+	}
+
 	reportPath, err := gen.GenerateCoverageReport()
 	if err != nil {
 		return err

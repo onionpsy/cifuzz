@@ -28,6 +28,8 @@ type CoverageGenerator struct {
 	NumJobs      uint
 	Stdout       io.Writer
 	Stderr       io.Writer
+	BuildStdout  io.Writer
+	BuildStderr  io.Writer
 	Verbose      bool
 }
 
@@ -84,8 +86,8 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	cmd := exec.Command("bazel", args...)
 	// Redirect the build command's stdout to stderr to only have
 	// reports printed to stdout
-	cmd.Stdout = cov.Stderr
-	cmd.Stderr = cov.Stderr
+	cmd.Stdout = cov.BuildStdout
+	cmd.Stderr = cov.BuildStderr
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {

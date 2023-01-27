@@ -29,8 +29,9 @@ type CoverageGenerator struct {
 
 	Parallel gradle.ParallelOptions
 
-	StdOut io.Writer
-	StdErr io.Writer
+	Stderr      io.Writer
+	BuildStdout io.Writer
+	BuildStderr io.Writer
 
 	runfilesFinder runfiles.RunfilesFinder
 }
@@ -86,7 +87,7 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	defer reportFile.Close()
-	summary.ParseJacocoXML(reportFile).PrintTable(cov.StdErr)
+	summary.ParseJacocoXML(reportFile).PrintTable(cov.Stderr)
 
 	if cov.OutputFormat == coverage.FormatJacocoXML {
 		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
@@ -111,8 +112,8 @@ func (cov *CoverageGenerator) runGradleCommand(args []string) error {
 
 	cmd := executil.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Dir = cov.ProjectDir
-	cmd.Stdout = cov.StdOut
-	cmd.Stderr = cov.StdErr
+	cmd.Stdout = cov.BuildStdout
+	cmd.Stderr = cov.BuildStderr
 	log.Debugf("Running gradle command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 
 	sigs := make(chan os.Signal, 1)

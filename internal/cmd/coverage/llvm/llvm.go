@@ -41,8 +41,9 @@ type CoverageGenerator struct {
 	UseSandbox     bool
 	FuzzTest       string
 	ProjectDir     string
-	StdOut         io.Writer
-	StdErr         io.Writer
+	Stderr         io.Writer
+	BuildStdout    io.Writer
+	BuildStderr    io.Writer
 
 	buildResult    *build.Result
 	tmpDir         string
@@ -104,8 +105,8 @@ func (cov *CoverageGenerator) build() error {
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: uint(cov.NumBuildJobs),
 			},
-			Stdout: cov.StdOut,
-			Stderr: cov.StdErr,
+			Stdout: cov.BuildStdout,
+			Stderr: cov.BuildStderr,
 			// We want the runtime deps in the build result because we
 			// pass them to the llvm-cov command.
 			FindRuntimeDeps: true,
@@ -133,8 +134,8 @@ func (cov *CoverageGenerator) build() error {
 			BuildCommand:   cov.BuildCommand,
 			Sanitizers:     []string{"coverage"},
 			RunfilesFinder: cov.runfilesFinder,
-			Stdout:         cov.StdOut,
-			Stderr:         cov.StdErr,
+			Stdout:         cov.BuildStdout,
+			Stderr:         cov.BuildStderr,
 		})
 		if err != nil {
 			return err
@@ -304,7 +305,7 @@ func (cov *CoverageGenerator) report() (string, error) {
 		return "", err
 	}
 	reportReader := strings.NewReader(lcovReportSummary)
-	summary.ParseLcov(reportReader).PrintTable(cov.StdErr)
+	summary.ParseLcov(reportReader).PrintTable(cov.Stderr)
 
 	reportPath := ""
 	switch cov.OutputFormat {
