@@ -83,7 +83,8 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 		}
 
 		for _, runtimeDep := range buildResult.RuntimeDeps {
-			log.Printf("runtime dept: %s\n", runtimeDep)
+			log.Debugf("runtime dept: %s", runtimeDep)
+
 			// check if the file exists
 			entry, err := os.Stat(runtimeDep)
 			if os.IsNotExist(err) {
@@ -194,8 +195,8 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: b.opts.NumBuildJobs,
 			},
-			Stdout: b.opts.Stdout,
-			Stderr: b.opts.Stderr,
+			Stdout: b.opts.BuildStdout,
+			Stderr: b.opts.BuildStderr,
 		})
 		if err != nil {
 			return nil, err
@@ -215,8 +216,8 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: b.opts.NumBuildJobs,
 			},
-			Stdout: b.opts.Stdout,
-			Stderr: b.opts.Stderr,
+			Stdout: b.opts.BuildStdout,
+			Stderr: b.opts.BuildStderr,
 		})
 		if err != nil {
 			return nil, err

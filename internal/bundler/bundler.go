@@ -111,8 +111,6 @@ func (b *Bundler) Bundle() error {
 		return errors.WithStack(err)
 	}
 
-	log.Successf("Successfully created bundle: %s", b.opts.OutputPath)
-
 	return nil
 }
 

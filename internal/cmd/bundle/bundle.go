@@ -152,18 +152,39 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 			}
 			opts.FuzzTests = fuzzTests
 
+			opts.BuildStdout = cmd.OutOrStdout()
+			opts.BuildStderr = cmd.OutOrStderr()
+			if cmdutils.ShouldLogBuildToFile() {
+				opts.BuildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, opts.FuzzTests)
+				if err != nil {
+					log.Errorf(err, "Failed to setup logging: %v", err.Error())
+					return cmdutils.WrapSilentError(err)
+				}
+				opts.BuildStderr = opts.BuildStdout
+			}
+
 			if isOSIndependent {
 				log.Warnf("WARNING: Bundling for %s is experimental and is currently not supported for remote runs.",
 					opts.BuildSystem)
 			}
+
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			opts.Stdout = c.OutOrStdout()
-			opts.Stderr = c.OutOrStderr()
+			if cmdutils.ShouldLogBuildToFile() {
+				log.CreateCurrentProgressSpinner(nil, log.BundleInProgressMsg)
+			}
 
 			err := bundler.New(&opts.Opts).Bundle()
 			if err != nil {
+				if cmdutils.ShouldLogBuildToFile() {
+					log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BundleInProgressErrorMsg)
+					printErr := cmdutils.PrintBuildLogOnStdout()
+					if printErr != nil {
+						log.Error(printErr)
+					}
+				}
+
 				var execErr *cmdutils.ExecError
 				if errors.As(err, &execErr) {
 					// It is expected that some commands might fail due to user
@@ -172,8 +193,16 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 					log.Error(err)
 					return cmdutils.ErrSilent
 				}
+
 				return err
 			}
+
+			if cmdutils.ShouldLogBuildToFile() {
+				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
+				log.Info(cmdutils.GetMsgPathToBuildLog())
+			}
+			log.Successf("Successfully created bundle: %s", opts.OutputPath)
+
 			return nil
 		},
 	}

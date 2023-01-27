@@ -151,8 +151,8 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
 			NumJobs:    b.opts.NumBuildJobs,
-			Stdout:     b.opts.Stdout,
-			Stderr:     b.opts.Stderr,
+			Stdout:     b.opts.BuildStdout,
+			Stderr:     b.opts.BuildStderr,
 			TempDir:    b.opts.tempDir,
 			Verbose:    viper.GetBool("verbose"),
 		})
@@ -190,8 +190,8 @@ func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVa
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: b.opts.NumBuildJobs,
 			},
-			Stdout:          b.opts.Stdout,
-			Stderr:          b.opts.Stderr,
+			Stdout:          b.opts.BuildStdout,
+			Stderr:          b.opts.BuildStderr,
 			FindRuntimeDeps: true,
 		})
 		if err != nil {
@@ -235,11 +235,14 @@ func (b *libfuzzerBundler) printBuildingMsg(variant configureVariant, i int) {
 	} else {
 		typeDisplayString = "fuzzing"
 	}
+
 	// Print a newline to separate the build logs unless this is the
+
 	// first variant build
-	if i > 0 {
+	if i > 0 && !cmdutils.ShouldLogBuildToFile() {
 		log.Print()
 	}
+
 	log.Infof("Building for %s...", typeDisplayString)
 }
 
@@ -250,8 +253,8 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 			ProjectDir:   b.opts.ProjectDir,
 			BuildCommand: b.opts.BuildCommand,
 			Sanitizers:   variant.Sanitizers,
-			Stdout:       b.opts.Stdout,
-			Stderr:       b.opts.Stderr,
+			Stdout:       b.opts.BuildStdout,
+			Stderr:       b.opts.BuildStderr,
 		})
 		if err != nil {
 			return nil, err

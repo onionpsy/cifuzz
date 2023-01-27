@@ -33,10 +33,12 @@ type Opts struct {
 	// Fields which are not configurable via viper (i.e. via cifuzz.yaml
 	// and CIFUZZ_* environment variables), by setting
 	// mapstructure:"-"
-	FuzzTests  []string  `mapstructure:"-"`
-	OutputPath string    `mapstructure:"-"`
-	Stdout     io.Writer `mapstructure:"-"`
-	Stderr     io.Writer `mapstructure:"-"`
+	FuzzTests   []string  `mapstructure:"-"`
+	OutputPath  string    `mapstructure:"-"`
+	Stdout      io.Writer `mapstructure:"-"`
+	Stderr      io.Writer `mapstructure:"-"`
+	BuildStdout io.Writer `mapstructure:"-"`
+	BuildStderr io.Writer `mapstructure:"-"`
 
 	tempDir string `mapstructure:"-"`
 
