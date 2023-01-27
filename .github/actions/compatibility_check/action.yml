@@ -10,17 +10,17 @@ runs:
     - name: Setup (linux)
       if: contains(inputs.os, 'ubuntu')
       run: |
-        echo "INSTALLER=cifuzz_installer_linux" >> $GITHUB_ENV
+        echo "INSTALLER=cifuzz_installer_linux_amd64" >> $GITHUB_ENV
       shell: bash
 
     - name: Setup (macos)
       if: contains(inputs.os, 'macos')
-      run: echo "INSTALLER=cifuzz_installer_darwin" >> $GITHUB_ENV
+      run: echo "INSTALLER=cifuzz_installer_macOS_amd64" >> $GITHUB_ENV
       shell: bash
 
     - name: Setup (windows)
       if: contains(inputs.os, 'windows')
-      run: echo "INSTALLER=cifuzz_installer_windows.exe" >> $GITHUB_ENV
+      run: echo "INSTALLER=cifuzz_installer_windows_amd64.exe" >> $GITHUB_ENV
       shell: bash
 
     - name: Download & execute latest installer

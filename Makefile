@@ -1,16 +1,20 @@
 current_os :=
+label_os :=
 bin_ext := 
 
 ifeq ($(OS),Windows_NT)
 	current_os = windows
+	label_os = windows
 	bin_ext = .exe
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
 		current_os = linux
+		label_os = linux
 	endif
 	ifeq ($(UNAME_S),Darwin)
 		current_os = darwin
+		label_os = macOS 
 		UNAME_P := $(shell uname -p)
 	endif
 endif
@@ -65,13 +69,13 @@ install:
 .PHONY: installer
 installer:
 	go run tools/builder/builder.go --version $(version)
-	go build -tags installer -o $(installer_base_path)_$(current_os)$(bin_ext) cmd/installer/installer.go
+	go build -tags installer -o $(installer_base_path)_$(label_os)_amd64$(bin_ext) cmd/installer/installer.go
 	rm -rf cmd/installer/build
 
 .PHONY: installer/darwin-arm64
 installer/darwin-arm64:
 	go run tools/builder/builder.go --version $(version) --goos darwin --goarch arm64
-	GOOS=darwin GOARCH=arm64 go build -tags installer -o $(installer_base_path)_darwin_arm64 cmd/installer/installer.go
+	GOOS=darwin GOARCH=arm64 go build -tags installer -o $(installer_base_path)_macOS_arm64 cmd/installer/installer.go
 	rm -rf cmd/installer/build
 
 .PHONY: build
@@ -91,9 +95,9 @@ build/windows: deps
 .PHONY: build/darwin
 build/darwin: deps
 ifeq ($(UNAME_P), arm)
-	env GOOS=darwin GOARCH=arm64 go build -o $(binary_base_path)_darwin cmd/cifuzz/main.go
+	env GOOS=darwin GOARCH=arm64 go build -o $(binary_base_path)_macOS cmd/cifuzz/main.go
 else
-	env GOOS=darwin GOARCH=amd64 go build -o $(binary_base_path)_darwin cmd/cifuzz/main.go
+	env GOOS=darwin GOARCH=amd64 go build -o $(binary_base_path)_macOS cmd/cifuzz/main.go
 endif
 
 .PHONY: lint
