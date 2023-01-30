@@ -23,7 +23,7 @@ import (
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
-// The CMake configuration (also called "build type") to use for fuzzing runs.
+// The default and recommended CMake configuration (also called "build type") to use for fuzzing runs.
 // See enable_fuzz_testing in tools/cmake/modules/cifuzz-functions.cmake for the rationale for using this
 // build type.
 const cmakeBuildConfiguration = "RelWithDebInfo"
@@ -43,6 +43,8 @@ type BuilderOptions struct {
 	BuildOnly  bool
 
 	FindRuntimeDeps bool
+
+	cmakeBuildConfiguration string
 }
 
 func (opts *BuilderOptions) Validate() error {
@@ -70,6 +72,9 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	}
 
 	b := &Builder{BuilderOptions: opts}
+
+	// Check what cmake build configuration should be used
+	b.cmakeBuildConfiguration = b.checkForUserCmakeBuildType()
 
 	// Ensure that the build directory exists.
 	buildDir, err := b.BuildDir()
@@ -147,7 +152,7 @@ func (b *Builder) Configure() error {
 	}
 
 	cacheArgs := []string{
-		"-DCMAKE_BUILD_TYPE=" + cmakeBuildConfiguration,
+		"-DCMAKE_BUILD_TYPE=" + b.cmakeBuildConfiguration,
 		"-DCIFUZZ_ENGINE=libfuzzer",
 		"-DCIFUZZ_SANITIZERS=" + strings.Join(b.Sanitizers, ";"),
 		"-DCIFUZZ_TESTING:BOOL=ON",
@@ -193,7 +198,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 
 	flags := append([]string{
 		"--build", buildDir,
-		"--config", cmakeBuildConfiguration,
+		"--config", b.cmakeBuildConfiguration,
 		"--target"}, fuzzTests...)
 
 	if b.Parallel.Enabled {
@@ -298,7 +303,7 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 		"cmake",
 		"--install",
 		buildDir,
-		"--config", cmakeBuildConfiguration,
+		"--config", b.cmakeBuildConfiguration,
 		"--component", "cifuzz_internal_deps_"+fuzzTest,
 	)
 	stdout, err := cmd.Output()
@@ -386,15 +391,32 @@ func (b *Builder) fuzzTestsInfoDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	// The path to the info file for single-configuration CMake generators (e.g. Makefiles).
 	fuzzTestsDir := filepath.Join(buildDir, ".cifuzz", "fuzz_tests")
 	if fileutil.IsDir(fuzzTestsDir) {
 		return fuzzTestsDir, nil
 	}
 	// The path to the info file for multi-configuration CMake generators (e.g. MSBuild).
-	fuzzTestsDir = filepath.Join(buildDir, cmakeBuildConfiguration, ".cifuzz", "fuzz_tests")
+	fuzzTestsDir = filepath.Join(buildDir, b.cmakeBuildConfiguration, ".cifuzz", "fuzz_tests")
 	if fileutil.IsDir(fuzzTestsDir) {
 		return fuzzTestsDir, nil
 	}
 	return "", os.ErrNotExist
+}
+
+// checkForUserCmakeBuildType checks if the user added the flag
+// "-D CMAKE_BUILD_TYPE=..." because it will change the build tree.
+func (b *Builder) checkForUserCmakeBuildType() string {
+	for _, arg := range b.Args {
+		if strings.Contains(arg, "CMAKE_BUILD_TYPE") {
+			_, dir, found := strings.Cut(arg, "=")
+			if found {
+				log.Warnf("We recommend not setting the CMAKE_BUILD_TYPE flag, as we cannot guarantee a successful fuzz test build.")
+				return dir
+			}
+		}
+	}
+
+	return cmakeBuildConfiguration
 }
