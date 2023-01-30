@@ -76,7 +76,11 @@ func clangVersion(dep *Dependency, clangCheck execCheck) (*semver.Version, error
 		log.Debugf("Found clang version %s in CC: %s", ccVersion.String(), cc)
 		clangVersion = ccVersion
 	} else {
-		log.Warn("No clang found in CC")
+		clang, err := exec.LookPath("clang")
+		if err != nil {
+			return nil, err
+		}
+		log.Warn("No clang found in CC, now using ", clang)
 	}
 
 	cxx := envutil.GetEnvWithPathSubstring(env, "CXX", "clang++")
@@ -94,7 +98,11 @@ func clangVersion(dep *Dependency, clangCheck execCheck) (*semver.Version, error
 Other llvm tools like llvm-cov are selected based on the smaller version.`)
 		}
 	} else {
-		log.Warn("No clang++ found in CXX")
+		clangPP, err := exec.LookPath("clang++")
+		if err != nil {
+			return nil, err
+		}
+		log.Warn("No clang++ found in CC, now using ", clangPP)
 	}
 
 	if clangVersion == nil {
