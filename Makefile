@@ -14,7 +14,7 @@ else
 	endif
 	ifeq ($(UNAME_S),Darwin)
 		current_os = darwin
-		label_os = macOS 
+		label_os = macOS
 		UNAME_P := $(shell uname -p)
 	endif
 endif
