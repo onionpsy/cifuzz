@@ -21,14 +21,11 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
     // Use Jazzer for fuzzing.
     testImplementation 'com.code-intelligence:jazzer-junit:0.13.3'
-
-    // This dependency is used by the application.
-    implementation 'com.google.guava:guava:31.1-jre'
 }
 
 application {
     // Define the main class for the application.
-    mainClass = 'com.github.CodeIntelligenceTesting.cifuzz.App'
+    mainClass = 'com.example.App'
 }
 
 test {
