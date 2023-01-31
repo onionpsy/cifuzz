@@ -109,6 +109,76 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	require.Equal(t, expectedContents, actualContents)
 }
 
+func TestListFuzzTests(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "bundle-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(tempDir)
+	require.NoError(t, err)
+
+	testRoot := filepath.Join(tempDir, "src", "test", "java")
+	err = os.MkdirAll(testRoot, 0o755)
+	require.NoError(t, err)
+	firstPackage := filepath.Join(testRoot, "com", "example")
+	err = os.MkdirAll(firstPackage, 0o755)
+	require.NoError(t, err)
+	secondPackage := filepath.Join(testRoot, "org", "example", "foo")
+	err = os.MkdirAll(secondPackage, 0o755)
+	require.NoError(t, err)
+
+	err = os.WriteFile(filepath.Join(firstPackage, "FuzzTest.java"), []byte(`
+package com.example;
+
+import com.code_intelligence.jazzer.junit.FuzzTest;
+
+class FuzzTest {
+    @FuzzTest
+    void fuzz(byte[] data) {}
+}
+`), 0o644)
+	require.NoError(t, err)
+
+	err = os.WriteFile(filepath.Join(secondPackage, "Bar.java"), []byte(`
+package org.example.foo;
+
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.code_intelligence.jazzer.junit.FuzzTest;
+
+public class Bar {
+    public static void fuzzerTestOneInput(FuzzedDataProvider data) {}
+}
+`), 0o644)
+	require.NoError(t, err)
+
+	err = os.WriteFile(filepath.Join(secondPackage, "Baz.txt"), []byte(`
+package org.example.foo;
+
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.code_intelligence.jazzer.junit.FuzzTest;
+
+public class Baz {
+    public static void fuzzerTestOneInput(FuzzedDataProvider data) {}
+}
+`), 0o644)
+	require.NoError(t, err)
+
+	fuzzTests, err := listFuzzTests(tempDir)
+	require.NoError(t, err)
+	require.ElementsMatchf(t, []string{
+		"com.example.FuzzTest", "org.example.foo.Bar",
+	}, fuzzTests, "Expected to find fuzz test in %s", tempDir)
+}
+
+func TestListFuzzTests_DoesNotExist(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "bundle-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(tempDir)
+	require.NoError(t, err)
+
+	fuzzTests, err := listFuzzTests(tempDir)
+	require.NoError(t, err)
+	require.Empty(t, fuzzTests)
+}
+
 func listFilesRecursively(dir string) ([]string, error) {
 	var paths []string
 

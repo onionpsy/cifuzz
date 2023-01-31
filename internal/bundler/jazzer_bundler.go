@@ -260,6 +260,11 @@ func listFuzzTests(projectDir string) ([]string, error) {
 
 	var fuzzTests []string
 	err := filepath.WalkDir(testDir, func(path string, d fs.DirEntry, err error) error {
+		if d == nil {
+			// testDir doesn't exist.
+			return nil
+		}
+
 		if d.IsDir() || filepath.Ext(path) != ".java" {
 			return nil
 		}
