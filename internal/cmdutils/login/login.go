@@ -27,10 +27,11 @@ func GetToken(server string) string {
 }
 
 func ReadTokenInteractively(server string) (string, error) {
-	url, err := url.JoinPath(server, "/dashboard/settings/account/tokens?create&origin=cli")
+	url, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
 	if err != nil {
 		return "", err
 	}
+	url += "?create&origin=cli"
 
 	log.Printf("You need an API access token which can be generated here:\n%s", url)
 
