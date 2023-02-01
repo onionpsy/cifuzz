@@ -311,6 +311,13 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 		buildResult.Executable = newExecutablePath
 	}
 
+	// Try to copy the regular files first before copying the corresponding symlinks.
+	// Failing to do so results in errors that target of the symlink does not exist
+	// in the temp directory.
+	sort.Slice(buildResult.RuntimeDeps, func(i, j int) bool {
+		return !fileutil.IsSymlink(buildResult.RuntimeDeps[i])
+	})
+
 	for i, dep := range buildResult.RuntimeDeps {
 		isBelow, err := fileutil.IsBelow(dep, buildResult.BuildDir)
 		if err != nil {
