@@ -772,6 +772,11 @@ func (c *runCmd) uploadFindings(fuzzTarget string, numBuildJobs uint) error {
 		if err != nil {
 			return cmdutils.WrapSilentError(err)
 		}
+
+		log.Infof(`To permanently sync findings to this project, add a 'project' entry to your cifuzz.yaml.
+For example:
+    echo "project: %s" >> cifuzz.yaml`, strings.TrimPrefix(project, "projects/"))
+		log.Info()
 	} else {
 		// check if project exists on server
 		found := false
