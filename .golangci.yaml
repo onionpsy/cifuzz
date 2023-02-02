@@ -26,4 +26,5 @@ linters-settings:
       - ifElseChain
       - singleCaseSwitch
 
-args: --timeout=3m
+run:
+  timeout: 3m
