@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -22,6 +23,9 @@ func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, er
 			fuzzTestName += "_" + fuzzTestNames[i]
 		}
 	}
+
+	// Make sure that calling fuzz tests in subdirs don't mess up the build log path
+	fuzzTestName = strings.ReplaceAll(fuzzTestName, string(os.PathSeparator), "_")
 
 	logDir := filepath.Join(projectDir, ".cifuzz-build", "logs")
 	// create logs dir if it doesn't exist
