@@ -37,19 +37,19 @@ func (b *Bundler) Bundle() error {
 	}
 	defer fileutil.Cleanup(b.opts.tempDir)
 
-	var outputPath string
 	if b.opts.OutputPath != "" {
-		outputPath = b.opts.OutputPath
+		// do nothing
 	} else if len(b.opts.FuzzTests) == 1 {
-		outputPath = filepath.Base(b.opts.FuzzTests[0]) + ".tar.gz"
+		b.opts.OutputPath = filepath.Base(b.opts.FuzzTests[0]) + ".tar.gz"
 	} else {
-		outputPath = "fuzz_tests.tar.gz"
+		b.opts.OutputPath = "fuzz_tests.tar.gz"
 	}
 
-	bundle, err := os.Create(outputPath)
+	bundle, err := os.Create(b.opts.OutputPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to create fuzzing artifact archive")
 	}
+
 	bufWriter := bufio.NewWriter(bundle)
 	archiveWriter := archive.NewArchiveWriter(bufWriter)
 
