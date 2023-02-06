@@ -37,7 +37,7 @@ func NewCIFuzzBuilder(opts Options) (*CIFuzzBuilder, error) {
 
 	// Validate options
 	if opts.Version == "" {
-		return nil, err
+		return nil, errors.New("No version is provided")
 	}
 	opts.TargetDir, err = validateTargetDir(opts.TargetDir)
 	if err != nil {
