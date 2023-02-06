@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 
@@ -201,7 +202,9 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
 				log.Info(cmdutils.GetMsgPathToBuildLog())
 			}
-			log.Successf("Successfully created bundle: %s", opts.OutputPath)
+
+			// FIXME: Using fmt to make sure we print to stdout and not stderr.
+			fmt.Printf("✅ Successfully created bundle: %s", opts.OutputPath)
 
 			return nil
 		},
