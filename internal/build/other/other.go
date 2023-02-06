@@ -375,10 +375,24 @@ func (b *Builder) findSharedLibraries(executable string) ([]string, error) {
 	}
 
 	for _, fileInfo := range filesInfo {
-		if sharedLibraryRegex.MatchString(fileInfo.FullName) {
+		if !isStandardSystemLibrary(fileInfo.FullName) {
 			sharedObjects = append(sharedObjects, fileInfo.FullName)
 		}
 	}
 
 	return sharedObjects, err
+}
+
+func isStandardSystemLibrary(library string) bool {
+	if !sharedLibraryRegex.MatchString(library) {
+		return false
+	}
+
+	for _, stdLibTopDir := range []string{"/usr", "/lib", "/lib64", "/lib32", "libx32"} {
+		if strings.HasPrefix(library, stdLibTopDir) {
+			return false
+		}
+	}
+
+	return true
 }
