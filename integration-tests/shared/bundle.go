@@ -376,18 +376,16 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, a
 	env, err := envutil.Setenv(os.Environ(), "BAR", "bar")
 	require.NoError(t, err)
 	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	t.Logf("Command: %s", cmd.String())
 
 	// Terminate the cifuzz process when we receive a termination signal
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	err = cmd.Run()
+	out, err := cmd.Output()
 	require.NoError(t, err)
 	require.FileExists(t, bundlePath)
-
+	assert.Contains(t, string(out), "Successfully created bundle: "+bundlePath)
 	// Extract the archive into a new temporary directory.
 	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
 	require.NoError(t, err)
