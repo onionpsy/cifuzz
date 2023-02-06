@@ -340,7 +340,16 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 			return errors.WithStack(err)
 		}
 		newDepPath := filepath.Join(tempDir, relPath)
-		err = copy.Copy(dep, newDepPath)
+
+		// When dealing with symlinks, resolve the path so that we copy the actual file
+		// to the temporary directory. This ensures that the dynamic dependencies resolved
+		// by ldd and added into the bundle are valid files.
+		resolvedPath, err := filepath.EvalSymlinks(dep)
+		if err != nil {
+			return err
+		}
+		err = copy.Copy(resolvedPath, newDepPath)
+
 		if err != nil {
 			return errors.WithStack(err)
 		}
