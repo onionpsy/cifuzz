@@ -75,6 +75,20 @@ Debian LLVM version 14.0.6
   Default target: x86_64-pc-linux-gnu
   Host CPU: skylake`,
 	},
+	{
+		Want:  semver.MustParse("1.8.0"),
+		Regex: javaRegex,
+		Output: `openjdk version "1.8.0_265"
+OpenJDK Runtime Environment (AdoptOpenJDK)(build 1.8.0_265-b01)
+OpenJDK 64-Bit Server VM (AdoptOpenJDK)(build 25.265-b01, mixed mode)`,
+	},
+	{
+		Want:  semver.MustParse("18.0.0"),
+		Regex: javaRegex,
+		Output: `openjdk version "18" 2022-03-22
+OpenJDK Runtime Environment (build 18+36-2087)
+OpenJDK 64-Bit Server VM (build 18+36-2087, mixed mode, sharing)`,
+	},
 }
 
 func TestVersionParsing(t *testing.T) {

@@ -134,7 +134,7 @@ var deps = Dependencies{
 	},
 	JAVA: {
 		Key:        JAVA,
-		MinVersion: *semver.MustParse("8.0.0"),
+		MinVersion: *semver.MustParse("1.8.0"),
 		GetVersion: javaVersion,
 		Installed: func(dep *Dependency) bool {
 			return dep.checkFinder(dep.finder.JavaHomePath)

@@ -141,7 +141,7 @@ choco install cmake llvm
  <summary>C/C++ with Bazel</summary>
 
 * [Bazel >= 5.3.2 (>=6.0.0 on macOS)](https://bazel.build/install)
-* Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
+* Java JDK >= 8 (1.8) (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
   is needed for Bazel's coverage feature.
 * [LLVM >= 11](https://clang.llvm.org/get_started.html)
@@ -187,7 +187,7 @@ choco install cmake llvm microsoft-openjdk bazelisk zip
 <details>
  <summary>Java with Maven</summary>
 
-* Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
+* Java JDK >= 8 (1.8) (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
 * [Maven](https://maven.apache.org/install.html)
 
@@ -224,7 +224,7 @@ choco install microsoft-openjdk maven
 <details>
  <summary>Java with Gradle</summary>
 
-* Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
+* Java JDK >= 8 (1.8) (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
 * [Gradle](https://gradle.org/install/) >= 5.0 
 

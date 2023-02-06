@@ -24,7 +24,7 @@ var (
 	clangRegex = regexp.MustCompile(`(?m)clang version (?P<version>\d+\.\d+(\.\d+)?)`)
 	cmakeRegex = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
 	llvmRegex  = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
-	javaRegex  = regexp.MustCompile(`(?m)version \"(?P<version>\d+(\.\d+\.\d+)?)\"`)
+	javaRegex  = regexp.MustCompile(`(?m)version \"(?P<version>\d+(\.\d+\.\d+)?)(_\d+)?\"`)
 	bazelRegex = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
 )
 
