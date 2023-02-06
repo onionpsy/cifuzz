@@ -328,13 +328,14 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 		if err != nil {
 			return err
 		}
-		if !isBelow {
-			// If the file is not below the build dir, we assume
-			// that it was not created during the build, so we
-			// don't need to copy it
-			continue
+		var topDir string
+		if isBelow {
+			topDir = buildResult.BuildDir
+		} else {
+			topDir = "/"
 		}
-		relPath, err := filepath.Rel(buildResult.BuildDir, dep)
+
+		relPath, err := filepath.Rel(topDir, dep)
 		if err != nil {
 			return errors.WithStack(err)
 		}
