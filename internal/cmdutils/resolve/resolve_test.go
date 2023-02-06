@@ -84,9 +84,30 @@ func TestResolveMavenGradle(t *testing.T) {
 	require.NoError(t, err)
 
 	fuzzTestName := "com.example.fuzz_test_1.FuzzTestCase"
+
+	// Java file
 	// relative path
 	srcFile := filepath.Join("src", "test", "java", "com", "example", "fuzz_test_1", "FuzzTestCase.java")
 	resolved, err := resolve(srcFile, config.BuildSystemGradle, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+	resolved, err = resolve(srcFile, config.BuildSystemMaven, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+
+	// absolute path
+	srcFile = filepath.Join(pwd, srcFile)
+	resolved, err = resolve(srcFile, config.BuildSystemGradle, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+	resolved, err = resolve(srcFile, config.BuildSystemMaven, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+
+	// Kotlin file
+	// relative path
+	srcFile = filepath.Join("src", "test", "kotlin", "com", "example", "fuzz_test_1", "FuzzTestCase.kt")
+	resolved, err = resolve(srcFile, config.BuildSystemGradle, pwd)
 	assert.NoError(t, err)
 	assert.Equal(t, fuzzTestName, resolved)
 	resolved, err = resolve(srcFile, config.BuildSystemMaven, pwd)

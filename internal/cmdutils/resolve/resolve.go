@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -85,22 +86,31 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 		return fuzzTest, nil
 
 	case config.BuildSystemMaven, config.BuildSystemGradle:
-		testDir := filepath.Join(projectDir, "src", "test", "java")
+		testDir := filepath.Join(projectDir, "src", "test")
+		matches, err := zglob.Glob(filepath.Join(testDir, "**", "*.{java,kt}"))
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
 
 		var pathToFile string
 		found := false
-		err := filepath.WalkDir(testDir, func(p string, d fs.DirEntry, err error) error {
-			if (filepath.IsAbs(path) && p == path) ||
-				p == filepath.Join(projectDir, path) {
-				pathToFile = p
+		for _, match := range matches {
+			if (filepath.IsAbs(path) && match == path) ||
+				match == filepath.Join(projectDir, path) {
+				pathToFile = match
 				found = true
-				return nil
 			}
 
-			return err
-		})
-		if err != nil {
-			return "", errors.WithStack(err)
+			if !found && runtime.GOOS == "windows" {
+				// Try out different slashes under windows to support both formats for user convenience
+				// (since zglob.Glob() returns paths with slashes instead of backslashes on windows)
+				match = strings.ReplaceAll(match, "/", "\\")
+				if (filepath.IsAbs(path) && match == path) ||
+					match == filepath.Join(projectDir, path) {
+					pathToFile = match
+					found = true
+				}
+			}
 		}
 		if !found {
 			return "", errNoFuzzTest
