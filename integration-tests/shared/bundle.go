@@ -382,7 +382,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, a
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 	require.FileExists(t, bundlePath)
 	assert.Contains(t, string(out), "Successfully created bundle: "+bundlePath)
