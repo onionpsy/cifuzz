@@ -16,16 +16,19 @@ import (
 var buildLogPath string
 
 func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, error) {
-	// Handle multiple fuzz tests
-	fuzzTestName := fuzzTestNames[0]
-	if len(fuzzTestNames) > 1 {
-		for i := 1; i < len(fuzzTestNames); i++ {
-			fuzzTestName += "_" + fuzzTestNames[i]
-		}
+	// Determine identifier for file
+	var logSuffix string
+	switch {
+	case len(fuzzTestNames) == 0 || (len(fuzzTestNames) == 1 && fuzzTestNames[0] == ""):
+		logSuffix = "all"
+	case len(fuzzTestNames) > 1:
+		logSuffix = strings.Join(fuzzTestNames, "_")
+	default:
+		logSuffix = fuzzTestNames[0]
 	}
-
 	// Make sure that calling fuzz tests in subdirs don't mess up the build log path
-	fuzzTestName = strings.ReplaceAll(fuzzTestName, string(os.PathSeparator), "_")
+	logSuffix = strings.ReplaceAll(logSuffix, string(os.PathSeparator), "_")
+	logFile := fmt.Sprintf("build-%s.log", logSuffix)
 
 	logDir := filepath.Join(projectDir, ".cifuzz-build", "logs")
 	// create logs dir if it doesn't exist
@@ -34,7 +37,6 @@ func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, er
 		return nil, err
 	}
 
-	logFile := fmt.Sprintf("build-%s.log", fuzzTestName)
 	buildLogPath = filepath.Join(logDir, logFile)
 	return os.OpenFile(buildLogPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 }
