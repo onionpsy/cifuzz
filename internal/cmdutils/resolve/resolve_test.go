@@ -3,6 +3,7 @@ package resolve
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,6 +117,43 @@ func TestResolveMavenGradle(t *testing.T) {
 
 	// absolute path
 	srcFile = filepath.Join(pwd, srcFile)
+	resolved, err = resolve(srcFile, config.BuildSystemGradle, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+	resolved, err = resolve(srcFile, config.BuildSystemMaven, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+}
+
+func TestResolveMavenGradleWindowsPaths(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip()
+	}
+
+	oldWd, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		err = os.Chdir(oldWd)
+		require.NoError(t, err)
+	}()
+
+	err = os.Chdir(filepath.Join("testdata", "maven_gradle"))
+	require.NoError(t, err)
+
+	pwd, err := os.Getwd()
+	require.NoError(t, err)
+
+	fuzzTestName := "com.example.fuzz_test_1.FuzzTestCase"
+
+	srcFile := "src/test/java/com/example/fuzz_test_1/FuzzTestCase.java"
+	resolved, err := resolve(srcFile, config.BuildSystemGradle, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+	resolved, err = resolve(srcFile, config.BuildSystemMaven, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+
+	srcFile = "src\\test\\java\\com\\example\\fuzz_test_1\\FuzzTestCase.java"
 	resolved, err = resolve(srcFile, config.BuildSystemGradle, pwd)
 	assert.NoError(t, err)
 	assert.Equal(t, fuzzTestName, resolved)
