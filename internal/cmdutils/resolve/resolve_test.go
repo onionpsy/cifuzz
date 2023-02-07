@@ -12,19 +12,48 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 )
 
-func TestResolveBazel(t *testing.T) {
-	oldWd, err := os.Getwd()
+func TestResolve(t *testing.T) {
+	originalWd, err := os.Getwd()
 	require.NoError(t, err)
-	defer func() {
-		err = os.Chdir(oldWd)
+	revertToOriginalWd := func() {
+		err = os.Chdir(originalWd)
 		require.NoError(t, err)
-	}()
+	}
 
-	err = os.Chdir(filepath.Join("testdata", "bazel"))
-	require.NoError(t, err)
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
+	changeWdToTestData := func(dir string) string {
+		err := os.Chdir(filepath.Join("testdata", dir))
+		require.NoError(t, err)
+		pwd, err := os.Getwd()
+		require.NoError(t, err)
+		return pwd
+	}
 
+	t.Run("resolveBazel", func(t *testing.T) {
+		defer revertToOriginalWd()
+		pwd := changeWdToTestData("bazel")
+		testResolveBazel(t, pwd)
+	})
+
+	t.Run("resolveCmake", func(t *testing.T) {
+		defer revertToOriginalWd()
+		pwd := changeWdToTestData("cmake")
+		testResolveCMake(t, pwd)
+	})
+
+	t.Run("testResolveMavenGradle", func(t *testing.T) {
+		defer revertToOriginalWd()
+		pwd := changeWdToTestData("maven_gradle")
+		testResolveMavenGradle(t, pwd)
+	})
+
+	t.Run("testResolveMavenGradleWindowsPaths", func(t *testing.T) {
+		defer revertToOriginalWd()
+		pwd := changeWdToTestData("maven_gradle")
+		testResolveMavenGradleWindowsPaths(t, pwd)
+	})
+}
+
+func testResolveBazel(t *testing.T, pwd string) {
 	fuzzTestName := "//src/fuzz_test_1:fuzz_test_1"
 
 	// relative path
@@ -38,23 +67,9 @@ func TestResolveBazel(t *testing.T) {
 	resolved, err = resolve(srcFile, config.BuildSystemBazel, pwd)
 	require.NoError(t, err)
 	require.Equal(t, fuzzTestName, resolved)
-
 }
 
-func TestResolveCMake(t *testing.T) {
-	oldWd, err := os.Getwd()
-	require.NoError(t, err)
-	defer func() {
-		err = os.Chdir(oldWd)
-		require.NoError(t, err)
-	}()
-
-	err = os.Chdir(filepath.Join("testdata", "cmake"))
-	require.NoError(t, err)
-
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
-
+func testResolveCMake(t *testing.T, pwd string) {
 	fuzzTestName := "fuzz_test_1"
 
 	// relative path
@@ -70,20 +85,7 @@ func TestResolveCMake(t *testing.T) {
 	require.Equal(t, fuzzTestName, resolved)
 }
 
-func TestResolveMavenGradle(t *testing.T) {
-	oldWd, err := os.Getwd()
-	require.NoError(t, err)
-	defer func() {
-		err = os.Chdir(oldWd)
-		require.NoError(t, err)
-	}()
-
-	err = os.Chdir(filepath.Join("testdata", "maven_gradle"))
-	require.NoError(t, err)
-
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
-
+func testResolveMavenGradle(t *testing.T, pwd string) {
 	fuzzTestName := "com.example.fuzz_test_1.FuzzTestCase"
 
 	// Java file
@@ -125,23 +127,10 @@ func TestResolveMavenGradle(t *testing.T) {
 	assert.Equal(t, fuzzTestName, resolved)
 }
 
-func TestResolveMavenGradleWindowsPaths(t *testing.T) {
+func testResolveMavenGradleWindowsPaths(t *testing.T, pwd string) {
 	if runtime.GOOS != "windows" {
 		t.Skip()
 	}
-
-	oldWd, err := os.Getwd()
-	require.NoError(t, err)
-	defer func() {
-		err = os.Chdir(oldWd)
-		require.NoError(t, err)
-	}()
-
-	err = os.Chdir(filepath.Join("testdata", "maven_gradle"))
-	require.NoError(t, err)
-
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
 
 	fuzzTestName := "com.example.fuzz_test_1.FuzzTestCase"
 
