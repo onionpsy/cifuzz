@@ -75,3 +75,36 @@ func TestForceSymlink(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, source2Path, target)
 }
+
+func TestSearchBackwards(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "backwards")
+	require.NoError(t, err)
+	defer Cleanup(tmpDir)
+
+	startDir := filepath.Join(tmpDir, "foo", "bar", "foobar")
+	err = os.MkdirAll(startDir, 0o755)
+	require.NoError(t, err)
+
+	testFile := filepath.Join(tmpDir, "foo", "test.txt")
+	err = Touch(testFile)
+	require.NoError(t, err)
+
+	path, err := SearchFileBackwards(startDir, "test.txt")
+	require.NoError(t, err)
+	assert.Equal(t, testFile, path)
+}
+
+func TestSearchBackwards_NotFound(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "backwards")
+	require.NoError(t, err)
+	defer Cleanup(tmpDir)
+
+	startDir := filepath.Join(tmpDir, "foo", "bar", "foobar")
+	err = os.MkdirAll(startDir, 0o755)
+	require.NoError(t, err)
+
+	path, err := SearchFileBackwards(startDir, "test.txt")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, os.ErrNotExist)
+	assert.Empty(t, path)
+}

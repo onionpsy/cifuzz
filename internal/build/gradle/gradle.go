@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -28,17 +27,8 @@ func FindGradleWrapper(projectDir string) (string, error) {
 	if runtime.GOOS == "windows" {
 		wrapper = "gradlew.bat"
 	}
-	wrapper = filepath.Join(projectDir, wrapper)
 
-	exists, err := fileutil.Exists(wrapper)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	if exists {
-		return wrapper, nil
-	}
-
-	return "", os.ErrNotExist
+	return fileutil.SearchFileBackwards(projectDir, wrapper)
 }
 
 type ParallelOptions struct {

@@ -150,3 +150,33 @@ func ForceLongPathTempDir() {
 		log.Error(err, "failed to set TMP to long path for temp dir")
 	}
 }
+
+// SearchFileBackwards searches for a file by going backwards/upwards
+// from a given path
+// if a path `/foo/bar` is given the order of search is
+//  1. /foo/bar
+//  2. /foo/
+//  3. /
+func SearchFileBackwards(start, filename string) (string, error) {
+	currentDir := start
+	for {
+		filePath := filepath.Join(currentDir, filename)
+		exists, err := Exists(filePath)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		if exists {
+			return filePath, nil
+		}
+
+		// if the root directory is reached stop the search
+		if currentDir == filepath.Dir(currentDir) {
+			break
+		}
+
+		// step one dir up
+		currentDir = filepath.Dir(currentDir)
+	}
+
+	return "", os.ErrNotExist
+}
