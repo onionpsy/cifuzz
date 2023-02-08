@@ -6,12 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/u-root/u-root/pkg/ldd"
 	"golang.org/x/exp/slices"
 
 	"code-intelligence.com/cifuzz/internal/build"
@@ -160,7 +158,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	// For the build system type "other", we expect the default seed corpus next
 	// to the fuzzer executable.
 	seedCorpus := executable + "_inputs"
-	runtimeDeps, err := b.findSharedLibraries(executable)
+	runtimeDeps, err := findSharedLibraries(executable)
 	if err != nil {
 		return nil, err
 	}
@@ -360,39 +358,4 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return absPath, nil
-}
-
-var sharedLibraryRegex = regexp.MustCompile(`^.+\.((so)|(dylib))(\.\d\w*)*$`)
-
-func (b *Builder) findSharedLibraries(executable string) ([]string, error) {
-	var sharedObjects []string
-
-	// ldd provides the complete list of dynamic dependencies of a dynamically linked file.
-	// That is, we don't have to recursively query the transitive dynamic dependencies.
-	filesInfo, err := ldd.Ldd([]string{executable})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, fileInfo := range filesInfo {
-		if !isStandardSystemLibrary(fileInfo.FullName) {
-			sharedObjects = append(sharedObjects, fileInfo.FullName)
-		}
-	}
-
-	return sharedObjects, err
-}
-
-func isStandardSystemLibrary(library string) bool {
-	if !sharedLibraryRegex.MatchString(library) {
-		return false
-	}
-
-	for _, stdLibTopDir := range []string{"/usr", "/lib", "/lib64", "/lib32", "libx32"} {
-		if strings.HasPrefix(library, stdLibTopDir) {
-			return false
-		}
-	}
-
-	return true
 }
