@@ -65,6 +65,11 @@ func (client *APIClient) ListProjects(token string) ([]*Project, error) {
 		return nil, errors.WithStack(err)
 	}
 	var projects []*Project
+	// If the projects field is not present, it means there are no projects
+	// so we return an empty list of projects and no error.
+	if _, ok := objmap["projects"]; !ok {
+		return []*Project{}, nil
+	}
 	err = json.Unmarshal(objmap["projects"], &projects)
 	if err != nil {
 		return nil, errors.WithStack(err)

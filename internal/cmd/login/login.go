@@ -129,7 +129,7 @@ func (c *loginCmd) handleExistingToken(token string) error {
 It's possible that the token has been revoked. Please try again after
 removing the token from %s.`, access_tokens.GetTokenFilePath())
 		log.Warn(err.Error())
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 	log.Success("You are already logged in.")
 	log.Infof("Your API access token is stored in %s", access_tokens.GetTokenFilePath())

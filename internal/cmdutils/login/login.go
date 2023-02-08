@@ -9,7 +9,6 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/access_tokens"
 	"code-intelligence.com/cifuzz/internal/api"
-	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
@@ -64,7 +63,7 @@ func CheckValidToken(apiClient *api.APIClient, token string) error {
 	if !tokenValid {
 		err = errors.Errorf("Invalid token: Received 401 Unauthorized from server %s", apiClient.Server)
 		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 
 	return nil
