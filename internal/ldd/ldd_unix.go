@@ -1,6 +1,6 @@
-//go:build !windows
+//go:build freebsd || linux
 
-package other
+package ldd
 
 import (
 	"github.com/u-root/u-root/pkg/ldd"
@@ -8,7 +8,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func findSharedLibraries(executable string) ([]string, error) {
+func NonSystemSharedLibraries(executable string) ([]string, error) {
 	var sharedObjects []string
 
 	// ldd provides the complete list of dynamic dependencies of a dynamically linked file.

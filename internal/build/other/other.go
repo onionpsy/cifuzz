@@ -14,6 +14,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -158,7 +159,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	// For the build system type "other", we expect the default seed corpus next
 	// to the fuzzer executable.
 	seedCorpus := executable + "_inputs"
-	runtimeDeps, err := findSharedLibraries(executable)
+	runtimeDeps, err := ldd.NonSystemSharedLibraries(executable)
 	if err != nil {
 		return nil, err
 	}
