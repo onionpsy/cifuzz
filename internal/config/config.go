@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
@@ -151,7 +152,7 @@ func DetermineBuildSystem(projectDir string) (string, error) {
 		BuildSystemBazel:  {"WORKSPACE", "WORKSPACE.bazel"},
 		BuildSystemCMake:  {"CMakeLists.txt"},
 		BuildSystemMaven:  {"pom.xml"},
-		BuildSystemGradle: {"build.gradle", "build.gradle.kts"},
+		BuildSystemGradle: {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"},
 	}
 
 	for buildSystem, files := range buildSystemIdentifier {
@@ -168,6 +169,17 @@ func DetermineBuildSystem(projectDir string) (string, error) {
 	}
 
 	return BuildSystemOther, nil
+}
+
+func IsGradleMultiProject(projectDir string) (bool, error) {
+	matches, err := zglob.Glob(filepath.Join(projectDir, "settings.{gradle,gradle.kts}"))
+	if err != nil {
+		return false, err
+	}
+	if len(matches) == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func DetermineGradleBuildLanguage(projectDir string) (GradleBuildLanguage, error) {

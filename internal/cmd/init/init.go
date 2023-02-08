@@ -30,6 +30,10 @@ var gradleGroovySetup string
 //go:embed instructions/gradlekotlin
 var gradleKotlinSetup string
 
+const (
+	GradleMultiProjectWarningMsg = "For multi-project builds, you should setup cifuzz in the subprojects containing the fuzz tests."
+)
+
 type Options struct {
 	Dir string
 }
@@ -129,6 +133,16 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 			log.Debug(err)
 			return
 		}
+
+		isGradleMultiProject, err := config.IsGradleMultiProject(dir)
+		if err != nil {
+			log.Debug(err)
+			return
+		}
+		if isGradleMultiProject {
+			log.Warn(GradleMultiProjectWarningMsg)
+		}
+
 		switch gradleBuildLanguage {
 		case config.G_GROOVY:
 			log.Print(gradleGroovySetup)
