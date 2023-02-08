@@ -493,7 +493,7 @@ func parseAsSlowInput(log string) *finding.Finding {
 			Details: fmt.Sprintf("Slow input detected. Processing time: %s s", res["duration"]),
 			Logs:    []string{fmt.Sprintf("Slow input: %s seconds for processing", res["duration"])},
 			MoreDetails: &finding.ErrorDetails{
-				Id:   "Slow Input Detected",
+				ID:   "Slow Input Detected",
 				Name: "Slow Input Detected",
 				Severity: &finding.Severity{
 					Level: finding.SeverityLevel_LOW,

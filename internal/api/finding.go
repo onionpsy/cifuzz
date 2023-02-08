@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
-	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 type Findings struct {
@@ -33,11 +35,11 @@ type ErrorReport struct {
 	Type      string   `json:"type,omitempty"`
 	InputData []byte   `json:"input_data,omitempty"`
 
-	DebuggingInfo      *DebuggingInfo `json:"debugging_info,omitempty"`
-	HumanReadableInput string         `json:"human_readable_input,omitempty"`
-	MoreDetails        *MoreDetails   `json:"more_details,omitempty"`
-	Tag                string         `json:"tag,omitempty"`
-	ShortDescription   string         `json:"short_description,omitempty"`
+	DebuggingInfo      *DebuggingInfo        `json:"debugging_info,omitempty"`
+	HumanReadableInput string                `json:"human_readable_input,omitempty"`
+	MoreDetails        *finding.ErrorDetails `json:"more_details,omitempty"`
+	Tag                string                `json:"tag,omitempty"`
+	ShortDescription   string                `json:"short_description,omitempty"`
 }
 
 type DebuggingInfo struct {
@@ -63,20 +65,13 @@ type Environment struct {
 	Value string `json:"value,omitempty"`
 }
 
-type MoreDetails struct {
-	ID          string    `json:"id,omitempty"`
-	Name        string    `json:"name,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Severity    *Severity `json:"severity,omitempty"`
-	Language    string    `json:"language,omitempty"`
-}
-
 type Severity struct {
 	Description string  `json:"description,omitempty"`
 	Score       float32 `json:"score,omitempty"`
 }
 
 func (client *APIClient) UploadFinding(project string, fuzzTarget string, campaignRunName string, fuzzingRunName string, finding *finding.Finding, token string) error {
+	// loop through the stack trace and create a list of breakpoints
 	breakPoints := []BreakPoint{}
 	for _, stackFrame := range finding.StackTrace {
 		breakPoints = append(breakPoints, BreakPoint{
@@ -89,16 +84,17 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 		})
 	}
 
-	// FIXME: currently we only fill MoreDetails for Java,
-	// because they are not set for other languages
-	moreDetails := MoreDetails{}
-	if finding.MoreDetails != nil {
-		moreDetails = MoreDetails{
-			ID:   finding.MoreDetails.Id,
-			Name: finding.MoreDetails.Name,
-			Severity: &Severity{
-				Score: finding.MoreDetails.Severity.Score,
-			},
+	// we need to check if an error-details file exists
+	// if it does, we need to enhance the finding with the details
+	errorFile := filepath.Join(os.Getenv("HOME"), ".local", "share", "error-details.json")
+	exists, err := fileutil.Exists(errorFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		err = finding.EnhanceWithErrorDetails(errorFile)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -118,7 +114,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 					DebuggingInfo: &DebuggingInfo{
 						BreakPoints: breakPoints,
 					},
-					MoreDetails:      &moreDetails,
+					MoreDetails:      finding.MoreDetails,
 					Tag:              fmt.Sprint(finding.Tag),
 					ShortDescription: finding.ShortDescription(),
 				},
@@ -131,8 +127,6 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	log.Debugf("Uploading finding: %s\n", string(body))
 
 	url, err := url.JoinPath("/v1", project, "findings")
 	if err != nil {

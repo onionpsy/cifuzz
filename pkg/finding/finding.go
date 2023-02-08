@@ -18,10 +18,12 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-const nameCrashingInput = "crashing-input"
-const nameJsonFile = "finding.json"
-const nameFindingsDir = ".cifuzz-findings"
-const lockFile = ".lock"
+const (
+	nameCrashingInput = "crashing-input"
+	nameJSONFile      = "finding.json"
+	nameFindingsDir   = ".cifuzz-findings"
+	lockFile          = ".lock"
+)
 
 type Finding struct {
 	Name               string        `json:"name,omitempty"`
@@ -56,9 +58,14 @@ const (
 )
 
 type ErrorDetails struct {
-	Id       string    `json:"id,omitempty"`
-	Name     string    `json:"name,omitempty"`
-	Severity *Severity `json:"severity,omitempty"`
+	ID           string          `json:"id,omitempty"`
+	Name         string          `json:"name,omitempty"`
+	Description  string          `json:"description,omitempty"`
+	Severity     *Severity       `json:"severity,omitempty"`
+	Mitigation   string          `json:"mitigation,omitempty"`
+	Links        []Link          `json:"links,omitempty"`
+	OwaspDetails *ExternalDetail `json:"owasp_details,omitempty"`
+	CweDetails   *ExternalDetail `json:"cwe_details,omitempty"`
 }
 
 type SeverityLevel string
@@ -73,6 +80,17 @@ const (
 type Severity struct {
 	Level SeverityLevel `json:"description,omitempty"`
 	Score float32       `json:"score,omitempty"`
+}
+
+type ExternalDetail struct {
+	ID          int64  `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+type Link struct {
+	Description string `json:"description,omitempty"`
+	URL         string `json:"url,omitempty"`
 }
 
 func (f *Finding) GetDetails() string {
@@ -91,20 +109,20 @@ func (f *Finding) GetSeedPath() string {
 
 // Exists returns whether the JSON file of this finding already exists
 func (f *Finding) Exists(projectDir string) (bool, error) {
-	jsonPath := filepath.Join(projectDir, nameFindingsDir, f.Name, nameJsonFile)
+	jsonPath := filepath.Join(projectDir, nameFindingsDir, f.Name, nameJSONFile)
 	return fileutil.Exists(jsonPath)
 }
 
 func (f *Finding) Save(projectDir string) error {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
-	jsonPath := filepath.Join(findingDir, nameJsonFile)
+	jsonPath := filepath.Join(findingDir, nameJSONFile)
 
 	err := os.MkdirAll(findingDir, 0755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	err = f.saveJson(jsonPath)
+	err = f.saveJSON(jsonPath)
 	if err != nil {
 		return err
 	}
@@ -112,7 +130,7 @@ func (f *Finding) Save(projectDir string) error {
 	return nil
 }
 
-func (f *Finding) saveJson(jsonPath string) error {
+func (f *Finding) saveJSON(jsonPath string) error {
 	bytes, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
 		return errors.WithStack(err)
@@ -291,7 +309,7 @@ func ListFindings(projectDir string) ([]*Finding, error) {
 // If the specified finding does not exist, a NotExistError is returned.
 func LoadFinding(projectDir, findingName string) (*Finding, error) {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, findingName)
-	jsonPath := filepath.Join(findingDir, nameJsonFile)
+	jsonPath := filepath.Join(findingDir, nameJSONFile)
 	bytes, err := os.ReadFile(jsonPath)
 	if os.IsNotExist(err) {
 		return nil, WrapNotExistError(err)
@@ -305,4 +323,58 @@ func LoadFinding(projectDir, findingName string) (*Finding, error) {
 		return nil, errors.WithStack(err)
 	}
 	return &f, nil
+}
+
+// EnhanceWithErrorDetails adds more details to the finding by parsing the
+// error details file.
+func (f *Finding) EnhanceWithErrorDetails(errorFile string) error {
+	file, err := os.Open(errorFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var errorDetails []ErrorDetails
+	err = json.NewDecoder(file).Decode(&errorDetails)
+	if err != nil {
+		return errors.Wrap(err, "decoding error details")
+	}
+
+	moreDetails := ErrorDetails{
+		ID:           "",
+		Name:         "",
+		Description:  "",
+		Severity:     &Severity{},
+		Mitigation:   "",
+		Links:        []Link{},
+		OwaspDetails: &ExternalDetail{},
+		CweDetails:   &ExternalDetail{},
+	}
+
+	// find error details for specific finding
+	// TODO: optimize matching of error details
+	var details *ErrorDetails
+	for _, d := range errorDetails {
+		if strings.EqualFold(d.Name, f.ShortDescriptionColumns()[0]) {
+			details = &d
+			break
+		}
+	}
+
+	if details != nil {
+		moreDetails = *details
+	} else {
+		log.Infof("No error details found for finding %s", f.Name)
+
+		moreDetails.Name = f.Name
+		if f.MoreDetails.Severity != nil {
+			moreDetails.Severity = &Severity{
+				Score: f.MoreDetails.Severity.Score,
+			}
+		}
+	}
+
+	f.MoreDetails = &moreDetails
+
+	return nil
 }

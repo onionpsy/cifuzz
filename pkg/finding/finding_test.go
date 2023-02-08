@@ -28,7 +28,7 @@ func TestFinding_Save_LoadFinding(t *testing.T) {
 
 	finding := testFinding()
 	findingDir := filepath.Join(testDir, nameFindingsDir, finding.Name)
-	jsonPath := filepath.Join(findingDir, nameJsonFile)
+	jsonPath := filepath.Join(findingDir, nameJSONFile)
 
 	err = finding.Save(testDir)
 	require.NoError(t, err)

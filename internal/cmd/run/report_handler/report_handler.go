@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -188,6 +189,20 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 
 	if f.InputFile != "" {
 		err = f.CopyInputFileAndUpdateFinding(h.ProjectDir, h.SeedCorpusDir)
+		if err != nil {
+			return err
+		}
+	}
+
+	// if error-details.json is present, add more details to the finding
+	errorFile := filepath.Join(os.Getenv("HOME"), ".local", "share", "error-details.json")
+	exists, err := fileutil.Exists(errorFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		log.Info("Adding more error details to finding...")
+		err = f.EnhanceWithErrorDetails(errorFile)
 		if err != nil {
 			return err
 		}
