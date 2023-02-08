@@ -27,9 +27,7 @@ type CommandOptions struct {
 	Args    []string
 }
 
-// Command runs "cifuzz <command> <args>" and returns any indented lines
-// which the command prints to stdout (which we expect to be lines which
-// should be added to some source or config file).
+// Command runs "cifuzz <command> <args>" and returns stderr output
 func (r *CIFuzzRunner) Command(t *testing.T, command string, opts *CommandOptions) []string {
 	t.Helper()
 
@@ -51,22 +49,41 @@ func (r *CIFuzzRunner) Command(t *testing.T, command string, opts *CommandOption
 	cmd := executil.Command(r.CIFuzzPath, args...)
 	cmd.Dir = opts.WorkDir
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)
-	defer stderrPipe.Close()
 	require.NoError(t, err)
+	defer func() {
+		err = stderrPipe.Close()
+		require.NoError(t, err)
+	}()
 
 	t.Logf("Command: %s", cmd.String())
 	err = cmd.Run()
 	require.NoError(t, err)
 
 	scanner := bufio.NewScanner(stderrPipe)
-	var linesToAdd []string
+	var stdErrOutput []string
 	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "    ") {
-			linesToAdd = append(linesToAdd, strings.TrimSpace(scanner.Text()))
-		}
+		stdErrOutput = append(stdErrOutput, scanner.Text())
 	}
 
+	return stdErrOutput
+}
+
+func FilterForInstructions(lines []string) []string {
+	var linesToAdd []string
+	for _, line := range lines {
+		if strings.HasPrefix(line, "    ") {
+			linesToAdd = append(linesToAdd, strings.TrimSpace(line))
+		}
+	}
 	return linesToAdd
+}
+
+// CommandWithFilterForInstructions runs "cifuzz <command> <args>" and
+// returns any indented lines which the command prints to stderr
+// (which we expect to be lines which should be added to some source or config file).
+func (r *CIFuzzRunner) CommandWithFilterForInstructions(t *testing.T, command string, opts *CommandOptions) []string {
+	allLines := r.Command(t, command, opts)
+	return FilterForInstructions(allLines)
 }
 
 type RunOptions struct {

@@ -51,13 +51,13 @@ func TestIntegration_Bazel(t *testing.T) {
 	}
 
 	// Execute the init command
-	linesToAdd := cifuzzRunner.Command(t, "init", nil)
+	linesToAdd := cifuzzRunner.CommandWithFilterForInstructions(t, "init", nil)
 	// Append the lines to WORKSPACE
 	shared.AppendLines(t, filepath.Join(testdata, "WORKSPACE"), linesToAdd)
 
 	// Execute the create command
 	outputPath := filepath.Join("src", "parser", "parser_fuzz_test.cpp")
-	linesToAdd = cifuzzRunner.Command(t, "create", &shared.CommandOptions{
+	linesToAdd = cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
 		Args: []string{"cpp", "--output", outputPath},
 	},
 	)

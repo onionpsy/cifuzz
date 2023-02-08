@@ -51,15 +51,15 @@ func TestIntegration_CMake(t *testing.T) {
 	}
 
 	// Execute the root command
-	cifuzzRunner.Command(t, "", nil)
+	cifuzzRunner.CommandWithFilterForInstructions(t, "", nil)
 
 	// Execute the init command
-	linesToAdd := cifuzzRunner.Command(t, "init", nil)
+	linesToAdd := cifuzzRunner.CommandWithFilterForInstructions(t, "init", nil)
 	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(dir, "CMakeLists.txt"), linesToAdd, "add_subdirectory", false)
 
 	// Execute the create command
 	outputPath := filepath.Join("src", "parser", "parser_fuzz_test.cpp")
-	linesToAdd = cifuzzRunner.Command(t, "create", &shared.CommandOptions{
+	linesToAdd = cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
 		Args: []string{"cpp", "--output", outputPath},
 	})
 

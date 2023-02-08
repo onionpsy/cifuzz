@@ -46,7 +46,7 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	// The instructions file for maven includes both dependencies and a profile section for jacoco that
 	// need to be included at different locations in the pom.xml, so we split the instructions file
 	// at the <profile> occurrence.
-	linesToAdd := cifuzzRunner.Command(t, "init", nil)
+	linesToAdd := cifuzzRunner.CommandWithFilterForInstructions(t, "init", nil)
 	assert.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
@@ -72,7 +72,7 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	err := os.MkdirAll(filepath.Join(projectDir, testDir), 0755)
 	require.NoError(t, err)
 	outputPath := filepath.Join(testDir, "FuzzTestCase.java")
-	cifuzzRunner.Command(t, "create", &shared.CommandOptions{
+	cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
 		Args: []string{"java", "--output", outputPath}},
 	)
 

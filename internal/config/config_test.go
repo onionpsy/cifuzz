@@ -1,6 +1,7 @@
 package config
 
 import (
+	_ "embed"
 	"log"
 	"os"
 	"path/filepath"
@@ -209,4 +210,40 @@ func TestTestTypeFileNameExtension(t *testing.T) {
 	ext, found = TestTypeFileNameExtension(KOTLIN)
 	assert.True(t, found)
 	assert.Equal(t, ".kt", ext)
+}
+
+func TestIsGradleMultiProject_Groovy(t *testing.T) {
+	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(projectDir)
+
+	err = fileutil.Touch(filepath.Join(projectDir, "settings.gradle"))
+	require.NoError(t, err, "Failed to create settings.gradle")
+	isGradleMultiProject, err := IsGradleMultiProject(projectDir)
+	require.NoError(t, err)
+	assert.True(t, isGradleMultiProject)
+}
+
+func TestIsGradleMultiProject_Kotlin(t *testing.T) {
+	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(projectDir)
+
+	err = fileutil.Touch(filepath.Join(projectDir, "settings.gradle.kts"))
+	require.NoError(t, err, "Failed to create settings.gradle.kts")
+	isGradleMultiProject, err := IsGradleMultiProject(projectDir)
+	require.NoError(t, err)
+	assert.True(t, isGradleMultiProject)
+}
+
+func TestIsGradleMultiProject_False(t *testing.T) {
+	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(projectDir)
+
+	err = fileutil.Touch(filepath.Join(projectDir, "build.gradle.kts"))
+	require.NoError(t, err, "Failed to create build.gradle.kts")
+	isGradleMultiProject, err := IsGradleMultiProject(projectDir)
+	require.NoError(t, err)
+	assert.False(t, isGradleMultiProject)
 }

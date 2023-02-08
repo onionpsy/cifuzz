@@ -16,6 +16,7 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
+	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -41,8 +42,10 @@ func TestIntegration_GradleKotlin_InitCreateRun(t *testing.T) {
 	}
 
 	// Execute the init command
-	linesToAdd := cifuzzRunner.Command(t, "init", nil)
-	assert.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
+	allStderrLines := cifuzzRunner.Command(t, "init", nil)
+	require.Contains(t, strings.Join(allStderrLines, " "), initCmd.GradleMultiProjectWarningMsg)
+	linesToAdd := shared.FilterForInstructions(allStderrLines)
+	require.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
 	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle.kts"), linesToAdd, "dependencies {", true)
 
 	// Execute the create command
@@ -56,7 +59,7 @@ func TestIntegration_GradleKotlin_InitCreateRun(t *testing.T) {
 	err := os.MkdirAll(filepath.Join(projectDir, testDir), 0755)
 	require.NoError(t, err)
 	outputPath := filepath.Join(testDir, "FuzzTestCase.kt")
-	cifuzzRunner.Command(t, "create", &shared.CommandOptions{
+	cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
 		Args: []string{"kotlin", "--output", outputPath}},
 	)
 
