@@ -3,10 +3,9 @@
 package other
 
 import (
-	"regexp"
-	"strings"
-
 	"github.com/u-root/u-root/pkg/ldd"
+
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func findSharedLibraries(executable string) ([]string, error) {
@@ -20,26 +19,10 @@ func findSharedLibraries(executable string) ([]string, error) {
 	}
 
 	for _, fileInfo := range filesInfo {
-		if !isStandardSystemLibrary(fileInfo.FullName) {
+		if fileutil.IsSharedLibrary(fileInfo.FullName) && !fileutil.IsSystemLibrary(fileInfo.FullName) {
 			sharedObjects = append(sharedObjects, fileInfo.FullName)
 		}
 	}
 
 	return sharedObjects, err
-}
-
-var sharedLibraryRegex = regexp.MustCompile(`^.+\.((so)|(dylib))(\.\d\w*)*$`)
-
-func isStandardSystemLibrary(library string) bool {
-	if !sharedLibraryRegex.MatchString(library) {
-		return false
-	}
-
-	for _, stdLibTopDir := range []string{"/usr", "/lib", "/lib64", "/lib32", "libx32"} {
-		if strings.HasPrefix(library, stdLibTopDir) {
-			return false
-		}
-	}
-
-	return true
 }

@@ -34,19 +34,6 @@ type configureVariant struct {
 	Sanitizers []string
 }
 
-// Runtime dependencies of fuzz tests that live under these paths will not be included in the artifact archive and have
-// to be provided by the Docker image instead.
-var systemLibraryPaths = map[string][]string{
-	"linux": {
-		"/lib",
-		"/usr/lib",
-	},
-	"darwin": {
-		"/lib",
-		"/usr/lib",
-	},
-}
-
 // System library dependencies that are so common that we shouldn't emit a warning for them - they will be contained in
 // any reasonable Docker image.
 var wellKnownSystemLibraries = map[string][]*regexp.Regexp{
@@ -487,16 +474,9 @@ depsLoop:
 
 		// 2. is handled by returning a list of these libraries that is shown to the user as a warning about the
 		// required contents of the Docker image specified as the run environment.
-		for _, systemLibraryPath := range systemLibraryPaths[runtime.GOOS] {
-			var isBelowLibPath bool
-			isBelowLibPath, err = fileutil.IsBelow(dep, systemLibraryPath)
-			if err != nil {
-				return
-			}
-			if isBelowLibPath {
-				systemDeps = append(systemDeps, dep)
-				continue depsLoop
-			}
+		if fileutil.IsSystemLibrary(dep) {
+			systemDeps = append(systemDeps, dep)
+			continue depsLoop
 		}
 
 		// 3. is handled by staging the dependency in a special external library directory in the archive that is added

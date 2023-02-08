@@ -3,6 +3,7 @@ package fileutil
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -179,4 +180,41 @@ func SearchFileBackwards(start, filename string) (string, error) {
 	}
 
 	return "", os.ErrNotExist
+}
+
+// Runtime dependencies of fuzz tests that live under these paths will not be included in the artifact archive and have
+// to be provided by the Docker image instead.
+var systemLibraryPaths = map[string][]string{
+	"linux": {
+		"/lib",
+		"/lib64",
+		"/lib32",
+		"/libx32",
+		"/usr/lib",
+	},
+	"darwin": {
+		"/lib",
+		"/libexec",
+		"/usr/lib",
+		"/usr/libexec",
+	},
+}
+
+var sharedLibraryRegex = regexp.MustCompile(`^.+\.((so)|(dylib))(\.\d\w*)*$`)
+
+func IsSharedLibrary(path string) bool {
+	return sharedLibraryRegex.MatchString(path)
+}
+
+func IsSystemLibrary(library string) bool {
+	for _, systemLibraryPath := range systemLibraryPaths[runtime.GOOS] {
+		isBelowLibPath, err := IsBelow(library, systemLibraryPath)
+		if err != nil {
+			return false
+		}
+		if isBelowLibPath {
+			return true
+		}
+	}
+	return false
 }
