@@ -21,7 +21,7 @@ require (
 	github.com/spf13/viper v1.15.0
 	golang.org/x/net v0.5.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/term v0.4.0
+	golang.org/x/term v0.5.0
 )
 
 // TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
