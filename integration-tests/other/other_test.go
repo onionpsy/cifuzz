@@ -67,10 +67,9 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`bin/minijail0`))
 	}
 
-	cifuzzEnv := append(os.Environ(), "LD_LIBRARY_PATH="+filepath.Join(dir, "build"))
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs: expectedOutputs,
-		Env:             cifuzzEnv,
+		Env:             cifuzzEnv(dir),
 	})
 
 	// Check that the findings command lists the findings
@@ -173,7 +172,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	}
 
 	// Test the coverage command
-	createHtmlCoverageReport(t, cifuzz, dir, cifuzzEnv, "my_fuzz_test")
+	createHtmlCoverageReport(t, cifuzz, dir, cifuzzEnv(dir), "my_fuzz_test")
 }
 
 func TestIntegration_Other_DetailedCoverage(t *testing.T) {
@@ -222,9 +221,8 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	}
 	args = append(args, "my_fuzz_test")
 
-	env := append(os.Environ(), "LD_LIBRARY_PATH="+filepath.Join(dir, "build"))
 	// Execute the bundle command
-	shared.TestBundleLibFuzzer(t, dir, cifuzz, env, args...)
+	shared.TestBundleLibFuzzer(t, dir, cifuzz, cifuzzEnv(dir), args...)
 }
 
 func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, cifuzzEnv []string, fuzzTest string) {
@@ -307,4 +305,13 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 		// instrumentation, so we conservatively assume they aren't covered.
 		21, 31, 41},
 		uncoveredLines)
+}
+
+func cifuzzEnv(workDir string) []string {
+	if runtime.GOOS == "linux" {
+		return append(os.Environ(), "LD_LIBRARY_PATH="+filepath.Join(workDir, "build"))
+	} else if runtime.GOOS == "darwin" {
+		return append(os.Environ(), "DYLD_LIBRARY_PATH="+workDir)
+	}
+	return nil
 }
