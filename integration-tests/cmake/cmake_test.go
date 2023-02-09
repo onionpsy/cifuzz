@@ -130,7 +130,7 @@ func TestIntegration_CMake(t *testing.T) {
 
 	t.Run("bundle", func(t *testing.T) {
 		// Run cifuzz bundle and verify the contents of the archive.
-		shared.TestBundleLibFuzzer(t, dir, cifuzz, "parser_fuzz_test")
+		shared.TestBundleLibFuzzer(t, dir, cifuzz, os.Environ(), "parser_fuzz_test")
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {

@@ -19,7 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string) {
+func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []string, args ...string) {
 	t.Helper()
 
 	// Make the bundle command not fail on unsupported platforms to be
@@ -66,7 +66,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string
 		"--verbose",
 	}
 	args = append(defaultArgs, args...)
-	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, cifuzzEnv, args...)
 	defer fileutil.Cleanup(archiveDir)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
@@ -101,7 +101,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string
 	cmd.Dir = filepath.Join(archiveDir, "work_dir")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), fuzzerMetadata.EngineOptions.Env...)
+	cmd.Env = append(cifuzzEnv, fuzzerMetadata.EngineOptions.Env...)
 	err = cmd.Run()
 	assert.NoError(t, err)
 
@@ -142,7 +142,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string
 	cmd.Dir = filepath.Join(archiveDir, "work_dir")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), "LLVM_PROFILE_FILE="+coverageProfile)
+	cmd.Env = append(cifuzzEnv, "LLVM_PROFILE_FILE="+coverageProfile)
 	cmd.Env = append(cmd.Env, coverageMetadata.EngineOptions.Env...)
 	t.Logf("Command: %s", cmd.String())
 	err = cmd.Run()
@@ -160,7 +160,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, args ...string
 			"--project", projectName,
 			"--server", server.Address,
 		)
-		cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", token)
+		cmd.Env, err = envutil.Setenv(cifuzzEnv, "CIFUZZ_API_TOKEN", token)
 		require.NoError(t, err)
 		cmd.Dir = dir
 		cmd.Stdout = os.Stdout
@@ -212,7 +212,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	}
 
 	args = append(defaultArgs, args...)
-	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, os.Environ(), args...)
 	defer fileutil.Cleanup(archiveDir)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
@@ -307,7 +307,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	}
 
 	args = append(defaultArgs, args...)
-	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, args...)
+	metadata, archiveDir := TestRunBundle(t, dir, cifuzz, bundlePath, os.Environ(), args...)
 	defer fileutil.Cleanup(archiveDir)
 
 	// Verify code revision given by `--branch` and `--commit-sha` flags
@@ -369,11 +369,11 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	assert.Equal(t, "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase\n", string(content))
 }
 
-func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, args ...string) (*archive.Metadata, string) {
+func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, cifuzzEnv []string, args ...string) (*archive.Metadata, string) {
 	// Bundle all fuzz tests into an archive.
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
-	env, err := envutil.Setenv(os.Environ(), "BAR", "bar")
+	env, err := envutil.Setenv(cifuzzEnv, "BAR", "bar")
 	require.NoError(t, err)
 	cmd.Env = env
 	t.Logf("Command: %s", cmd.String())

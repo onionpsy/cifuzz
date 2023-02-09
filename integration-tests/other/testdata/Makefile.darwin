@@ -3,8 +3,12 @@ CXXFLAGS += -std=c++11
 clean:
 	rm -f *.o *.a *.dylib a.out
 
-libexplore.dylib: src/explore/explore_me.cpp src/explore/explore_me.h
-	${CXX} ${CXXFLAGS} -dynamiclib -Wl,-headerpad_max_install_names -fpic -o libexplore.dylib -install_name @executable_path/libexplore.dylib $<
+# This is to verify that we find the transitive dependencies with the ldd approach
+libbug.dylib: src/bug/trigger_bugs.cpp src/bug/trigger_bugs.h
+	${CXX} ${CXXFLAGS} -dynamiclib -Wl,-headerpad_max_install_names -fpic -o libbug.dylib -install_name @executable_path/libbug.dylib $<
+
+libexplore.dylib: src/explore/explore_me.cpp src/explore/explore_me.h libbug.dylib
+	${CXX} ${CXXFLAGS} -dynamiclib -Wl,-headerpad_max_install_names -fpic -o libexplore.dylib -install_name @executable_path/libexplore.dylib -Isrc -L. -lbug $<
 
 my_fuzz_test: libexplore.dylib
 	@echo "Building $@"

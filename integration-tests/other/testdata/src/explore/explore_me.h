@@ -1,4 +1,3 @@
 #include <string>
-using namespace std;
 
-void exploreMe(int a, int b, string c);
+void exploreMe(int a, int b, std::string c);

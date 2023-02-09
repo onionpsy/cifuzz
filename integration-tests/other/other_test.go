@@ -67,8 +67,10 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`bin/minijail0`))
 	}
 
+	cifuzzEnv := append(os.Environ(), "LD_LIBRARY_PATH="+filepath.Join(dir, "build"))
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs: expectedOutputs,
+		Env:             cifuzzEnv,
 	})
 
 	// Check that the findings command lists the findings
@@ -104,17 +106,24 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		expectedStackTrace := []*stacktrace.StackFrame{
 			{
-				SourceFile:  "src/explore/explore_me.cpp",
-				Line:        14,
-				Column:      11,
+				SourceFile:  "src/bug/trigger_bugs.cpp",
+				Line:        11,
+				Column:      3,
 				FrameNumber: 1,
+				Function:    "triggerASan",
+			},
+			{
+				SourceFile:  "src/explore/explore_me.cpp",
+				Line:        10,
+				Column:      11,
+				FrameNumber: 2,
 				Function:    "exploreMe",
 			},
 			{
 				SourceFile:  "my_fuzz_test.cpp",
 				Line:        18,
 				Column:      3,
-				FrameNumber: 2,
+				FrameNumber: 3,
 				Function:    "LLVMFuzzerTestOneInputNoReturn",
 			},
 		}
@@ -138,17 +147,24 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 		if runtime.GOOS != "darwin" {
 			expectedStackTrace := []*stacktrace.StackFrame{
 				{
-					SourceFile:  "src/explore/explore_me.cpp",
-					Line:        20,
-					Column:      11,
+					SourceFile:  "src/bug/trigger_bugs.cpp",
+					Line:        18,
+					Column:      5,
 					FrameNumber: 0,
+					Function:    "triggerUBSan",
+				},
+				{
+					SourceFile:  "src/explore/explore_me.cpp",
+					Line:        13,
+					Column:      9,
+					FrameNumber: 1,
 					Function:    "exploreMe",
 				},
 				{
 					SourceFile:  "my_fuzz_test.cpp",
 					Line:        18,
 					Column:      3,
-					FrameNumber: 1,
+					FrameNumber: 2,
 					Function:    "LLVMFuzzerTestOneInputNoReturn",
 				},
 			}
@@ -157,7 +173,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	}
 
 	// Test the coverage command
-	createHtmlCoverageReport(t, cifuzz, dir, "my_fuzz_test")
+	createHtmlCoverageReport(t, cifuzz, dir, cifuzzEnv, "my_fuzz_test")
 }
 
 func TestIntegration_Other_DetailedCoverage(t *testing.T) {
@@ -206,11 +222,12 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	}
 	args = append(args, "my_fuzz_test")
 
+	env := append(os.Environ(), "LD_LIBRARY_PATH="+filepath.Join(dir, "build"))
 	// Execute the bundle command
-	shared.TestBundleLibFuzzer(t, dir, cifuzz, args...)
+	shared.TestBundleLibFuzzer(t, dir, cifuzz, env, args...)
 }
 
-func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, fuzzTest string) {
+func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, cifuzzEnv []string, fuzzTest string) {
 	t.Helper()
 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
@@ -219,6 +236,7 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, fuzzTest 
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = cifuzzEnv
 	t.Logf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 	err := cmd.Run()
 	require.NoError(t, err)
