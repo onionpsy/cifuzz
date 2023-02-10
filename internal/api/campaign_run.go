@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/report"
 )
 
 type CampaignRunBody struct {
@@ -36,7 +37,7 @@ type Campaign struct {
 // returns the name of the campaign and fuzzing run. The campaign and fuzzing
 // run name is used to identify the campaign run in the API for consecutive
 // calls.
-func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, numBuildJobs uint) (string, string, error) {
+func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) (string, string, error) {
 	fuzzTarget = base64.URLEncoding.EncodeToString([]byte(fuzzTarget))
 
 	// generate a short random string to use as the campaign run name
@@ -54,6 +55,41 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 	if err != nil {
 		return "", "", err
 	}
+
+	// FIXME: We don't have metrics except for the first run. Successive runs
+	// will reuse the corpus and inputs from the previous run and thus will not
+	// generate new metrics
+	var metricsList []*Metrics
+	// add metrics if available
+	if firstMetrics != nil && lastMetrics != nil {
+		metricsDuration := lastMetrics.Timestamp.Sub(firstMetrics.Timestamp)
+		execs := lastMetrics.TotalExecutions - firstMetrics.TotalExecutions
+		performance := int32(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
+
+		metricsList = []*Metrics{
+			{
+				Timestamp:                lastMetrics.Timestamp.Format(time.RFC3339),
+				ExecutionsPerSecond:      performance,
+				Features:                 lastMetrics.Features,
+				CorpusSize:               lastMetrics.CorpusSize,
+				SecondsSinceLastCoverage: fmt.Sprintf("%d", lastMetrics.SecondsSinceLastFeature),
+				TotalExecutions:          fmt.Sprintf("%d", lastMetrics.TotalExecutions),
+				Edges:                    lastMetrics.Edges,
+				SecondsSinceLastEdge:     fmt.Sprintf("%d", lastMetrics.SecondsSinceLastEdge),
+			},
+			{
+				Timestamp:                firstMetrics.Timestamp.Format(time.RFC3339),
+				ExecutionsPerSecond:      performance,
+				Features:                 firstMetrics.Features,
+				CorpusSize:               firstMetrics.CorpusSize,
+				SecondsSinceLastCoverage: fmt.Sprintf("%d", firstMetrics.SecondsSinceLastFeature),
+				TotalExecutions:          fmt.Sprintf("%d", firstMetrics.TotalExecutions),
+				Edges:                    firstMetrics.Edges,
+				SecondsSinceLastEdge:     fmt.Sprintf("%d", firstMetrics.SecondsSinceLastEdge),
+			},
+		}
+	}
+
 	fuzzingRun := FuzzingRun{
 		Name:        fuzzingRunName,
 		DisplayName: "cifuzz-fuzzing-run",
@@ -62,6 +98,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 			Engine:       "LIBFUZZER",
 			NumberOfJobs: 4,
 		},
+		Metrics: metricsList,
 		FuzzTargetConfig: FuzzTargetConfig{
 			Name: fuzzTargetConfigName,
 			CAPI: CAPI{

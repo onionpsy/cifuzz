@@ -38,6 +38,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -80,7 +81,7 @@ func (opts *runOptions) validate() error {
 
 	if opts.Dictionary != "" {
 		// Check if the dictionary exists and can be accessed
-		_, err := os.Stat(opts.Dictionary)
+		_, err = os.Stat(opts.Dictionary)
 		if err != nil {
 			err = errors.WithStack(err)
 			log.Error(err, err.Error())
@@ -365,7 +366,7 @@ func (c *runCmd) run() error {
 
 	// check if there are findings that should be uploaded
 	if uploadFindings && len(c.reportHandler.Findings) > 0 {
-		err = c.uploadFindings(c.opts.fuzzTest, c.opts.NumBuildJobs)
+		err = c.uploadFindings(c.opts.fuzzTest, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics, c.opts.NumBuildJobs)
 		if err != nil {
 			return err
 		}
@@ -774,7 +775,7 @@ Your results will not be synced to a remote fuzzing server.`)
 	return willSync, nil
 }
 
-func (c *runCmd) uploadFindings(fuzzTarget string, numBuildJobs uint) error {
+func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) error {
 	// get projects from server
 	apiClient := api.APIClient{Server: c.opts.Server}
 	token := access_tokens.Get(c.opts.Server)
@@ -820,7 +821,7 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	}
 
 	// create campaign run on server for selected project
-	campaignRunName, fuzzingRunName, err := apiClient.CreateCampaignRun(project, token, fuzzTarget, numBuildJobs)
+	campaignRunName, fuzzingRunName, err := apiClient.CreateCampaignRun(project, token, fuzzTarget, firstMetrics, lastMetrics, numBuildJobs)
 	if err != nil {
 		return err
 	}

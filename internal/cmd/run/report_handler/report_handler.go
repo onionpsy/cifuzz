@@ -42,8 +42,8 @@ type ReportHandler struct {
 	initStarted  bool
 	initFinished bool
 
-	lastMetrics  *report.FuzzingMetric
-	firstMetrics *report.FuzzingMetric
+	LastMetrics  *report.FuzzingMetric
+	FirstMetrics *report.FuzzingMetric
 
 	numSeedsAtInit uint
 
@@ -103,9 +103,9 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 	}
 
 	if r.Metric != nil {
-		h.lastMetrics = r.Metric
-		if h.firstMetrics == nil {
-			h.firstMetrics = r.Metric
+		h.LastMetrics = r.Metric
+		if h.FirstMetrics == nil {
+			h.FirstMetrics = r.Metric
 		}
 		h.printer.PrintMetrics(r.Metric)
 	}
@@ -285,20 +285,20 @@ func (h *ReportHandler) PrintFinalMetrics(numCorpusEntries uint) error {
 
 	var averageExecsStr string
 
-	if h.firstMetrics == nil {
+	if h.FirstMetrics == nil {
 		averageExecsStr = metrics.NumberString("n/a")
 	} else {
 		var averageExecs uint64
-		metricsDuration := h.lastMetrics.Timestamp.Sub(h.firstMetrics.Timestamp)
+		metricsDuration := h.LastMetrics.Timestamp.Sub(h.FirstMetrics.Timestamp)
 		if metricsDuration.Milliseconds() == 0 {
 			// The first and last metrics are either the same or were
 			// printed too fast one after the other to calculate a
 			// meaningful average, so we just use the exec/s from the
 			// current metrics as the average.
-			averageExecs = uint64(h.lastMetrics.ExecutionsPerSecond)
+			averageExecs = uint64(h.LastMetrics.ExecutionsPerSecond)
 		} else {
 			// We use milliseconds here to calculate a more accurate average
-			execs := h.lastMetrics.TotalExecutions - h.firstMetrics.TotalExecutions
+			execs := h.LastMetrics.TotalExecutions - h.FirstMetrics.TotalExecutions
 			averageExecs = uint64(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
 		}
 		averageExecsStr = metrics.NumberString("%d", averageExecs)
