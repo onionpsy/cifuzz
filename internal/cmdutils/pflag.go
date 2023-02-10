@@ -115,9 +115,12 @@ func AddDictFlag(cmd *cobra.Command) func() {
 }
 
 func AddDockerImageFlag(cmd *cobra.Command) func() {
-	cmd.Flags().String("docker-image", "ubuntu:rolling",
+	// Default was originally set to "ubuntu:rolling", but this is not correct
+	// It will be set by the bundle command depending on the build system, unless user overrides it
+	cmd.Flags().String("docker-image", "",
 		"Docker image to use in the bundle config. This image will be used when\n"+
-			"the bundle is executed on a CI Fuzz Server instance.")
+			"the bundle is executed on a CI Fuzz Server instance.\n"+
+			"By default, the image is chosen automatically based on the build system.")
 	return func() {
 		ViperMustBindPFlag("docker-image", cmd.Flags().Lookup("docker-image"))
 	}

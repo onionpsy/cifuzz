@@ -63,6 +63,9 @@ can be found in the help message of the run command.
 The usage of this command depends on the build system
 configured for the project.
 
+This command will select an appropriate Docker image for execution based
+on the build system. This can be overridden with a docker-image flag.
+
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("CMake") + `
   <fuzz test> is the name of the fuzz test defined in the add_fuzz_test
   command in your CMakeLists.txt.

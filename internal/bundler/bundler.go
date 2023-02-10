@@ -29,6 +29,8 @@ func New(opts *Opts) *Bundler {
 }
 
 func (b *Bundler) Bundle() error {
+	var dockerImageUsedInBundle = b.opts.DockerImage
+
 	// create temp dir
 	var err error
 	b.opts.tempDir, err = os.MkdirTemp("", "cifuzz-bundle-")
@@ -58,8 +60,16 @@ func (b *Bundler) Bundle() error {
 	switch b.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
 		fuzzers, err = newLibfuzzerBundler(b.opts, archiveWriter).bundle()
+		// Use default Ubuntu Docker image for CMake, Bazel, and other build systems
+		if dockerImageUsedInBundle == "" {
+			dockerImageUsedInBundle = "ubuntu:rolling"
+		}
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		fuzzers, err = newJazzerBundler(b.opts, archiveWriter).bundle()
+		// Maven and Gradle should use a Docker image with Java
+		if dockerImageUsedInBundle == "" {
+			dockerImageUsedInBundle = "openjdk:latest"
+		}
 	}
 	if err != nil {
 		return err
@@ -69,7 +79,7 @@ func (b *Bundler) Bundle() error {
 	metadata := &archive.Metadata{
 		Fuzzers: fuzzers,
 		RunEnvironment: &archive.RunEnvironment{
-			Docker: b.opts.DockerImage,
+			Docker: dockerImageUsedInBundle,
 		},
 		CodeRevision: b.getCodeRevision(),
 	}
