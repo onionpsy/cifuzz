@@ -69,6 +69,14 @@ func AddBuildCommandFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddCleanCommandFlag(cmd *cobra.Command) func() {
+	cmd.Flags().String("clean-command", "",
+		"The `command` to clean the fuzz test and its dependencies for other build systems.")
+	return func() {
+		ViperMustBindPFlag("clean-command", cmd.Flags().Lookup("clean-command"))
+	}
+}
+
 func AddBuildJobsFlag(cmd *cobra.Command) func() {
 	cmd.Flags().Uint("build-jobs", 0,
 		"Maximum number of concurrent processes to use when building.\n"+

@@ -1,1 +1,2 @@
-build-command: make clean && make $FUZZ_TEST
+build-command: make $FUZZ_TEST
+clean-command: make clean

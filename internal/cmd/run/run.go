@@ -46,6 +46,7 @@ import (
 type runOptions struct {
 	BuildSystem           string        `mapstructure:"build-system"`
 	BuildCommand          string        `mapstructure:"build-command"`
+	CleanCommand          string        `mapstructure:"clean-command"`
 	NumBuildJobs          uint          `mapstructure:"build-jobs"`
 	Dictionary            string        `mapstructure:"dict"`
 	EngineArgs            []string      `mapstructure:"engine-args"`
@@ -199,8 +200,13 @@ depends on the build system configured for the project.
     echo "build-command: make clean && make \$FUZZ_TEST" >> cifuzz.yaml
     cifuzz run my_fuzz_test
 
+  To avoid cleaning the build artifacts after building each fuzz test, you
+  can provide a clean command using the --clean-command flag or specifying
+  the "clean-command" option in cifuzz.yaml. The clean command is then
+  executed once before building the fuzz tests.
+
   The inputs found in the directory
-			
+
     <fuzz test>_inputs
 
   are used as a starting point for the fuzzing run.
@@ -265,6 +271,7 @@ depends on the build system configured for the project.
 	// bind it to viper in the PreRunE function.
 	funcs := []func(cmd *cobra.Command) func(){
 		cmdutils.AddBuildCommandFlag,
+		cmdutils.AddCleanCommandFlag,
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddBuildOnlyFlag,
 		cmdutils.AddDictFlag,
@@ -534,11 +541,16 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		builder, err = other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   c.opts.ProjectDir,
 			BuildCommand: c.opts.BuildCommand,
+			CleanCommand: c.opts.CleanCommand,
 			Sanitizers:   sanitizers,
 			Stdout:       c.opts.buildStdout,
 			Stderr:       c.opts.buildStderr,
 		})
 		if err != nil {
+			return nil, err
+		}
+
+		if err := builder.Clean(); err != nil {
 			return nil, err
 		}
 

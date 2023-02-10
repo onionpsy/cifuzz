@@ -18,6 +18,7 @@ import (
 type Opts struct {
 	Branch         string        `mapstructure:"branch"`
 	BuildCommand   string        `mapstructure:"build-command"`
+	CleanCommand   string        `mapstructure:"clean-command"`
 	BuildSystem    string        `mapstructure:"build-system"`
 	NumBuildJobs   uint          `mapstructure:"build-jobs"`
 	Commit         string        `mapstructure:"commit"`

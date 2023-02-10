@@ -39,6 +39,7 @@ type coverageOptions struct {
 	OutputPath            string   `mapstructure:"output"`
 	BuildSystem           string   `mapstructure:"build-system"`
 	BuildCommand          string   `mapstructure:"build-command"`
+	CleanCommand          string   `mapstructure:"clean-command"`
 	NumBuildJobs          uint     `mapstructure:"build-jobs"`
 	SeedCorpusDirs        []string `mapstructure:"seed-corpus-dirs"`
 	UseSandbox            bool     `mapstructure:"use-sandbox"`
@@ -106,7 +107,7 @@ addition to optional input directories specified with the seed-corpus flag.
 More details about the build system specific inputs directory location
 can be found in the help message of the run command.
 
-The output can be displayed in the browser or written as a HTML 
+The output can be displayed in the browser or written as a HTML
 or a lcov trace file.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Browser") + `
@@ -167,6 +168,7 @@ or a lcov trace file.
 	// bind it to viper in the PreRunE function.
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddBuildCommandFlag,
+		cmdutils.AddCleanCommandFlag,
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
@@ -246,6 +248,7 @@ func (c *coverageCmd) run() error {
 			OutputPath:     c.opts.OutputPath,
 			BuildSystem:    c.opts.BuildSystem,
 			BuildCommand:   c.opts.BuildCommand,
+			CleanCommand:   c.opts.CleanCommand,
 			NumBuildJobs:   c.opts.NumBuildJobs,
 			SeedCorpusDirs: c.opts.SeedCorpusDirs,
 			UseSandbox:     c.opts.UseSandbox,

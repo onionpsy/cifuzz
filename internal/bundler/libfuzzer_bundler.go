@@ -252,6 +252,7 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   b.opts.ProjectDir,
 			BuildCommand: b.opts.BuildCommand,
+			CleanCommand: b.opts.CleanCommand,
 			Sanitizers:   variant.Sanitizers,
 			Stdout:       b.opts.BuildStdout,
 			Stderr:       b.opts.BuildStderr,
@@ -268,6 +269,10 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 			// fuzz tests, that case should have been handled in the
 			// Opts.Validate function.
 			panic("No fuzz tests specified")
+		}
+
+		if err := builder.Clean(); err != nil {
+			return nil, err
 		}
 
 		for _, fuzzTest := range b.opts.FuzzTests {

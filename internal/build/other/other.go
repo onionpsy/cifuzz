@@ -25,6 +25,7 @@ import (
 type BuilderOptions struct {
 	ProjectDir   string
 	BuildCommand string
+	CleanCommand string
 	Sanitizers   []string
 
 	RunfilesFinder runfiles.RunfilesFinder
@@ -177,6 +178,24 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		Sanitizers:      b.Sanitizers,
 		RuntimeDeps:     runtimeDeps,
 	}, nil
+}
+
+// Clean cleans the project's build artifacts user-specified build command.
+func (b *Builder) Clean() error {
+	if b.CleanCommand == "" {
+		return nil
+	}
+	// Run the clean command
+	cmd := exec.Command("/bin/sh", "-c", b.CleanCommand)
+	cmd.Stdout = b.Stdout
+	cmd.Stderr = b.Stderr
+	cmd.Env = b.env
+	log.Debugf("Command: %s", cmd.String())
+	if err := cmd.Run(); err != nil {
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+
+	return nil
 }
 
 func (b *Builder) setLibFuzzerEnv() error {

@@ -36,6 +36,7 @@ type CoverageGenerator struct {
 	OutputPath     string
 	BuildSystem    string
 	BuildCommand   string
+	CleanCommand   string
 	NumBuildJobs   uint
 	SeedCorpusDirs []string
 	UseSandbox     bool
@@ -132,6 +133,7 @@ func (cov *CoverageGenerator) build() error {
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:     cov.ProjectDir,
 			BuildCommand:   cov.BuildCommand,
+			CleanCommand:   cov.CleanCommand,
 			Sanitizers:     []string{"coverage"},
 			RunfilesFinder: cov.runfilesFinder,
 			Stdout:         cov.BuildStdout,
@@ -140,6 +142,11 @@ func (cov *CoverageGenerator) build() error {
 		if err != nil {
 			return err
 		}
+
+		if err := builder.Clean(); err != nil {
+			return err
+		}
+
 		buildResult, err := builder.Build(cov.FuzzTest)
 		if err != nil {
 			return err

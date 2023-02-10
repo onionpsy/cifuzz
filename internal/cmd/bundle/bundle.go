@@ -50,8 +50,8 @@ func newWithOptions(opts *options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle [flags] [<fuzz test>]...",
 		Short: "Bundles fuzz tests into an archive",
-		Long: `This command bundles all runtime artifacts required by the 
-given fuzz tests into a self-contained archive (bundle) that can be executed 
+		Long: `This command bundles all runtime artifacts required by the
+given fuzz tests into a self-contained archive (bundle) that can be executed
 by a CI Fuzz Server instance.
 
 The inputs found in the inputs directory of the fuzz test are also added
@@ -76,8 +76,8 @@ configured for the project.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Bazel") + `
   <fuzz test> is the name of the cc_fuzz_test target as defined in your
-  BUILD file, either as a relative or absolute Bazel label. 
-  
+  BUILD file, either as a relative or absolute Bazel label.
+
   Command completion for the <fuzz test> argument is supported.
 
   The '--build-command' flag is ignored.
@@ -104,6 +104,11 @@ configured for the project.
 
     echo "build-command: make clean && make \$FUZZ_TEST" >> cifuzz.yaml
     cifuzz run my_fuzz_test
+
+  To avoid cleaning the build artifacts after building each fuzz test, you
+  can provide a clean command using the --clean-command flag or specifying
+  the "clean-command" option in cifuzz.yaml. The clean command is then
+  executed once before building the fuzz tests.
 
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,
@@ -211,6 +216,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddBranchFlag,
 		cmdutils.AddBuildCommandFlag,
+		cmdutils.AddCleanCommandFlag,
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddCommitFlag,
 		cmdutils.AddDictFlag,

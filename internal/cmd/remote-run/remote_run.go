@@ -184,6 +184,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddBranchFlag,
 		cmdutils.AddBuildCommandFlag,
+		cmdutils.AddCleanCommandFlag,
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddCommitFlag,
 		cmdutils.AddDictFlag,
