@@ -70,6 +70,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs: expectedOutputs,
 		Env:             cifuzzEnv(dir),
+		Args:            []string{"--build-command", buildCommand()},
 	})
 
 	// Check that the findings command lists the findings
@@ -215,11 +216,7 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 
 	// Use a different Makefile on macOS, because shared objects need
 	// to be built differently there
-	var args []string
-	if runtime.GOOS == "darwin" {
-		args = append(args, "--build-command", "make -f Makefile.darwin clean && make -f Makefile.darwin $FUZZ_TEST")
-	}
-	args = append(args, "my_fuzz_test")
+	args := []string{"my_fuzz_test", "--build-command", buildCommand()}
 
 	// Execute the bundle command
 	shared.TestBundleLibFuzzer(t, dir, cifuzz, cifuzzEnv(dir), args...)
@@ -230,6 +227,7 @@ func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, cifuzzEnv
 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
 		"--output", fuzzTest+"-coverage",
+		"--build-command", buildCommand(),
 		fuzzTest)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
@@ -260,10 +258,12 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
 		"--format=lcov",
 		"--output", reportPath,
+		"--build-command", buildCommand(),
 		fuzzTest)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = cifuzzEnv(dir)
 	err := cmd.Run()
 	require.NoError(t, err)
 
@@ -314,4 +314,11 @@ func cifuzzEnv(workDir string) []string {
 		return append(os.Environ(), "DYLD_LIBRARY_PATH="+workDir)
 	}
 	return nil
+}
+
+func buildCommand() string {
+	if runtime.GOOS == "darwin" {
+		return "make -f Makefile.darwin clean && make -f Makefile.darwin $FUZZ_TEST"
+	}
+	return "make clean && make $FUZZ_TEST"
 }
