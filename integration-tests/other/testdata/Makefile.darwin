@@ -18,7 +18,7 @@ my_fuzz_test: libexplore.dylib
 	# done in a single invocation here, so we pass both to $CXX here).
 	${CXX} ${CXXFLAGS} ${FUZZ_TEST_CXXFLAGS} ${FUZZ_TEST_LDFLAGS} -Wl,-search_paths_first -Wl,-headerpad_max_install_names -o $@ $@.cpp -L. -lexplore
 
-crashing_fuzz_test.o: src/coverage/crashing_fuzz_test.cpp
+crashing_fuzz_test.o: src/coverage/crashing_fuzz_test.c
 	${CXX} ${CXXFLAGS} ${FUZZ_TEST_CXXFLAGS} -c $<
 
 crashing_fuzz_test: crashing_fuzz_test.o
