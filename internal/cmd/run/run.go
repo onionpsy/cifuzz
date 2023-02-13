@@ -34,6 +34,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -636,6 +637,12 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
+		libraryPaths, err := ldd.LibraryPaths(buildResult.Executable)
+		if err != nil {
+			return err
+		}
+		runnerOpts.LibraryDirs = libraryPaths
+
 		runner = libfuzzer.NewRunner(runnerOpts)
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		runnerOpts := &jazzer.RunnerOptions{
