@@ -129,6 +129,9 @@ func TestIntegration_CMake(t *testing.T) {
 	})
 
 	t.Run("bundle", func(t *testing.T) {
+		if runtime.GOOS != "linux" {
+			t.Skip("Creating a bundle for CMake is currently only supported on Linux")
+		}
 		// Run cifuzz bundle and verify the contents of the archive.
 		shared.TestBundleLibFuzzer(t, dir, cifuzz, os.Environ(), "parser_fuzz_test")
 	})

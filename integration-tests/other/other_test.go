@@ -201,8 +201,8 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Other build systems are currently only supported on Unix")
+	if runtime.GOOS != "linux" {
+		t.Skip("Creating a bundle for other build systems is currently only supported on Linux")
 	}
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
