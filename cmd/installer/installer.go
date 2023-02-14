@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -364,7 +365,12 @@ func installZshCompletionScript(installDir string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	fpath := strings.TrimSpace(string(out))
+	// There could be an extra output, like control characters in the output
+	// This regex captures everything before the first slash
+	// - "?" in .*? makes it non-greedy
+	re := regexp.MustCompile("^.*?[^/]*")
+	fpath := re.ReplaceAllLiteralString(string(out), "")
+	fpath = strings.TrimSpace(fpath)
 
 	// Ensure that the directory exists. Ignore errors here, if this
 	// fails, creating the symlink below will also fail and we handle
