@@ -617,11 +617,20 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		}
 	}
 
+	var libraryPaths []string
+	if runtime.GOOS != "windows" && buildResult.Executable != "" {
+		libraryPaths, err = ldd.LibraryPaths(buildResult.Executable)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	runnerOpts := &libfuzzer.RunnerOptions{
 		Dictionary:         c.opts.Dictionary,
 		EngineArgs:         c.opts.EngineArgs,
 		EnvVars:            []string{"NO_CIFUZZ=1"},
 		FuzzTarget:         buildResult.Executable,
+		LibraryDirs:        libraryPaths,
 		GeneratedCorpusDir: buildResult.GeneratedCorpus,
 		KeepColor:          !c.opts.PrintJSON,
 		ProjectDir:         c.opts.ProjectDir,
@@ -637,12 +646,6 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
-		libraryPaths, err := ldd.LibraryPaths(buildResult.Executable)
-		if err != nil {
-			return err
-		}
-		runnerOpts.LibraryDirs = libraryPaths
-
 		runner = libfuzzer.NewRunner(runnerOpts)
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		runnerOpts := &jazzer.RunnerOptions{
