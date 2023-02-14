@@ -26,13 +26,22 @@ func GetToken(server string) string {
 }
 
 func ReadTokenInteractively(server string) (string, error) {
-	url, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
+	path, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
 	if err != nil {
 		return "", err
 	}
-	url += "?create&origin=cli"
 
-	log.Printf("You need an API access token which can be generated here:\n%s", url)
+	values := url.Values{}
+	values.Set("create", "")
+	values.Add("origin", "cli")
+
+	url, err := url.Parse(path)
+	if err != nil {
+		return "", err
+	}
+	url.RawQuery = values.Encode()
+
+	log.Printf("You need an API access token which can be generated here:\n%s", url.String())
 
 	openBrowser, err := dialog.Confirm("Open browser to generate a new token?", true)
 	if err != nil {
@@ -40,7 +49,7 @@ func ReadTokenInteractively(server string) (string, error) {
 	}
 
 	if openBrowser {
-		err = browser.OpenURL(url)
+		err = browser.OpenURL(url.String())
 		if err != nil {
 			log.Errorf(err, "Failed to open browser: %v", err)
 		}

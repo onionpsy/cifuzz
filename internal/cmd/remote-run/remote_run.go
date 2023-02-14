@@ -318,13 +318,23 @@ func (c *runRemoteCmd) run() error {
 		//       shows details about the run, but currently details are only
 		//       shown on the "<fuzz target>/edit" page, which lists all runs
 		//       of the fuzz target.
-		url, err := url.JoinPath(c.opts.Server, "dashboard", campaignRunName, "overview?origin=cli")
+		path, err := url.JoinPath(c.opts.Server, "dashboard", campaignRunName, "overview")
 		if err != nil {
 			return err
 		}
+
+		values := url.Values{}
+		values.Add("origin", "cli")
+
+		url, err := url.Parse(path)
+		if err != nil {
+			return err
+		}
+		url.RawQuery = values.Encode()
+
 		log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
     %s
-`, url)
+`, url.String())
 	}
 
 	return nil
