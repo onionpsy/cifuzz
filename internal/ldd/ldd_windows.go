@@ -1,5 +1,5 @@
 package ldd
 
 func NonSystemSharedLibraries(executable string) ([]string, error) {
-	return nil, nil
+	panic("NonSystemSharedLibraries is not implemented for Windows")
 }
