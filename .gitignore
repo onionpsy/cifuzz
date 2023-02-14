@@ -19,3 +19,6 @@ coverage.out
 /cifuzz.yaml
 
 build-*.log
+
+# cifuzz run output in maven example
+/examples/maven/src/test/resources/
