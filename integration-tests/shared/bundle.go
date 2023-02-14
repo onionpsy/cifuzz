@@ -24,8 +24,10 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 
 	// Make the bundle command not fail on unsupported platforms to be
 	// able to test it on all platforms
-	err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1")
-	require.NoError(t, err)
+	if runtime.GOOS != "linux" {
+		err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1")
+		require.NoError(t, err)
+	}
 
 	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
 	require.NoError(t, err)

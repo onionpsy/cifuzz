@@ -90,4 +90,3 @@ runs:
         echo "--new--" && cat findings.new
         test -z $(comm -23 <(sort -u findings.old) <(sort -u findings.new))
       shell: bash
-

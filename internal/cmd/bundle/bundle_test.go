@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -32,9 +33,11 @@ func TestMain(m *testing.M) {
 
 	// Make the bundle command not fail on unsupported platforms to be
 	// able to test it on all platforms
-	err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1")
-	if err != nil {
-		panic(err)
+	if runtime.GOOS != "linux" {
+		err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1")
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	m.Run()
