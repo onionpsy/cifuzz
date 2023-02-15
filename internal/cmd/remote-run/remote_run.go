@@ -43,7 +43,7 @@ type remoteRunOpts struct {
 }
 
 func (opts *remoteRunOpts) Validate() error {
-	if !sliceutil.Contains([]string{config.BuildSystemBazel, config.BuildSystemCMake, config.BuildSystemOther}, opts.BuildSystem) {
+	if !sliceutil.Contains([]string{config.BuildSystemBazel, config.BuildSystemCMake, config.BuildSystemMaven, config.BuildSystemGradle, config.BuildSystemOther}, opts.BuildSystem) {
 		err := errors.Errorf(`Starting a remote run is currently not supported for %[1]s projects. If you
 are interested in using this feature with %[1]s, please file an issue at
 https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))
@@ -106,24 +106,25 @@ variable or by running 'cifuzz login' first.
 			// were bound to the flags of other commands before.
 			bindFlags()
 			cmdutils.ViperMustBindPFlag("bundle", cmd.Flags().Lookup("bundle"))
-
-			// Fail early if the platform is not supported
-			if runtime.GOOS != "linux" {
-				system := cases.Title(language.Und).String(runtime.GOOS)
-				if runtime.GOOS == "darwin" {
-					system = "macOS"
-				}
-				err := errors.Errorf(`Starting a remote run is currently only supported on Linux. If you are
-interested in using this feature on %s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
-				log.Print(err.Error())
-				return cmdutils.WrapSilentError(err)
-			}
-
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
+			}
+
+			// Fail early if the platform is not supported
+			if runtime.GOOS != "linux" {
+				if !sliceutil.Contains([]string{config.BuildSystemMaven, config.BuildSystemGradle}, opts.BuildSystem) {
+					system := cases.Title(language.Und).String(runtime.GOOS)
+					if runtime.GOOS == "darwin" {
+						system = "macOS"
+					}
+					err := errors.Errorf(`Starting a remote run is currently only supported on Linux. If you are
+interested in using this feature on %s, please file an issue at
+https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
+					log.Print(err.Error())
+					return cmdutils.WrapSilentError(err)
+				}
 			}
 
 			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)

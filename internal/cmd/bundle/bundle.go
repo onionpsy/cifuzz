@@ -171,11 +171,6 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 				opts.BuildStderr = opts.BuildStdout
 			}
 
-			if isOSIndependent {
-				log.Warnf("WARNING: Bundling for %s is experimental and is currently not supported for remote runs.",
-					opts.BuildSystem)
-			}
-
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
