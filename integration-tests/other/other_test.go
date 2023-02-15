@@ -35,9 +35,8 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Other build systems are currently only supported on Unix")
-	}
+	skipOnWindows(t)
+
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir = shared.InstallCIFuzzInTemp(t)
@@ -57,9 +56,6 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	expectedOutputs := []*regexp.Regexp{
 		regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-buffer-overflow`),
 	}
-	if runtime.GOOS != "windows" {
-		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
-	}
 
 	// Check that Minijail is used (if running on Linux, because Minijail
 	// is only supported on Linux)
@@ -75,13 +71,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 
 	// Check that the findings command lists the findings
 	findings := shared.GetFindings(t, cifuzz, dir)
-	// On Windows, only the ASan finding is expected, on Linux and macOS
-	// both the ASan and the UBSan finding are expected.
-	if runtime.GOOS == "windows" {
-		require.Len(t, findings, 1)
-	} else {
-		require.Len(t, findings, 2)
-	}
+	require.Len(t, findings, 2)
 	var asanFinding *finding.Finding
 	var ubsanFinding *finding.Finding
 	for _, f := range findings {
@@ -127,49 +117,41 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 				Function:    "LLVMFuzzerTestOneInputNoReturn",
 			},
 		}
-		if runtime.GOOS == "windows" {
-			// On Windows, the column is not printed
-			for i := range expectedStackTrace {
-				expectedStackTrace[i].Column = 0
-			}
-		}
 
 		require.Equal(t, expectedStackTrace, asanFinding.StackTrace)
 	}
 
 	// Verify that there is a UBSan finding and that it has the correct details.
-	if runtime.GOOS != "windows" {
-		require.NotNil(t, ubsanFinding)
-		// Verify that UBSan findings come with inputs under the project directory.
-		require.NotEmpty(t, ubsanFinding.InputFile)
-		require.False(t, filepath.IsAbs(ubsanFinding.InputFile), "Should be relative: %s", ubsanFinding.InputFile)
-		require.FileExists(t, filepath.Join(dir, ubsanFinding.InputFile))
-		if runtime.GOOS != "darwin" {
-			expectedStackTrace := []*stacktrace.StackFrame{
-				{
-					SourceFile:  "src/bug/trigger_bugs.cpp",
-					Line:        18,
-					Column:      5,
-					FrameNumber: 0,
-					Function:    "triggerUBSan",
-				},
-				{
-					SourceFile:  "src/explore/explore_me.cpp",
-					Line:        13,
-					Column:      9,
-					FrameNumber: 1,
-					Function:    "exploreMe",
-				},
-				{
-					SourceFile:  "my_fuzz_test.cpp",
-					Line:        18,
-					Column:      3,
-					FrameNumber: 2,
-					Function:    "LLVMFuzzerTestOneInputNoReturn",
-				},
-			}
-			require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
+	require.NotNil(t, ubsanFinding)
+	// Verify that UBSan findings come with inputs under the project directory.
+	require.NotEmpty(t, ubsanFinding.InputFile)
+	require.False(t, filepath.IsAbs(ubsanFinding.InputFile), "Should be relative: %s", ubsanFinding.InputFile)
+	require.FileExists(t, filepath.Join(dir, ubsanFinding.InputFile))
+	if runtime.GOOS != "darwin" {
+		expectedStackTrace := []*stacktrace.StackFrame{
+			{
+				SourceFile:  "src/bug/trigger_bugs.cpp",
+				Line:        18,
+				Column:      5,
+				FrameNumber: 0,
+				Function:    "triggerUBSan",
+			},
+			{
+				SourceFile:  "src/explore/explore_me.cpp",
+				Line:        13,
+				Column:      9,
+				FrameNumber: 1,
+				Function:    "exploreMe",
+			},
+			{
+				SourceFile:  "my_fuzz_test.cpp",
+				Line:        18,
+				Column:      3,
+				FrameNumber: 2,
+				Function:    "LLVMFuzzerTestOneInputNoReturn",
+			},
 		}
+		require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
 	}
 
 	// Test the coverage command
@@ -180,9 +162,8 @@ func TestIntegration_Other_DetailedCoverage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Other build systems are currently only supported on Unix")
-	}
+	skipOnWindows(t)
+
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 
@@ -321,4 +302,10 @@ func buildCommand() string {
 		return "make -f Makefile.darwin clean && make -f Makefile.darwin $FUZZ_TEST"
 	}
 	return "make clean && make $FUZZ_TEST"
+}
+
+func skipOnWindows(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Other build systems are currently not supported on Windows")
+	}
 }
