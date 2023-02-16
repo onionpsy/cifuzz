@@ -22,6 +22,7 @@ type RunnerOptions struct {
 	LibfuzzerOptions              *libfuzzer.RunnerOptions
 	AutofuzzTarget                string
 	TargetClass                   string
+	TargetMethod                  string
 	ClassPaths                    []string
 	InstrumentationPackageFilters []string
 }
@@ -83,6 +84,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		args = append(args, "--autofuzz="+r.AutofuzzTarget)
 	} else {
 		args = append(args, "--target_class="+r.TargetClass)
+		args = append(args, "--target_method="+r.TargetMethod)
 	}
 	// -------------------------
 	// --- libfuzzer options ---

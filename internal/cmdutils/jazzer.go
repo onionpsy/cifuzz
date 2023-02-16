@@ -10,9 +10,10 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/regexutil"
 )
 
-var jazzerFuzzTestRegex = regexp.MustCompile(`@FuzzTest|\sfuzzerTestOneInput\(`)
+var jazzerFuzzTestRegex = regexp.MustCompile(`@FuzzTest|\sfuzzerTestOneInput\s*\(`)
 
 func JazzerSeedCorpus(targetClass string, projectDir string) string {
 	seedCorpus := targetClass + "Inputs"
@@ -26,6 +27,41 @@ func JazzerGeneratedCorpus(targetClass string, projectDir string) string {
 	return filepath.Join(projectDir, ".cifuzz-corpus", targetClass)
 }
 
+// GetTargetMethodsFromJVMFuzzTestFile returns a list of target methods from
+// a given fuzz test file.
+func GetTargetMethodsFromJVMFuzzTestFile(path string) ([]string, error) {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	var targetMethods []string
+
+	// Define a regular expression pattern to match @FuzzTest annotations
+	// it will return the name of the fuzz test method in the line following
+	// the @FuzzTest annotation
+	fuzzTestRegex := regexp.MustCompile(`@FuzzTest\s+(?P<prefix>\w*\s)*(?P<functionName>\w+)\s*\(`)
+
+	// Find all matches of the regular expression in the input string
+	// matches := fuzzTestRegex.FindAllStringSubmatch(string(bytes), -1)
+	matches, _ := regexutil.FindAllNamedGroupsMatches(fuzzTestRegex, string(bytes))
+
+	// Check if the file contains a fuzzerTestOneInput method
+	// and append it to the targetMethods slice if it does
+	fuzzerTestOneInputRegex := regexp.MustCompile(`\sfuzzerTestOneInput\s*\(`)
+	if len(fuzzerTestOneInputRegex.FindAllStringSubmatch(string(bytes), -1)) > 0 {
+		targetMethods = append(targetMethods, "fuzzerTestOneInput")
+	}
+
+	// Extract the function name from each match and append it to the
+	// targetMethods slice
+	for _, match := range matches {
+		targetMethods = append(targetMethods, match["functionName"])
+	}
+
+	return targetMethods, nil
+}
+
 // ConstructJVMFuzzTestIdentifier constructs a fully qualified class name for a
 // given fuzz test file from the directory the file is in and the file name.
 func ConstructJVMFuzzTestIdentifier(path, testDir string) (string, error) {
@@ -36,6 +72,7 @@ func ConstructJVMFuzzTestIdentifier(path, testDir string) (string, error) {
 
 	match := jazzerFuzzTestRegex.MatchString(string(bytes))
 	if match {
+
 		classFilePath, err := filepath.Rel(testDir, path)
 		if err != nil {
 			return "", errors.WithStack(err)
@@ -85,12 +122,37 @@ func ListJVMFuzzTestsWithFilter(projectDir string, prefixFilter string) ([]strin
 
 	var fuzzTests []string
 	for _, match := range matches {
-		fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
+		// Get the target methods from the fuzz test file
+		methods, err := GetTargetMethodsFromJVMFuzzTestFile(match)
 		if err != nil {
 			return nil, err
 		}
-		if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
-			fuzzTests = append(fuzzTests, fuzzTestIdentifier)
+
+		// For files with a single fuzz method, identify it only by the file name
+		if len(methods) == 1 {
+			fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
+			if err != nil {
+				return nil, err
+			}
+
+			if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
+				fuzzTests = append(fuzzTests, fuzzTestIdentifier)
+			}
+			continue
+		}
+
+		// add the fuzz test identifier to the fuzzTests slice
+		for _, method := range methods {
+			fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
+			if err != nil {
+				return nil, err
+			}
+
+			fuzzTestIdentifier = fuzzTestIdentifier + "::" + method
+			if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
+				// add the method name to the identifier
+				fuzzTests = append(fuzzTests, fuzzTestIdentifier)
+			}
 		}
 	}
 

@@ -62,9 +62,10 @@ type runOptions struct {
 	BuildOnly             bool          `mapstructure:"build-only"`
 	ResolveSourceFilePath bool
 
-	ProjectDir string
-	fuzzTest   string
-	argsToPass []string
+	ProjectDir   string
+	fuzzTest     string
+	targetMethod string
+	argsToPass   []string
 
 	buildStdout io.Writer
 	buildStderr io.Writer
@@ -239,6 +240,13 @@ depends on the build system configured for the project.
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
+			}
+
+			// Check if the fuzz test is a method of a class
+			// And remove method from fuzz test argument
+			if strings.Contains(args[0], "::") {
+				split := strings.Split(args[0], "::")
+				args[0], opts.targetMethod = split[0], split[1]
 			}
 
 			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
@@ -552,7 +560,8 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 
-		if err := builder.Clean(); err != nil {
+		err := builder.Clean()
+		if err != nil {
 			return nil, err
 		}
 
@@ -568,7 +577,12 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 }
 
 func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
-	log.Infof("Running %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprintf(c.opts.fuzzTest))
+	if c.opts.targetMethod != "" {
+		log.Infof("Running %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprintf(c.opts.fuzzTest+"::"+c.opts.targetMethod))
+	} else {
+		log.Infof("Running %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprintf(c.opts.fuzzTest))
+	}
+
 	if buildResult.Executable != "" {
 		log.Debugf("Executable: %s", buildResult.Executable)
 	}
@@ -608,7 +622,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		// by bazel via --script_path and must therefore be accessible
 		// inside the sandbox.
 		cmd := exec.Command("bazel", "info", "install_base")
-		err := cmd.Run()
+		err = cmd.Run()
 		if err != nil {
 			// It's expected that bazel might fail due to user configuration,
 			// so we print the error without the stack trace.
@@ -651,6 +665,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		runnerOpts := &jazzer.RunnerOptions{
 			TargetClass:      c.opts.fuzzTest,
+			TargetMethod:     c.opts.targetMethod,
 			ClassPaths:       buildResult.RuntimeDeps,
 			LibfuzzerOptions: runnerOpts,
 		}
