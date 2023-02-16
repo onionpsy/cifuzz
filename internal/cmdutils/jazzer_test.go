@@ -65,3 +65,70 @@ func TestListJVMFuzzTests(t *testing.T) {
 	assert.Contains(t, result, "com.filter.me.FuzzTestCase2")
 	assert.Contains(t, result, "com.example.FuzzTestCase3")
 }
+
+func TestGetTargetMethodsFromJVMFuzzTestFileSingleMethod(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "jazzer-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(tempDir)
+	require.NoError(t, err)
+
+	path := filepath.Join(tempDir, "FuzzTest1.java")
+	err = os.WriteFile(path, []byte(`
+package com.example;
+
+import com.code_intelligence.jazzer.junit.FuzzTest;
+
+class FuzzTest {
+    @FuzzTest
+    public static void fuzz(byte[] data) {}
+}
+`), 0o644)
+	require.NoError(t, err)
+
+	result, err := GetTargetMethodsFromJVMFuzzTestFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"fuzz"}, result)
+
+	path = filepath.Join(tempDir, "FuzzTest2.java")
+	err = os.WriteFile(path, []byte(`
+package com.example;
+
+import com.code_intelligence.jazzer.junit.FuzzTest;
+
+class FuzzTest {
+    public static void fuzzerTestOneInput(byte[] data) {}
+}
+`), 0o644)
+	require.NoError(t, err)
+
+	result, err = GetTargetMethodsFromJVMFuzzTestFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"fuzzerTestOneInput"}, result)
+}
+
+func TestGetTargetMethodsFromJVMFuzzTestFileMultipleMethods(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "jazzer-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(tempDir)
+	require.NoError(t, err)
+
+	path := filepath.Join(tempDir, "FuzzTest.java")
+	err = os.WriteFile(path, []byte(`
+package com.example;
+
+import com.code_intelligence.jazzer.junit.FuzzTest;
+
+class FuzzTest {
+    @FuzzTest
+    public static void fuzz(byte[] data) {}
+
+	@FuzzTest
+	public static void fuzz2(byte[] data) {}
+}
+`), 0o644)
+	require.NoError(t, err)
+
+	result, err := GetTargetMethodsFromJVMFuzzTestFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"fuzz", "fuzz2"}, result)
+}
