@@ -23,12 +23,20 @@ applying all inputs or earlier if a regression occurs.
 To work correctly, the fuzz test has to be build with so-called sanitizers, 
 which track the execution at runtime to be able to detect various errors.
 
-### CMake
+In general, we want regression tests to run in the native build system.
 
-It is recommended to use the provided CMake user presets, which can be
-generated with `cifuzz integrate cmake`. Those provide a preset for
-regression testing, which can be executed from within your IDE or in
-the cli.
+### CMake (+ support in CLion IDE)
+
+To use the provided CMake user presets (necessary to run in CLion), generate
+them with `cifuzz integrate cmake`. These provide a preset for regression
+testing, which can be executed from within your IDE or from the CLI.
+
+In CLion, enable the CMake profiles under **"Settings" -> "Build, Execution,
+Deployment" -> "CMake"**:
+
+![enabling cmake profiles in CLion settings](assets/cmake_clion_profiles.png)
+
+![selecting the cifuzz regression test preset](assets/clion_regression_preset.png)
 
 After selecting the preset the fuzz test is executed in regression
 test mode.
