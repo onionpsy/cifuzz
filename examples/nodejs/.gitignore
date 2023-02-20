@@ -1,0 +1,9 @@
+.cifuzz-corpus/
+*.log
+
+FuzzTestCase.fuzz/
+
+coverage
+*.lcov
+
+node_modules/
