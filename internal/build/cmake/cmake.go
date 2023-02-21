@@ -18,6 +18,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/sliceutil"
@@ -227,13 +228,21 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		var runtimeDeps []string
 		if b.FindRuntimeDeps {
-			runtimeDeps, err = b.getRuntimeDeps(fuzzTest)
+			// TODO if we have another solution for windows/darwin we should remove
+			// the getRuntimeDeps and the related code in cifuzz-functions.cmake
+			if runtime.GOOS == "linux" {
+				runtimeDeps, err = ldd.NonSystemSharedLibraries(executable)
+			} else {
+				runtimeDeps, err = b.getRuntimeDeps(fuzzTest)
+			}
 			if err != nil {
 				return nil, err
 			}
 		}
+
 		generatedCorpus := filepath.Join(b.ProjectDir, ".cifuzz-corpus", fuzzTest)
 		result := &build.Result{
 			Name:            fuzzTest,
