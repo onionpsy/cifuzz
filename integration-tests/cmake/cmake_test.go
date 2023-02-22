@@ -112,6 +112,10 @@ func TestIntegration_CMake(t *testing.T) {
 			// Produces a coverage report for crashing_fuzz_test
 			testLcovCoverageReport(t, cifuzz, dir)
 		})
+		t.Run("coverageWithAdditionalArgs", func(t *testing.T) {
+			// Run cifuzz coverage with additional args
+			testCoverageWithAdditionalArgs(t, cifuzz, dir)
+		})
 	})
 
 	t.Run("runWithConfigFile", func(t *testing.T) {
@@ -134,10 +138,18 @@ func TestIntegration_CMake(t *testing.T) {
 		}
 		// Run cifuzz bundle and verify the contents of the archive.
 		shared.TestBundleLibFuzzer(t, dir, cifuzz, os.Environ(), "parser_fuzz_test")
+
+		// Run cifuzz bundle with additional args
+		testBundleWithAdditionalArgs(t, cifuzz, dir)
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {
+		if runtime.GOOS != "linux" {
+			t.Skip("The remote-run command is currently only supported on Linux")
+		}
 		testRemoteRun(t, cifuzzRunner)
+
+		testRemoteRunWithAdditionalArgs(t, cifuzzRunner)
 	})
 
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
@@ -145,6 +157,56 @@ func TestIntegration_CMake(t *testing.T) {
 			testRunWithUpload(t, cifuzzRunner)
 		})
 	}
+}
+
+func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
+	// Skip this test if we're running on a PRERELEASE pipeline, because
+	// we might append additional arguments to the command, which might
+	// cause this test to fail.
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		t.Skip("skipping testRunWithAdditionalArgs")
+	}
+
+	if runtime.GOOS == "windows" {
+		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
+	}
+
+	// Run cmake and expect it to fail because we passed it a non-existent flag
+	cmd := executil.Command(cifuzz, "coverage", "parser_fuzz_test", "--", "--non-existent-flag")
+	cmd.Dir = dir
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	output, err := cmd.CombinedOutput()
+	regexp := regexp.MustCompile("Unknown argument --non-existent-flag")
+	seenExpectedOutput := regexp.MatchString(string(output))
+	require.Error(t, err)
+	require.True(t, seenExpectedOutput)
+}
+
+func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
+	// Skip this test if we're running on a PRERELEASE pipeline, because
+	// we might append additional arguments to the command, which might
+	// cause this test to fail.
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		t.Skip("skipping testRunWithAdditionalArgs")
+	}
+
+	// Run cmake and expect it to fail because we passed it a non-existent flag
+	cmd := executil.Command(cifuzz, "bundle", "parser_fuzz_test", "--", "--non-existent-flag")
+	cmd.Dir = dir
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	output, err := cmd.CombinedOutput()
+	regexp := regexp.MustCompile("Unknown argument --non-existent-flag")
+	seenExpectedOutput := regexp.MatchString(string(output))
+	require.Error(t, err)
+	require.True(t, seenExpectedOutput)
 }
 
 func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
@@ -341,6 +403,11 @@ func testHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
 	err := cmd.Run()
 	require.NoError(t, err)
 
@@ -371,6 +438,11 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
 	err := cmd.Run()
 	require.NoError(t, err)
 
@@ -416,15 +488,16 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 }
 
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	// The remote-run command is currently only supported on Linux
-	if runtime.GOOS != "linux" {
-		t.Skip()
-	}
-	t.Parallel()
-
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRemoteRun(t, testdata, cifuzz)
+}
+
+func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	regexp := regexp.MustCompile("Unknown argument --non-existent-flag")
+	shared.TestRemoteRunWithAdditionalArgs(t, testdata, cifuzz, regexp)
 }
 
 func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

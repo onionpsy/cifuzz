@@ -112,15 +112,66 @@ func TestIntegration_Bazel(t *testing.T) {
 
 	t.Run("bundle", func(t *testing.T) {
 		testBundle(t, cifuzzRunner)
+
+		testBundleWithAdditionalArgs(t, cifuzz, testdata)
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {
+		// The remote-run command is currently only supported on Linux
+		if runtime.GOOS != "linux" {
+			t.Skip()
+		}
 		testRemoteRun(t, cifuzzRunner)
+
+		testRemoteRunWithAdditionalArgs(t, cifuzzRunner)
 	})
 
 	t.Run("coverage", func(t *testing.T) {
 		testCoverage(t, cifuzzRunner)
 	})
+
+	t.Run("coverageWithAdditionalArgs", func(t *testing.T) {
+		// Run cifuzz coverage with additional args
+		testCoverageWithAdditionalArgs(t, cifuzz, testdata)
+	})
+}
+
+func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS == "darwin" {
+		t.Skip("Coverage is currently not working on our macOS CI")
+	}
+
+	cmd := executil.Command(cifuzz, "coverage", "//src/parser:parser_fuzz_test", "--", "--non-existent-flag")
+	cmd.Dir = dir
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	output, err := cmd.CombinedOutput()
+	regexp := regexp.MustCompile("Unrecognized option: --non-existent-flag")
+	seenExpectedOutput := regexp.MatchString(string(output))
+	require.Error(t, err)
+	require.True(t, seenExpectedOutput)
+}
+
+func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS == "darwin" {
+		t.Skip("Bundle is currently not supported on macOS")
+	}
+
+	cmd := executil.Command(cifuzz, "bundle", "//src/parser:parser_fuzz_test", "--", "--non-existent-flag")
+	cmd.Dir = dir
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	output, err := cmd.CombinedOutput()
+	regexp := regexp.MustCompile("Unrecognized option: --non-existent-flag")
+	seenExpectedOutput := regexp.MatchString(string(output))
+	require.Error(t, err)
+	require.True(t, seenExpectedOutput)
 }
 
 func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
@@ -249,14 +300,16 @@ func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	// The remote-run command is currently only supported on Linux
-	if runtime.GOOS != "linux" {
-		t.Skip()
-	}
-
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRemoteRun(t, testdata, cifuzz, "//src/parser:parser_fuzz_test")
+}
+
+func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	regexp := regexp.MustCompile("Unrecognized option: --non-existent-flag")
+	shared.TestRemoteRunWithAdditionalArgs(t, testdata, cifuzz, regexp, "//src/parser:parser_fuzz_test")
 }
 
 func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

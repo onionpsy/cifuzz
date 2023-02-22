@@ -3,6 +3,7 @@ package shared
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -64,4 +65,38 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	require.True(t, server.ArtifactsUploaded)
 	require.True(t, server.RunStarted)
+}
+
+func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, expectedErrorExp *regexp.Regexp, args ...string) {
+	var err error
+	projectName := "test-project"
+	artifactsName := "test-artifacts-123"
+	token := "test-token"
+
+	// Start a mock server to handle our requests
+	server := StartMockServer(t, projectName, artifactsName)
+
+	args = append(
+		[]string{
+			"remote-run",
+			"--project", projectName,
+			"--server", server.Address,
+		}, args...)
+	args = append(args, "--", "--non-existent-flag")
+	cmd := executil.Command(cifuzz, args...)
+	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", token)
+	require.NoError(t, err)
+	cmd.Dir = dir
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	TerminateOnSignal(t, cmd)
+
+	t.Logf("Command: %s", cmd.String())
+	output, err := cmd.CombinedOutput()
+	t.Logf("XXXXX: %s", string(output))
+	require.Error(t, err)
+
+	seenExpectedOutput := expectedErrorExp.MatchString(string(output))
+	require.True(t, seenExpectedOutput)
 }
