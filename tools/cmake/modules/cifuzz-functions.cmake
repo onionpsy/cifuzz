@@ -136,10 +136,14 @@ endfunction()
 function(add_fuzz_test name)
   set(_options)
   set(_one_value_args)
-  set(_multi_value_args)
+  set(_multi_value_args DEPENDENCIES INCLUDE_DIRS SOURCES )
   cmake_parse_arguments(PARSE_ARGV 1 _args "${_options}" "${_one_value_args}" "${_multi_value_args}")
 
-  set(_args_sources ${_args_UNPARSED_ARGUMENTS})
+  if( NOT _args_SOURCES )
+    set(_args_sources ${_args_UNPARSED_ARGUMENTS})
+  else()
+    set(_args_sources ${_args_SOURCES})
+  endif()
 
   add_executable("${name}" ${_args_sources})
 
@@ -152,9 +156,15 @@ function(add_fuzz_test name)
     else()
       target_compile_options("${name}" PRIVATE "-include${_fuzz_macro_header}")
     endif()
-  else()
-    target_include_directories("${name}" SYSTEM PRIVATE "${CIFUZZ_INCLUDE_DIR}")
   endif()
+  
+  list( APPEND _args_INCLUDE_DIRS SYSTEM PRIVATE "${CIFUZZ_INCLUDE_DIR}" )
+  target_include_directories("${name}" ${_args_INCLUDE_DIRS} )
+
+  if( _args_DEPENDENCIES )
+    target_link_libraries( "${name}" ${_args_DEPENDENCIES} )
+  endif()
+  
   # This macro is consumed by cifuzz.h and cifuzz_launcher.c.
   target_compile_definitions("${name}" PRIVATE CIFUZZ_TEST_NAME="${name}")
 
