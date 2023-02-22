@@ -300,6 +300,7 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 
 	args := []string{"build"}
 	args = append(args, commonFlags...)
+	args = append(args, b.Args...)
 	args = append(args, buildAndCQueryFlags...)
 
 	// We have to build the "*_oss_fuzz" target defined by the

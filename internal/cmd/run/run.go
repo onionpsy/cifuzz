@@ -228,6 +228,7 @@ depends on the build system configured for the project.
 			if cmd.ArgsLenAtDash() != -1 {
 				lenFuzzTestArgs = cmd.ArgsLenAtDash()
 				argsToPass = args[cmd.ArgsLenAtDash():]
+				args = args[:cmd.ArgsLenAtDash()]
 			} else {
 				lenFuzzTestArgs = len(args)
 			}

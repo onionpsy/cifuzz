@@ -105,6 +105,13 @@ variable or by running 'cifuzz login' first.
 			// function, because that would re-bind viper keys which
 			// were bound to the flags of other commands before.
 			bindFlags()
+
+			var argsToPass []string
+			if cmd.ArgsLenAtDash() != -1 {
+				argsToPass = args[cmd.ArgsLenAtDash():]
+				args = args[:cmd.ArgsLenAtDash()]
+			}
+
 			cmdutils.ViperMustBindPFlag("bundle", cmd.Flags().Lookup("bundle"))
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
@@ -133,6 +140,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				return cmdutils.WrapSilentError(err)
 			}
 			opts.FuzzTests = fuzzTests
+			opts.BuildSystemArgs = argsToPass
 
 			if opts.ProjectName != "" && !strings.HasPrefix(opts.ProjectName, "projects/") {
 				opts.ProjectName = "projects/" + opts.ProjectName
