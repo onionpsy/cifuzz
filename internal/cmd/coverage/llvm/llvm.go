@@ -32,19 +32,20 @@ import (
 )
 
 type CoverageGenerator struct {
-	OutputFormat   string
-	OutputPath     string
-	BuildSystem    string
-	BuildCommand   string
-	CleanCommand   string
-	NumBuildJobs   uint
-	SeedCorpusDirs []string
-	UseSandbox     bool
-	FuzzTest       string
-	ProjectDir     string
-	Stderr         io.Writer
-	BuildStdout    io.Writer
-	BuildStderr    io.Writer
+	OutputFormat    string
+	OutputPath      string
+	BuildSystem     string
+	BuildCommand    string
+	BuildSystemArgs []string
+	CleanCommand    string
+	NumBuildJobs    uint
+	SeedCorpusDirs  []string
+	UseSandbox      bool
+	FuzzTest        string
+	ProjectDir      string
+	Stderr          io.Writer
+	BuildStdout     io.Writer
+	BuildStderr     io.Writer
 
 	buildResult    *build.Result
 	tmpDir         string
@@ -101,6 +102,7 @@ func (cov *CoverageGenerator) build() error {
 	case config.BuildSystemCMake:
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: cov.ProjectDir,
+			Args:       cov.BuildSystemArgs,
 			Sanitizers: []string{"coverage"},
 			Parallel: cmake.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),

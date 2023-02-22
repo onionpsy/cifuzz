@@ -20,17 +20,18 @@ import (
 )
 
 type CoverageGenerator struct {
-	FuzzTest     string
-	OutputFormat string
-	OutputPath   string
-	ProjectDir   string
-	Engine       string
-	NumJobs      uint
-	Stdout       io.Writer
-	Stderr       io.Writer
-	BuildStdout  io.Writer
-	BuildStderr  io.Writer
-	Verbose      bool
+	FuzzTest        string
+	OutputFormat    string
+	OutputPath      string
+	BuildSystemArgs []string
+	ProjectDir      string
+	Engine          string
+	NumJobs         uint
+	Stdout          io.Writer
+	Stderr          io.Writer
+	BuildStdout     io.Writer
+	BuildStderr     io.Writer
+	Verbose         bool
 }
 
 func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
@@ -81,6 +82,7 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	args := []string{"coverage"}
 	args = append(args, commonFlags...)
 	args = append(args, coverageFlags...)
+	args = append(args, cov.BuildSystemArgs...)
 	args = append(args, cov.FuzzTest)
 
 	cmd := exec.Command("bazel", args...)

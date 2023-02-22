@@ -47,7 +47,9 @@ type coverageOptions struct {
 	ResolveSourceFilePath bool
 	ProjectDir            string
 
-	fuzzTest    string
+	fuzzTest   string
+	argsToPass []string
+
 	buildStdout io.Writer
 	buildStderr io.Writer
 }
@@ -107,6 +109,8 @@ addition to optional input directories specified with the seed-corpus flag.
 More details about the build system specific inputs directory location
 can be found in the help message of the run command.
 
+Additional arguments for CMake and Bazel can be passed after a "--".
+
 The output can be displayed in the browser or written as a HTML
 or a lcov trace file.
 
@@ -123,7 +127,6 @@ or a lcov trace file.
     cifuzz coverage --format=jacocoxml <fuzz test>
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,
-		Args:              cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Bind viper keys to flags. We can't do this in the New
 			// function, because that would re-bind viper keys which
@@ -131,6 +134,20 @@ or a lcov trace file.
 			bindFlags()
 			cmdutils.ViperMustBindPFlag("format", cmd.Flags().Lookup("format"))
 			cmdutils.ViperMustBindPFlag("output", cmd.Flags().Lookup("output"))
+
+			var lenFuzzTestArgs int
+			var argsToPass []string
+			if cmd.ArgsLenAtDash() != -1 {
+				lenFuzzTestArgs = cmd.ArgsLenAtDash()
+				argsToPass = args[cmd.ArgsLenAtDash():]
+				args = args[:cmd.ArgsLenAtDash()]
+			} else {
+				lenFuzzTestArgs = len(args)
+			}
+			if lenFuzzTestArgs != 1 {
+				msg := fmt.Sprintf("Exactly one <fuzz test> argument must be provided, got %d", lenFuzzTestArgs)
+				return cmdutils.WrapIncorrectUsageError(errors.New(msg))
+			}
 
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
@@ -144,6 +161,7 @@ or a lcov trace file.
 				return cmdutils.WrapSilentError(err)
 			}
 			opts.fuzzTest = fuzzTest[0]
+			opts.argsToPass = argsToPass
 
 			opts.buildStdout = cmd.OutOrStdout()
 			opts.buildStderr = cmd.OutOrStderr()
@@ -230,35 +248,49 @@ func (c *coverageCmd) run() error {
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
 		gen = &bazelCoverage.CoverageGenerator{
-			FuzzTest:     c.opts.fuzzTest,
-			OutputFormat: c.opts.OutputFormat,
-			OutputPath:   c.opts.OutputPath,
-			ProjectDir:   c.opts.ProjectDir,
-			Engine:       "libfuzzer",
-			NumJobs:      c.opts.NumBuildJobs,
-			Stdout:       c.OutOrStdout(),
-			Stderr:       c.ErrOrStderr(),
-			BuildStdout:  c.opts.buildStdout,
-			BuildStderr:  c.opts.buildStderr,
-			Verbose:      viper.GetBool("verbose"),
+			FuzzTest:        c.opts.fuzzTest,
+			OutputFormat:    c.opts.OutputFormat,
+			OutputPath:      c.opts.OutputPath,
+			BuildSystemArgs: c.opts.argsToPass,
+			ProjectDir:      c.opts.ProjectDir,
+			Engine:          "libfuzzer",
+			NumJobs:         c.opts.NumBuildJobs,
+			Stdout:          c.OutOrStdout(),
+			Stderr:          c.ErrOrStderr(),
+			BuildStdout:     c.opts.buildStdout,
+			BuildStderr:     c.opts.buildStderr,
+			Verbose:         viper.GetBool("verbose"),
 		}
 	case config.BuildSystemCMake, config.BuildSystemOther:
+		if c.opts.BuildSystem == config.BuildSystemOther {
+			if len(c.opts.argsToPass) > 0 {
+				log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
+					"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+			}
+		}
+
 		gen = &llvmCoverage.CoverageGenerator{
-			OutputFormat:   c.opts.OutputFormat,
-			OutputPath:     c.opts.OutputPath,
-			BuildSystem:    c.opts.BuildSystem,
-			BuildCommand:   c.opts.BuildCommand,
-			CleanCommand:   c.opts.CleanCommand,
-			NumBuildJobs:   c.opts.NumBuildJobs,
-			SeedCorpusDirs: c.opts.SeedCorpusDirs,
-			UseSandbox:     c.opts.UseSandbox,
-			FuzzTest:       c.opts.fuzzTest,
-			ProjectDir:     c.opts.ProjectDir,
-			Stderr:         c.OutOrStderr(),
-			BuildStdout:    c.opts.buildStdout,
-			BuildStderr:    c.opts.buildStderr,
+			OutputFormat:    c.opts.OutputFormat,
+			OutputPath:      c.opts.OutputPath,
+			BuildSystem:     c.opts.BuildSystem,
+			BuildCommand:    c.opts.BuildCommand,
+			BuildSystemArgs: c.opts.argsToPass,
+			CleanCommand:    c.opts.CleanCommand,
+			NumBuildJobs:    c.opts.NumBuildJobs,
+			SeedCorpusDirs:  c.opts.SeedCorpusDirs,
+			UseSandbox:      c.opts.UseSandbox,
+			FuzzTest:        c.opts.fuzzTest,
+			ProjectDir:      c.opts.ProjectDir,
+			Stderr:          c.OutOrStderr(),
+			BuildStdout:     c.opts.buildStdout,
+			BuildStderr:     c.opts.buildStderr,
 		}
 	case config.BuildSystemGradle:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
 		gen = &gradleCoverage.CoverageGenerator{
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
@@ -271,6 +303,11 @@ func (c *coverageCmd) run() error {
 			BuildStderr: c.opts.buildStderr,
 		}
 	case config.BuildSystemMaven:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
 		gen = &mavenCoverage.CoverageGenerator{
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
