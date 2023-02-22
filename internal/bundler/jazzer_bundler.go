@@ -3,6 +3,7 @@ package bundler
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -188,6 +189,11 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 	var buildResults []*build.Result
 	switch b.opts.BuildSystem {
 	case config.BuildSystemMaven:
+		if len(b.opts.BuildSystemArgs) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
+				"These arguments are ignored: %s", strings.Join(b.opts.BuildSystemArgs, " "))
+		}
+
 		builder, err := maven.NewBuilder(&maven.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
 			Parallel: maven.ParallelOptions{
@@ -209,6 +215,11 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 			buildResults = append(buildResults, buildResult)
 		}
 	case config.BuildSystemGradle:
+		if len(b.opts.BuildSystemArgs) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
+				"These arguments are ignored: %s", strings.Join(b.opts.BuildSystemArgs, " "))
+		}
+
 		builder, err := gradle.NewBuilder(&gradle.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
 			Parallel: gradle.ParallelOptions{

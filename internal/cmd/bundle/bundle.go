@@ -75,6 +75,10 @@ on the build system. This can be overridden with a docker-image flag.
 
   The --build-command flag is ignored.
 
+  Additional CMake arguments can be passed after a "--". For example:
+
+    cifuzz run my_fuzz_test -- -G Ninja
+
   If no fuzz tests are specified, all fuzz tests are added to the bundle.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Bazel") + `
@@ -84,6 +88,10 @@ on the build system. This can be overridden with a docker-image flag.
   Command completion for the <fuzz test> argument is supported.
 
   The '--build-command' flag is ignored.
+
+  Additional Bazel arguments can be passed after a "--". For example:
+
+    cifuzz run my_fuzz_test -- --sandbox_debug
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Maven/Gradle") + `
   <fuzz test> is the name of the class containing the fuzz test.
@@ -122,6 +130,12 @@ on the build system. This can be overridden with a docker-image flag.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
+			var argsToPass []string
+			if cmd.ArgsLenAtDash() != -1 {
+				argsToPass = args[cmd.ArgsLenAtDash():]
+				args = args[:cmd.ArgsLenAtDash()]
+			}
+
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
@@ -159,6 +173,7 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, sys
 				return cmdutils.WrapSilentError(err)
 			}
 			opts.FuzzTests = fuzzTests
+			opts.BuildSystemArgs = argsToPass
 
 			opts.BuildStdout = cmd.OutOrStdout()
 			opts.BuildStderr = cmd.OutOrStderr()

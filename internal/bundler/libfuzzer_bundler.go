@@ -138,6 +138,7 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 	for i, variant := range configureVariants {
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
+			Args:       b.opts.BuildSystemArgs,
 			NumJobs:    b.opts.NumBuildJobs,
 			Stdout:     b.opts.BuildStdout,
 			Stderr:     b.opts.BuildStderr,
@@ -173,6 +174,7 @@ func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVa
 	for i, variant := range configureVariants {
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
+			Args:       b.opts.BuildSystemArgs,
 			Sanitizers: variant.Sanitizers,
 			Parallel: cmake.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
@@ -235,6 +237,11 @@ func (b *libfuzzerBundler) printBuildingMsg(variant configureVariant, i int) {
 }
 
 func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVariant) ([]*build.Result, error) {
+	if len(b.opts.BuildSystemArgs) > 0 {
+		log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
+			"These arguments are ignored: %s", strings.Join(b.opts.BuildSystemArgs, " "))
+	}
+
 	var results []*build.Result
 	for i, variant := range configureVariants {
 		builder, err := other.NewBuilder(&other.BuilderOptions{
