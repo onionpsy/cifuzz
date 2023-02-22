@@ -25,6 +25,25 @@ commands with all supported options and parameters by calling `cifuzz command
 4. Start fuzzing by executing `cifuzz run my_fuzz_test_1`. **cifuzz** now builds
    the fuzz test and starts a fuzzing run.
 
+#### Info:
+
+For Java/Kotlin projects, users need to specify the fuzz target identifier in
+reverse domain name notation, e.g., `com.example.FuzzTestCase`. For this
+example, it means that the package name is `com.example` and the class name is
+`FuzzTestCase`.
+
+Example: `cifuzz run com.example.FuzzTestCase`.
+
+By default, cifuzz will try to find a single fuzz test for a given JVM class.
+If you want to have multiple fuzz tests in a single JVM class, use the `::`
+notation to specify the named fuzz test.
+
+Example: `cifuzz run com.example.FuzzTestCase::myNamedFuzzTest`
+
+This will look for the class name `FuzzTestCase` in the package `com.example`
+and run the `myNamedFuzzTest` method. We provide tab completion for named fuzz
+test methods if cifuzz finds more than one fuzz test in the JVM class.
+
 ## Generate coverage report
 
 Once you executed a fuzz test, you can generate a coverage report which shows
