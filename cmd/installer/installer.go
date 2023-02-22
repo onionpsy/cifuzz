@@ -75,6 +75,15 @@ func main() {
 		log.Error(err)
 		os.Exit(1)
 	}
+
+	// When running on Windows, the installer is run in a new console window
+	// and users need to press 'Enter' to close the window. Otherwise, the
+	// installer will close immediately and users won't see the installation
+	// notes. We don't want to wait for 'Enter' when running in CI, though.
+	if runtime.GOOS == "windows" && os.Getenv("CI") == "" {
+		log.Printf("Press 'Enter' to terminate the installer")
+		fmt.Scanln()
+	}
 }
 
 func installCIFuzz(installDir string) error {
