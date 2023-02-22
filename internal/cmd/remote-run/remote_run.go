@@ -174,6 +174,17 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 				}
 			}
 
+			opts.BuildStdout = cmd.OutOrStdout()
+			opts.BuildStderr = cmd.OutOrStderr()
+			if cmdutils.ShouldLogBuildToFile() {
+				opts.BuildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, opts.FuzzTests)
+				if err != nil {
+					log.Errorf(err, "Failed to setup logging: %v", err.Error())
+					return cmdutils.WrapSilentError(err)
+				}
+				opts.BuildStderr = opts.BuildStdout
+			}
+
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -278,10 +289,37 @@ func (c *runRemoteCmd) run() error {
 		bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
 		c.opts.BundlePath = bundlePath
 		c.opts.OutputPath = bundlePath
+
+		if cmdutils.ShouldLogBuildToFile() {
+			log.CreateCurrentProgressSpinner(nil, log.BundleInProgressMsg)
+		}
+
 		b := bundler.New(&c.opts.Opts)
 		err = b.Bundle()
 		if err != nil {
+			if cmdutils.ShouldLogBuildToFile() {
+				log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BundleInProgressErrorMsg)
+				printErr := cmdutils.PrintBuildLogOnStdout()
+				if printErr != nil {
+					log.Error(printErr)
+				}
+			}
+
+			var execErr *cmdutils.ExecError
+			if errors.As(err, &execErr) {
+				// It is expected that some commands might fail due to user
+				// configuration so we print the error without the stack trace
+				// (in non-verbose mode) and silence it
+				log.Error(err)
+				return cmdutils.ErrSilent
+			}
+
 			return err
+		}
+
+		if cmdutils.ShouldLogBuildToFile() {
+			log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
+			log.Info(cmdutils.GetMsgPathToBuildLog())
 		}
 	}
 
