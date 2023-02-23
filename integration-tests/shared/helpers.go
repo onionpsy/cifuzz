@@ -74,6 +74,28 @@ func AppendLines(t *testing.T, filePath string, linesToAdd []string) {
 	require.NoError(t, err)
 }
 
+// Used for e2e tests
+// CopyTestdataDirForE2E copies a named folder from the samples directory
+// to a temporary directory called "cifuzz-<name>-testdata" and returns the path.
+func CopyTestdataDirForE2E(t *testing.T, name string) string {
+	fileutil.ForceLongPathTempDir()
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+
+	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
+	require.NoError(t, err)
+
+	// Get the path to the testdata dir
+	testDataDir := filepath.Join(cwd, "..", "samples", name)
+
+	// Copy the testdata dir to the temporary directory
+	err = copy.Copy(testDataDir, dir)
+	require.NoError(t, err)
+
+	return dir
+}
+
 // CopyTestdataDir copies the "testdata" folder in the current working directory
 // to a temporary directory called "cifuzz-<name>-testdata" and returns the path.
 func CopyTestdataDir(t *testing.T, name string) string {
