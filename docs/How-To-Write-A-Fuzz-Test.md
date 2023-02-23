@@ -6,9 +6,18 @@
 When using `cifuzz init` and `cifuzz create` the commands will tell you 
 which manual steps are necessary to use the cifuzz CMake integration inside
 your existing project. Usually you also have to add instructions in your 
-CMakeLists.txt file to link the fuzz test with  the software under test 
+CMakeLists.txt file to link the fuzz test with the software under test 
 (e.g. use the `target_link_libraries directive`). 
-The `add_fuzz_test` directive can be treated like `add_executable`.
+The `add_fuzz_test` directive can be treated like `add_executable`, but
+can also be used to declare dependencies. For example:
+
+```
+add_fuzz_test(my_fuzz_test
+    SOURCES my_fuzz_test.cpp
+    DEPENDENCIES ${FUZZ_TEST_DEPENDENCIES}
+    INCLUDE_DIRS ${FUZZ_TEST_INCLUDE_DIRS}
+)
+```
 
 
 ## How to convert/cast the fuzzer data into the data types you need
