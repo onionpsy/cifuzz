@@ -812,10 +812,12 @@ func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingM
 			return cmdutils.WrapSilentError(err)
 		}
 
-		log.Infof(`To permanently sync findings to this project, add a 'project' entry to your cifuzz.yaml.
-For example:
-    echo "project: %s" >> cifuzz.yaml`, strings.TrimPrefix(project, "projects/"))
-		log.Info()
+		// this will ask users via a y/N prompt if they want to persist the
+		// project choice
+		err = dialog.AskToPersistProjectChoice(apiClient.Server, project)
+		if err != nil {
+			return cmdutils.WrapSilentError(err)
+		}
 	} else {
 		// check if project exists on server
 		found := false

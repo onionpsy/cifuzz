@@ -1,8 +1,10 @@
 package dialog
 
 import (
+	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"atomicgo.dev/keyboard/keys"
 	"github.com/pkg/errors"
@@ -94,4 +96,34 @@ func ReadSecret(message string, file *os.File) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return string(secret), nil
+}
+
+// askToPersistProjectChoice asks the user if they want to persist their
+// choice of server and project. If they do, it adds the server and project
+// to the cifuzz.yaml file.
+func AskToPersistProjectChoice(server string, projectName string) error {
+	persist, err := Confirm(`Do you want to persist your choice?
+This will add a 'server' and 'project' entry to your cifuzz.yaml.
+You can change these values later by editing the file.`, false)
+	if err != nil {
+		return err
+	}
+
+	if persist {
+		text := fmt.Sprintf(`server: %s
+project: %s`, server, strings.TrimPrefix(projectName, "projects/"))
+
+		f, err := os.OpenFile("cifuzz.yaml", os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer f.Close()
+
+		_, err = f.WriteString(text)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		log.Notef("Your choice has been persisted in cifuzz.yaml.")
+	}
+	return nil
 }
