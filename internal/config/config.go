@@ -21,6 +21,7 @@ import (
 const (
 	BuildSystemBazel  string = "bazel"
 	BuildSystemCMake  string = "cmake"
+	BuildSystemNodeJS string = "nodejs"
 	BuildSystemMaven  string = "maven"
 	BuildSystemGradle string = "gradle"
 	BuildSystemOther  string = "other"
@@ -29,6 +30,7 @@ const (
 var buildSystemTypes = []string{
 	BuildSystemBazel,
 	BuildSystemCMake,
+	BuildSystemNodeJS,
 	BuildSystemMaven,
 	BuildSystemGradle,
 	BuildSystemOther,
@@ -151,6 +153,7 @@ func DetermineBuildSystem(projectDir string) (string, error) {
 	buildSystemIdentifier := map[string][]string{
 		BuildSystemBazel:  {"WORKSPACE", "WORKSPACE.bazel"},
 		BuildSystemCMake:  {"CMakeLists.txt"},
+		BuildSystemNodeJS: {"package.json", "package-lock.json", "yarn.lock", "node_modules/"},
 		BuildSystemMaven:  {"pom.xml"},
 		BuildSystemGradle: {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"},
 	}
@@ -218,7 +221,7 @@ func FindConfigDir() (string, error) {
 	}
 	for !configFileExists {
 		if dir == filepath.Dir(dir) {
-			err := fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", projectConfigFile, os.ErrNotExist)
+			err = fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", projectConfigFile, os.ErrNotExist)
 			return "", errors.WithStack(err)
 		}
 		dir = filepath.Dir(dir)

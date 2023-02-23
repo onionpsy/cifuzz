@@ -30,6 +30,9 @@ var gradleGroovySetup string
 //go:embed instructions/gradlekotlin
 var gradleKotlinSetup string
 
+//go:embed instructions/nodejs
+var nodejsSetup string
+
 const (
 	GradleMultiProjectWarningMsg = "For multi-project builds, you should setup cifuzz in the subprojects containing the fuzz tests."
 )
@@ -125,6 +128,13 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 		// With NO_SYSTEM_ENVIRONMENT_PATH, the system-wide installation
 		// directory is only searched in step 7.
 		log.Print(cmakeSetup)
+	case config.BuildSystemNodeJS:
+		if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+			log.Print(nodejsSetup)
+		} else {
+			log.Print("cifuzz does not support NodeJS projects yet.")
+			os.Exit(1)
+		}
 	case config.BuildSystemMaven:
 		log.Print(mavenSetup)
 	case config.BuildSystemGradle:
