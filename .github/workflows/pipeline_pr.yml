@@ -1,6 +1,7 @@
 name: PR Pipeline
 
 on:
+  merge_group:
   pull_request:
     branches: [main]
   workflow_dispatch:

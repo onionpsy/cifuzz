@@ -1,6 +1,7 @@
 name: Tests and Linting
 
 on:
+  merge_group:
   pull_request:
     branches: [main]
   push:
