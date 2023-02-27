@@ -109,7 +109,7 @@ func (c *loginCmd) run() error {
 
 	// Try reading it interactively
 	if c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-		_, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient)
+		_, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
 		return err
 	}
 

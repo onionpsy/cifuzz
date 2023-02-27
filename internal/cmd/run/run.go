@@ -38,6 +38,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -964,8 +965,7 @@ removing the token from %s.`, access_tokens.GetTokenFilePath())
 // showServerConnectionDialog ask users if they want to use a SaaS backend
 // if they are not authenticated and returns their wish to authenticate
 func showServerConnectionDialog(server string) (bool, error) {
-	log.Notef(`Do you want to persist your findings?
-Authenticate with the CI Fuzz Server (%s) to get more insights.`, server)
+	additionalParams := messaging.ShowServerConnectionMessage(server)
 
 	wishOptions := map[string]string{
 		"Yes":  "Yes",
@@ -978,7 +978,7 @@ Authenticate with the CI Fuzz Server (%s) to get more insights.`, server)
 
 	if wishToAuthenticate == "Yes" {
 		apiClient := api.APIClient{Server: server}
-		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient)
+		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient, additionalParams)
 		if err != nil {
 			return false, err
 		}

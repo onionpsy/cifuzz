@@ -249,7 +249,7 @@ func (c *runRemoteCmd) run() error {
 			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
 			return cmdutils.ErrSilent
 		}
-		token, err = login.ReadCheckAndStoreTokenInteractively(apiClient)
+		token, err = login.ReadCheckAndStoreTokenInteractively(apiClient, nil)
 		if err != nil {
 			return err
 		}

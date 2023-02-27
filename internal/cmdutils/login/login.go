@@ -25,7 +25,7 @@ func GetToken(server string) string {
 	return access_tokens.Get(server)
 }
 
-func ReadTokenInteractively(server string) (string, error) {
+func ReadTokenInteractively(server string, additionalParams *url.Values) (string, error) {
 	path, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
 	if err != nil {
 		return "", err
@@ -34,6 +34,15 @@ func ReadTokenInteractively(server string) (string, error) {
 	values := url.Values{}
 	values.Set("create", "")
 	values.Add("origin", "cli")
+
+	// Add additional params to existing values
+	if additionalParams != nil {
+		for key, params := range *additionalParams {
+			for _, param := range params {
+				values.Add(key, param)
+			}
+		}
+	}
 
 	url, err := url.Parse(path)
 	if err != nil {
@@ -92,8 +101,8 @@ func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
 	return nil
 }
 
-func ReadCheckAndStoreTokenInteractively(apiClient *api.APIClient) (string, error) {
-	token, err := ReadTokenInteractively(apiClient.Server)
+func ReadCheckAndStoreTokenInteractively(apiClient *api.APIClient, additionalParams *url.Values) (string, error) {
+	token, err := ReadTokenInteractively(apiClient.Server, additionalParams)
 	if err != nil {
 		return "", err
 	}
