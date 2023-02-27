@@ -6,6 +6,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  # default values, as BASE_REF and HEAD_REF are only available
+  # when triggered by a pull request
+  BASE_REF: ${{ github.base_ref || 'main' }}
+  HEAD_REF: ${{ github.head_ref ||  github.ref_name }}
+
 jobs:
   no-wip-commits:
     name: No WIP or XXX commits
@@ -15,26 +21,26 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fetch the base branch
-        run: git fetch origin "${GITHUB_BASE_REF}"
+        run: git fetch origin "${BASE_REF}"
 
       - name: Check no commits starting with WIP
         run: |
-          git fetch origin "${GITHUB_HEAD_REF}"
-          git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}"
-          if git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}" | grep -B4 -i -e "^\s\+WIP"; then
+          git fetch origin "${HEAD_REF}"
+          git log "origin/${BASE_REF}..origin/${HEAD_REF}"
+          if git log "origin/${BASE_REF}..origin/${HEAD_REF}" | grep -B4 -i -e "^\s\+WIP"; then
             exit 1
           fi
 
       - name: Check no commits starting with XXX
         run: |
-          git fetch origin "${GITHUB_HEAD_REF}"
-          if git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}" | grep -B4 -i -e "^\s\+XXX"; then
+          git fetch origin "${HEAD_REF}"
+          if git log "origin/${BASE_REF}..origin/${HEAD_REF}" | grep -B4 -i -e "^\s\+XXX"; then
             exit 1
           fi
 
       - name: Check no commits starting with fixup
         run: |
-          git fetch origin "${GITHUB_HEAD_REF}"
-          if git log "origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF}" | grep -B4 -i -e "^\s\+fixup"; then
+          git fetch origin "${HEAD_REF}"
+          if git log "origin/${BASE_REF}..origin/${HEAD_REF}" | grep -B4 -i -e "^\s\+fixup"; then
             exit 1
           fi
