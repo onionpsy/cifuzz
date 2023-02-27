@@ -260,7 +260,7 @@ choco install microsoft-openjdk gradle
 
 ## Troubleshooting
 
-If you encounter problems installing or running cifuzz, you can check [Troubleshooting](Troubleshooting.md)
+If you encounter problems installing or running cifuzz, you can check [Troubleshooting](docs/Troubleshooting.md)
 for possible solutions.
 
 ## Contributing
