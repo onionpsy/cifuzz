@@ -100,8 +100,10 @@ func (cmd *findingCmd) run(args []string) error {
 		}
 		for _, f := range findings {
 			if f.MoreDetails != nil {
+				colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
+
 				data = append(data, []string{
-					fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score),
+					colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
 					f.Name,
 					// FIXME: replace f.ShortDescriptionColumns()[0] with
 					// f.MoreDetails.Name once we cover all bugs with our
@@ -214,5 +216,16 @@ func PrintMoreDetails(f *finding.Finding) {
 	if f.MoreDetails.Mitigation != "" {
 		pterm.Println(pterm.Blue("\nMitigation:"))
 		fmt.Println(f.MoreDetails.Mitigation)
+	}
+}
+
+func getColorFunctionForSeverity(severity float32) func(a ...interface{}) string {
+	switch {
+	case severity >= 7.0:
+		return pterm.Red
+	case severity >= 4.0:
+		return pterm.Yellow
+	default:
+		return pterm.Gray
 	}
 }
