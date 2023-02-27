@@ -1,0 +1,8 @@
+contact_links:
+  - name: Email us
+    # mailto: links are not allowed, but URL shortener solves the limitation
+    url: https://tinyurl.com/nkxuwh9v
+    about: Reach out to us on cifuzz@code-intelligence.com
+  - name: Code Intelligence Docs
+    url: https://docs.code-intelligence.com
+    about: Code Intelligence User Documentation Portal
