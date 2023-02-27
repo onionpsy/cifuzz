@@ -94,9 +94,35 @@ func (cmd *findingCmd) run(args []string) error {
 		}
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 1, ' ', 0)
-		for _, f := range findings {
-			_, _ = fmt.Fprintln(w, f.Name, "\t", strings.Join(f.ShortDescriptionColumns(), "\t"))
+
+		data := [][]string{
+			{"Severity", "Name", "Description", "Location"},
 		}
+		for _, f := range findings {
+			if f.MoreDetails != nil {
+				data = append(data, []string{
+					fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score),
+					f.Name,
+					// FIXME: replace f.ShortDescriptionColumns()[0] with
+					// f.MoreDetails.Name once we cover all bugs with our
+					// error-details.json
+					f.ShortDescriptionColumns()[0],
+					f.ShortDescriptionColumns()[1],
+				})
+			} else {
+				data = append(data, []string{
+					"n/a",
+					f.Name,
+					f.ShortDescriptionColumns()[0],
+					f.ShortDescriptionColumns()[1],
+				})
+			}
+		}
+		err = pterm.DefaultTable.WithHasHeader().WithData(data).Render()
+		if err != nil {
+			return err
+		}
+
 		err = w.Flush()
 		if err != nil {
 			return errors.WithStack(err)
@@ -136,6 +162,57 @@ func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 		if err != nil {
 			return err
 		}
+		PrintMoreDetails(f)
+
 	}
 	return nil
+}
+
+func PrintMoreDetails(f *finding.Finding) {
+	if f.MoreDetails == nil {
+		return
+	}
+
+	log.Info("\ncifuzz found more extensive information about this finding:")
+
+	data := [][]string{
+		{"Name", f.MoreDetails.Name},
+	}
+
+	if f.MoreDetails.Severity != nil {
+		data = append(data, []string{"Severity Level", string(f.MoreDetails.Severity.Level)})
+		data = append(data, []string{"Severity Score", fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)})
+
+	}
+	if f.MoreDetails.Links != nil {
+		for _, link := range f.MoreDetails.Links {
+			data = append(data, []string{link.Description, link.URL})
+		}
+	}
+	if f.MoreDetails.OwaspDetails != nil {
+		if f.MoreDetails.OwaspDetails.Description != "" {
+			data = append(data, []string{"OWASP Name", f.MoreDetails.OwaspDetails.Name})
+			data = append(data, []string{"OWASP Description", f.MoreDetails.OwaspDetails.Description})
+		}
+	}
+	if f.MoreDetails.CweDetails != nil {
+		if f.MoreDetails.CweDetails.Description != "" {
+			data = append(data, []string{"CWE Name", f.MoreDetails.CweDetails.Name})
+			data = append(data, []string{"CWE Description", f.MoreDetails.CweDetails.Description})
+		}
+	}
+
+	err := pterm.DefaultTable.WithData(data).WithBoxed().Render()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if f.MoreDetails.Description != "" {
+		pterm.Println(pterm.Blue("Description:"))
+		fmt.Println(f.MoreDetails.Description)
+	}
+	if f.MoreDetails.Mitigation != "" {
+		pterm.Println(pterm.Blue("\nMitigation:"))
+		fmt.Println(f.MoreDetails.Mitigation)
+	}
 }

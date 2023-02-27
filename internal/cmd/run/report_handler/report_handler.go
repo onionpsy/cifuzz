@@ -201,7 +201,7 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 		return err
 	}
 	if exists {
-		log.Info("Adding more error details to finding...")
+		log.Debug("Adding more error details to finding...")
 		err = f.EnhanceWithErrorDetails(errorFile)
 		if err != nil {
 			return err
