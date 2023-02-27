@@ -8,3 +8,6 @@
 .cifuzz-findings/
 *_inputs
 crash-*
+
+# ignore findings for example projects
+src/test/resources/
