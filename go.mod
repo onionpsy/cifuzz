@@ -19,7 +19,7 @@ require (
 	github.com/pterm/pterm v0.12.54
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
-	github.com/u-root/u-root v0.11.0
+	github.com/u-root/u-root v0.11.1-0.20230225005747-5b46c23c3414
 	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/term v0.5.0
