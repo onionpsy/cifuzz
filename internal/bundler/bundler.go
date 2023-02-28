@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -18,7 +19,7 @@ import (
 
 // The (possibly empty) directory inside the fuzzing artifact archive that will
 // be the fuzzers working directory.
-const fuzzerWorkDirPath = "work_dir"
+const archiveWorkDirPath = "work_dir"
 
 type Bundler struct {
 	opts *Opts
@@ -98,14 +99,37 @@ func (b *Bundler) Bundle() error {
 	}
 
 	// The fuzzing artifact archive spec requires this directory even if it is empty.
-	workDirPath := filepath.Join(b.opts.tempDir, fuzzerWorkDirPath)
-	err = os.Mkdir(workDirPath, 0755)
+	tempWorkDirPath := filepath.Join(b.opts.tempDir, archiveWorkDirPath)
+	err = os.Mkdir(tempWorkDirPath, 0755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	err = archiveWriter.WriteDir(fuzzerWorkDirPath, workDirPath)
+	err = archiveWriter.WriteDir(archiveWorkDirPath, tempWorkDirPath)
 	if err != nil {
 		return err
+	}
+
+	for _, arg := range b.opts.AdditionalFiles {
+		source, target, err := parseAdditionalFilesArgument(arg)
+		if err != nil {
+			return err
+		}
+
+		if !filepath.IsAbs(source) {
+			source = filepath.Join(b.opts.ProjectDir, target)
+		}
+
+		if fileutil.IsDir(source) {
+			err = archiveWriter.WriteDir(source, target)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = archiveWriter.WriteFile(source, target)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	err = archiveWriter.Close()
@@ -185,4 +209,30 @@ func prepareSeeds(seedCorpusDirs []string, archiveSeedsDir string, archiveWriter
 		}
 	}
 	return nil
+}
+
+func parseAdditionalFilesArgument(arg string) (string, string, error) {
+	var source, target string
+	parts := strings.Split(arg, ";")
+
+	if len(parts) == 1 {
+		// if there is no ; separator just use the work_dir
+		// handles "test.txt"
+		source = parts[0]
+		target = filepath.Join(archiveWorkDirPath, filepath.Base(arg))
+	} else {
+		// handles test.txt;test2.txt
+		source = parts[0]
+		target = parts[1]
+	}
+
+	if len(parts) > 2 || source == "" || target == "" {
+		return "", "", errors.New("could not parse '--add' argument")
+	}
+
+	if filepath.IsAbs(target) {
+		return "", "", errors.New("when using '--add source;target', target has to be a relative path")
+	}
+
+	return source, target, nil
 }

@@ -52,6 +52,16 @@ func AddFlags(cmd *cobra.Command, funcs ...func(cmd *cobra.Command) func()) (bin
 	}
 }
 
+func AddAdditionalFilesFlag(cmd *cobra.Command) func() {
+	cmd.Flags().StringArray("add", nil,
+		"Add a file or directory to the bundle, defined in the format '--add=<source-path>;<target-path>'.\n"+
+			"If <target-path> is missing the file gets copied to 'work_dir'.\n"+
+			"This flag can be used multiple times.")
+	return func() {
+		ViperMustBindPFlag("add", cmd.Flags().Lookup("add"))
+	}
+}
+
 func AddBranchFlag(cmd *cobra.Command) func() {
 	cmd.Flags().String("branch", "",
 		"Branch name to use in the bundle config.\n"+

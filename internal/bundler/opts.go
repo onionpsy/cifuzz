@@ -16,20 +16,21 @@ import (
 )
 
 type Opts struct {
-	Branch         string        `mapstructure:"branch"`
-	BuildCommand   string        `mapstructure:"build-command"`
-	CleanCommand   string        `mapstructure:"clean-command"`
-	BuildSystem    string        `mapstructure:"build-system"`
-	NumBuildJobs   uint          `mapstructure:"build-jobs"`
-	Commit         string        `mapstructure:"commit"`
-	Dictionary     string        `mapstructure:"dict"`
-	DockerImage    string        `mapstructure:"docker-image"`
-	EngineArgs     []string      `mapstructure:"engine-args"`
-	Env            []string      `mapstructure:"env"`
-	SeedCorpusDirs []string      `mapstructure:"seed-corpus-dirs"`
-	Timeout        time.Duration `mapstructure:"timeout"`
-	ProjectDir     string        `mapstructure:"project-dir"`
-	ConfigDir      string        `mapstructure:"config-dir"`
+	Branch          string        `mapstructure:"branch"`
+	BuildCommand    string        `mapstructure:"build-command"`
+	CleanCommand    string        `mapstructure:"clean-command"`
+	BuildSystem     string        `mapstructure:"build-system"`
+	NumBuildJobs    uint          `mapstructure:"build-jobs"`
+	Commit          string        `mapstructure:"commit"`
+	Dictionary      string        `mapstructure:"dict"`
+	DockerImage     string        `mapstructure:"docker-image"`
+	EngineArgs      []string      `mapstructure:"engine-args"`
+	Env             []string      `mapstructure:"env"`
+	SeedCorpusDirs  []string      `mapstructure:"seed-corpus-dirs"`
+	Timeout         time.Duration `mapstructure:"timeout"`
+	ProjectDir      string        `mapstructure:"project-dir"`
+	ConfigDir       string        `mapstructure:"config-dir"`
+	AdditionalFiles []string      `mapstructure:"add"`
 
 	// Fields which are not configurable via viper (i.e. via cifuzz.yaml
 	// and CIFUZZ_* environment variables), by setting
