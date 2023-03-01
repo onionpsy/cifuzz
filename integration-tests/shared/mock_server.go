@@ -37,6 +37,30 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
 		require.NoError(t, err)
 	}
 
+	handleGetErrorDetails := func(w http.ResponseWriter, req *http.Request) {
+		_, err := io.ReadAll(req.Body)
+		require.NoError(t, err)
+		_, err = fmt.Fprint(w, `[
+        {
+          "id": "undefined behavior: .*",
+          "name": "Undefined Behavior",
+          "description": "An operation has been detected which is undefined by the C/C++ standard. The result will \nbe compiler dependent and is often unpredictable.",
+          "severity": {
+            "description": "Low",
+            "score": 2
+          },
+          "mitigation": "Avoid all operations that cause undefined behavior as per the C/C++ standard.",
+          "links": [
+            {
+              "description": "Undefined Behavior Sanitizer",
+              "url": "https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#available-checks"
+            }
+          ],
+          "language": 1
+        }]`)
+		require.NoError(t, err)
+	}
+
 	handleUploadArtifact := func(w http.ResponseWriter, req *http.Request) {
 		_, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
@@ -73,6 +97,7 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/projects", handleListProjects)
+	mux.HandleFunc("/v2/error-details", handleGetErrorDetails)
 	mux.HandleFunc(fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), handleCreateCampaignRun)
 	mux.HandleFunc(fmt.Sprintf("/v1/projects/%s/findings", projectName), handleUploadFinding)
 	mux.HandleFunc(fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName), handleUploadArtifact)
