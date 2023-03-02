@@ -12,11 +12,18 @@ import (
 
 var accessTokens map[string]string
 
-var accessTokensFilePath = "$HOME/.config/cifuzz/access_tokens.json"
+var (
+	configDir, err       = os.UserConfigDir()
+	accessTokensFilePath = filepath.Join(configDir, "cifuzz", "access_tokens.json")
+)
 
 func init() {
 	// Expand the $HOME environment variable in the access tokens file path
 	accessTokensFilePath = os.ExpandEnv(accessTokensFilePath)
+
+	if err != nil {
+		log.Errorf(err, "Error getting user config directory: %v", err.Error())
+	}
 
 	var err error
 	bytes, err := os.ReadFile(accessTokensFilePath)
