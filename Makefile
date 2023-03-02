@@ -58,7 +58,7 @@ deps/integration-tests:
 .PHONY: deps/dev
 deps/dev: deps
 	go install github.com/incu6us/goimports-reviser/v2@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
 
 .PHONY: install
 install:
