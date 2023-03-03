@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 type Findings struct {
@@ -84,18 +81,14 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 		})
 	}
 
-	// we need to check if an error-details file exists
-	// if it does, we need to enhance the finding with the details
-	errorFile := filepath.Join(os.Getenv("HOME"), ".local", "share", "error-details.json")
-	exists, err := fileutil.Exists(errorFile)
+	errorDetails, err := client.GetErrorDetails(token)
 	if err != nil {
 		return err
 	}
-	if exists {
-		err = finding.EnhanceWithErrorDetails(errorFile)
-		if err != nil {
-			return err
-		}
+
+	err = finding.EnhanceWithErrorDetails(&errorDetails)
+	if err != nil {
+		return err
 	}
 
 	findings := &Findings{

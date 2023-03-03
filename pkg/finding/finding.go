@@ -117,7 +117,7 @@ func (f *Finding) Save(projectDir string) error {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
 	jsonPath := filepath.Join(findingDir, nameJSONFile)
 
-	err := os.MkdirAll(findingDir, 0755)
+	err := os.MkdirAll(findingDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -136,7 +136,7 @@ func (f *Finding) saveJSON(jsonPath string) error {
 		return errors.WithStack(err)
 	}
 
-	if err := os.WriteFile(jsonPath, bytes, 0644); err != nil {
+	if err := os.WriteFile(jsonPath, bytes, 0o644); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -149,7 +149,7 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string
 	// Acquire a file lock to avoid races with other cifuzz processes
 	// running in parallel
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
-	err := os.MkdirAll(findingDir, 0755)
+	err := os.MkdirAll(findingDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -190,7 +190,7 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
 	}
 
 	// Copy the input file to the seed corpus dir
-	err = os.MkdirAll(seedCorpusDir, 0755)
+	err = os.MkdirAll(seedCorpusDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -327,17 +327,9 @@ func LoadFinding(projectDir, findingName string) (*Finding, error) {
 
 // EnhanceWithErrorDetails adds more details to the finding by parsing the
 // error details file.
-func (f *Finding) EnhanceWithErrorDetails(errorFile string) error {
-	file, err := os.Open(errorFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	var errorDetails []ErrorDetails
-	err = json.NewDecoder(file).Decode(&errorDetails)
-	if err != nil {
-		return errors.Wrap(err, "decoding error details")
+func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) error {
+	if errorDetails == nil {
+		return nil
 	}
 
 	moreDetails := ErrorDetails{
@@ -354,10 +346,13 @@ func (f *Finding) EnhanceWithErrorDetails(errorFile string) error {
 	// find error details for specific finding
 	// TODO: optimize matching of error details
 	var details *ErrorDetails
-	for _, d := range errorDetails {
-		if strings.EqualFold(d.Name, f.ShortDescriptionColumns()[0]) {
-			details = &d
-			break
+
+	if errorDetails != nil {
+		for _, d := range *errorDetails {
+			if strings.EqualFold(d.Name, f.ShortDescriptionColumns()[0]) {
+				details = &d
+				break
+			}
 		}
 	}
 
@@ -367,10 +362,8 @@ func (f *Finding) EnhanceWithErrorDetails(errorFile string) error {
 		log.Infof("No error details found for finding %s", f.Name)
 
 		moreDetails.Name = f.Name
-		if f.MoreDetails.Severity != nil {
-			moreDetails.Severity = &Severity{
-				Score: f.MoreDetails.Severity.Score,
-			}
+		if f.MoreDetails != nil {
+			moreDetails.Severity = f.MoreDetails.Severity
 		}
 	}
 

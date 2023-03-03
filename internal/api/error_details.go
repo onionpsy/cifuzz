@@ -2,35 +2,41 @@ package api
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
+	"io"
+	"net/url"
 
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 // GetErrorDetails gets the error details from the API
 func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, error) {
-	// FIXME: Until the endpoint is implemented, we parse the error details from the
-	// local file system at ~/.local/share/error-details.json
-	errorFile := filepath.Join(os.Getenv("HOME"), ".local", "share", "error-details.json")
-	exists, err := fileutil.Exists(errorFile)
-	if !exists || err != nil {
-		return nil, errors.Wrap(err, "error details file does not exist")
+	// get it from the API
+	url, err := url.JoinPath("v2", "error-details")
+	if err != nil {
+		return nil, err
 	}
 
-	file, err := os.Open(errorFile)
+	resp, err := client.sendRequest("GET", url, nil, token)
 	if err != nil {
-		return nil, errors.Wrap(err, "error opening error details file")
+		return nil, err
 	}
-	defer file.Close()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, responseToAPIError(resp)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
 	var errorDetails []finding.ErrorDetails
-	err = json.NewDecoder(file).Decode(&errorDetails)
+	err = json.Unmarshal(body, &errorDetails)
 	if err != nil {
-		return nil, errors.Wrap(err, "error decoding error details")
+		return nil, errors.WithStack(err)
 	}
 
 	return errorDetails, nil
