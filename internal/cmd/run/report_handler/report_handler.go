@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -44,6 +43,7 @@ type ReportHandler struct {
 
 	LastMetrics  *report.FuzzingMetric
 	FirstMetrics *report.FuzzingMetric
+	ErrorDetails *[]finding.ErrorDetails
 
 	numSeedsAtInit uint
 
@@ -194,18 +194,9 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 		}
 	}
 
-	// if error-details.json is present, add more details to the finding
-	errorFile := filepath.Join(os.Getenv("HOME"), ".local", "share", "error-details.json")
-	exists, err := fileutil.Exists(errorFile)
+	err = f.EnhanceWithErrorDetails(h.ErrorDetails)
 	if err != nil {
 		return err
-	}
-	if exists {
-		log.Debug("Adding more error details to finding...")
-		err = f.EnhanceWithErrorDetails(errorFile)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Do not mutate f after this call.

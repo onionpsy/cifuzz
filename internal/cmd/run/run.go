@@ -38,6 +38,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/detect_ci"
 	"code-intelligence.com/cifuzz/pkg/dialog"
+	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
@@ -313,12 +314,21 @@ func (c *runCmd) run() error {
 		return err
 	}
 
-	uploadFindings := false
+	authenticatedUser := false
+
+	var errorDetails *[]finding.ErrorDetails
 
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		uploadFindings, err = c.setupSync()
+		authenticatedUser, err = c.setupSync()
 		if err != nil {
 			return err
+		}
+
+		if authenticatedUser {
+			errorDetails, err = c.getErrorDetails()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -358,6 +368,7 @@ func (c *runCmd) run() error {
 	if err != nil {
 		return err
 	}
+	c.reportHandler.ErrorDetails = errorDetails
 
 	err = c.runFuzzTest(buildResult)
 	if err != nil {
@@ -376,7 +387,7 @@ func (c *runCmd) run() error {
 	}
 
 	// check if there are findings that should be uploaded
-	if uploadFindings && len(c.reportHandler.Findings) > 0 {
+	if authenticatedUser && len(c.reportHandler.Findings) > 0 {
 		err = c.uploadFindings(c.opts.fuzzTest, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics, c.opts.NumBuildJobs)
 		if err != nil {
 			return err
@@ -789,6 +800,21 @@ Your results will not be synced to a remote fuzzing server.`)
 		}
 	}
 	return willSync, nil
+}
+
+func (c *runCmd) getErrorDetails() (*[]finding.ErrorDetails, error) {
+	apiClient := api.APIClient{Server: c.opts.Server}
+	token := access_tokens.Get(c.opts.Server)
+	if token == "" {
+		return nil, errors.New("No access token found")
+	}
+
+	errorDetails, err := apiClient.GetErrorDetails(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return &errorDetails, nil
 }
 
 func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) error {
