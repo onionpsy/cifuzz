@@ -64,7 +64,7 @@ func ReadTokenInteractively(server string, additionalParams *url.Values) (string
 		}
 	}
 
-	token, err := dialog.ReadSecret("Paste your access token:", os.Stdin)
+	token, err := dialog.ReadSecretWithFeedback("Paste your access token:")
 	if err != nil {
 		return "", err
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"atomicgo.dev/keyboard/keys"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"golang.org/x/exp/maps"
@@ -88,6 +89,7 @@ func Input(message string) (string, error) {
 	return result, nil
 }
 
+// ReadSecret reads a secret from the user without printing * characters.
 func ReadSecret(message string, file *os.File) (string, error) {
 	log.Info(message)
 	// TODO: print * characters instead of the actual secret
@@ -95,7 +97,22 @@ func ReadSecret(message string, file *os.File) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return string(secret), nil
+}
+
+// ReadSecretWithFeedback reads a secret from the user and prints * characters
+// instead of the actual secret.
+func ReadSecretWithFeedback(message string) (string, error) {
+	secret := ""
+	prompt := &survey.Password{
+		Message: message,
+	}
+	err := survey.AskOne(prompt, &secret, nil)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return secret, nil
 }
 
 // askToPersistProjectChoice asks the user if they want to persist their
