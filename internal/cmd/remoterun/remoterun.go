@@ -1,4 +1,4 @@
-package remote_run
+package remoterun
 
 import (
 	"fmt"

@@ -19,7 +19,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/term"
 
-	"code-intelligence.com/cifuzz/internal/cmd/remote-run/progress"
+	"code-intelligence.com/cifuzz/internal/cmd/remoterun/progress"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/stringutil"

@@ -21,7 +21,7 @@ import (
 	integrateCmd "code-intelligence.com/cifuzz/internal/cmd/integrate"
 	loginCmd "code-intelligence.com/cifuzz/internal/cmd/login"
 	reloadCmd "code-intelligence.com/cifuzz/internal/cmd/reload"
-	remoteRunCmd "code-intelligence.com/cifuzz/internal/cmd/remote-run"
+	remoteRunCmd "code-intelligence.com/cifuzz/internal/cmd/remoterun"
 	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
