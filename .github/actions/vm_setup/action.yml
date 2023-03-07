@@ -1,7 +1,7 @@
 name: 'VM Setup'
 description: 'setting up vms for cifuzz'
 inputs:
-  os: 
+  os:
     description: 'current vm operating system'
     required: true
 runs:
@@ -34,7 +34,7 @@ runs:
 
       # needed to fix MacOSX clang/llvm after using the action above
       # https://github.com/KyleMayes/install-llvm-action/issues/15
-      - name: Setup - MacOSX 
+      - name: Setup - MacOSX
         if: contains(inputs.os, 'macos')
         run: |
           LLVM_PATH=${{ env.LLVM_PATH }}
@@ -62,18 +62,15 @@ runs:
         uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
         if: contains(inputs.os, 'windows')
 
-      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
       - name: Update Path - MacOS/Linux
         if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu')
         run: |
-          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
           echo "$HOME/.local/bin" >> $GITHUB_PATH
         shell: bash
 
-      # "$HOME/cifuzz/bin" can be removed as soon as new install path is released
       - name: Update Path - Windows
         if: contains(inputs.os, 'windows')
-        run: |
-          echo "$HOME/cifuzz/bin" >> $GITHUB_PATH
-          echo "$HOME/AppData/Roaming/cifuzz/bin" >> $GITHUB_PATH
-        shell: bash
+        # Windows can't find cifuzz executable without this
+        # https://www.scivision.dev/github-actions-path-append/
+        run: echo "${HOME}/AppData/Roaming/cifuzz/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: pwsh

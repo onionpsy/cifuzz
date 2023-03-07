@@ -25,12 +25,6 @@ jobs:
       - name: Install cifuzz
         run: make install
 
-      # Windows can't find cifuzz executable without this
-      # https://www.scivision.dev/github-actions-path-append/ ¯\_(ツ)_/¯
-      - name: Update path windows II
-        if: contains(matrix.os, 'windows')
-        run: echo "${HOME}/AppData/Roaming/cifuzz/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
       - name: Run e2e tests matrix
         run: go test ./e2e-tests/...
         env:
