@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 type Findings struct {
@@ -83,7 +84,14 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 
 	errorDetails, err := client.GetErrorDetails(token)
 	if err != nil {
-		return err
+		var connErr *ConnectionError
+		if !errors.As(err, &connErr) {
+			return err
+		} else {
+			log.Warn("Connection to API failed. Skipping error details.")
+			log.Debugf("Connection error: %v (continuing gracefully)", err)
+			return nil
+		}
 	}
 
 	err = finding.EnhanceWithErrorDetails(&errorDetails)

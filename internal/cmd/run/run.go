@@ -325,7 +325,7 @@ func (c *runCmd) run() error {
 		}
 
 		if authenticatedUser {
-			errorDetails, err = c.getErrorDetails()
+			errorDetails, err = c.errorDetails()
 			if err != nil {
 				return err
 			}
@@ -779,7 +779,15 @@ func (c *runCmd) setupSync() (bool, error) {
 
 	authenticated, err := getAuthStatus(c.opts.Server)
 	if err != nil {
-		return false, cmdutils.WrapSilentError(err)
+		var connErr *api.ConnectionError
+		if errors.As(err, &connErr) {
+			log.Warn("Connection to API failed. Skipping sync.")
+			log.Debugf("Connection error: %s (continuing gracefully)", connErr)
+			return false, nil
+		} else {
+			fmt.Println("AUTH STATUS CHECK ERROR")
+			return false, cmdutils.WrapSilentError(err)
+		}
 	}
 
 	if authenticated {
@@ -796,13 +804,20 @@ Your results will not be synced to a remote fuzzing server.`)
 		// establish server connection to check user auth
 		willSync, err = showServerConnectionDialog(c.opts.Server)
 		if err != nil {
-			return false, cmdutils.WrapSilentError(err)
+			var connErr *api.ConnectionError
+			if errors.As(err, &connErr) {
+				log.Warn("Connection to API failed. Skipping sync.")
+				log.Debugf("Connection error: %v (continuing gracefully)", connErr)
+				return false, nil
+			} else {
+				return false, cmdutils.WrapSilentError(err)
+			}
 		}
 	}
 	return willSync, nil
 }
 
-func (c *runCmd) getErrorDetails() (*[]finding.ErrorDetails, error) {
+func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 	apiClient := api.APIClient{Server: c.opts.Server}
 	token := access_tokens.Get(c.opts.Server)
 	if token == "" {
@@ -811,7 +826,14 @@ func (c *runCmd) getErrorDetails() (*[]finding.ErrorDetails, error) {
 
 	errorDetails, err := apiClient.GetErrorDetails(token)
 	if err != nil {
-		return nil, err
+		var connErr *api.ConnectionError
+		if !errors.As(err, &connErr) {
+			return nil, err
+		} else {
+			log.Warn("Connection to API failed. Skipping error details.")
+			log.Debugf("Connection error: %v (continiung gracefully)", connErr)
+			return nil, nil
+		}
 	}
 
 	return &errorDetails, nil
@@ -976,10 +998,10 @@ func getAuthStatus(server string) (bool, error) {
 	apiClient := api.APIClient{Server: server}
 	err := login.CheckValidToken(&apiClient, token)
 	if err != nil {
-		err := errors.Errorf(`Failed to authenticate with the configured API access token.
+
+		log.Warnf(`Failed to authenticate with the configured API access token.
 It's possible that the token has been revoked. Please try again after
 removing the token from %s.`, access_tokens.GetTokenFilePath())
-		log.Warn(err.Error())
 
 		return false, err
 	}

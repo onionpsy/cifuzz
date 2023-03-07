@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 // GetErrorDetails gets the error details from the API
@@ -25,7 +26,11 @@ func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, responseToAPIError(resp)
+		// the request did not succeed, but we don't want the entire process to fail
+		// so we just log the error and return an empty list
+		log.Warnf("Error getting error details: %s", resp.Status)
+		log.Info("Continuing without external error details")
+		return nil, nil
 	}
 
 	body, err := io.ReadAll(resp.Body)

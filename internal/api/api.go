@@ -65,6 +65,26 @@ func responseToAPIError(resp *http.Response) error {
 	return &APIError{StatusCode: resp.StatusCode, err: errors.Errorf("%s: %s", msg, apiResp.Message)}
 }
 
+// ConnectionError is returned when a REST request fails to connect to the API
+type ConnectionError struct {
+	err error
+}
+
+func (e ConnectionError) Error() string {
+	return e.err.Error()
+}
+
+func (e ConnectionError) Unwrap() error {
+	return e.err
+}
+
+// WrapConnectionError wraps an error returned by the API client in a
+// ConnectionError to avoid having the error message printed when the error is
+// handled.
+func WrapConnectionError(err error) error {
+	return &ConnectionError{err}
+}
+
 type APIClient struct {
 	Server string
 }
@@ -225,9 +245,12 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	return campaignRunName, nil
 }
 
-// sendRequest sends a request to the API server with a default timeout of 10 seconds.
+// sendRequest sends a request to the API server with a default timeout of 60 seconds.
 func (client *APIClient) sendRequest(method string, endpoint string, body io.Reader, token string) (*http.Response, error) {
-	timeout := 10 * time.Second
+	// we use 60 seconds as a conservative timeout for the API server to
+	// respond to a request. We might have to revisit this value in the future
+	// after the rollout of our API  features.
+	timeout := 60 * time.Second
 	return client.sendRequestWithTimeout(method, endpoint, body, token, timeout)
 }
 
@@ -246,7 +269,7 @@ func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, 
 	httpClient := &http.Client{Transport: getCustomTransport(), Timeout: timeout}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, WrapConnectionError(errors.WithStack(err))
 	}
 
 	return resp, nil
