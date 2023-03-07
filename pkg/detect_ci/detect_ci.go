@@ -14,7 +14,7 @@ package detect_ci
 
 import "os"
 
-func GetCIName() string {
+func CIName() string {
 	if os.Getenv("GERRIT_PROJECT") != "" {
 		return "gerrit"
 	}
@@ -187,5 +187,5 @@ func GetCIName() string {
 }
 
 func IsCI() bool {
-	return GetCIName() != ""
+	return CIName() != ""
 }

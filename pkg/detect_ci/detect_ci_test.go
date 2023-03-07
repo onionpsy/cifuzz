@@ -22,7 +22,7 @@ func TestIsCI(t *testing.T) {
 		os.Setenv(envvarAndExpected[0], "true")
 
 		assert.True(t, IsCI())
-		assert.Equal(t, envvarAndExpected[1], GetCIName())
+		assert.Equal(t, envvarAndExpected[1], CIName())
 
 		os.Unsetenv(envvarAndExpected[0])
 		assert.False(t, IsCI())
