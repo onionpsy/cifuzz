@@ -1,4 +1,4 @@
-package integration_tests
+package integrationtest
 
 import (
 	"runtime"
@@ -7,25 +7,26 @@ import (
 	"code-intelligence.com/cifuzz/pkg/finding"
 )
 
-func TestIntegration_UBSANNonRecoverable(t *testing.T) {
+func TestIntegration_UBSANRecoverable(t *testing.T) {
 	// We are using msvc on windows, which does not support UBSan yet.
 	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()
 
-	buildDir := BuildFuzzTarget(t, "trigger_ubsan_non_recoverable")
+	buildDir := BuildFuzzTarget(t, "trigger_ubsan")
 
 	TestWithAndWithoutMinijail(t, func(t *testing.T, disableMinijail bool) {
-		test := NewLibfuzzerTest(t, buildDir, "trigger_ubsan_non_recoverable", disableMinijail)
+		test := NewLibfuzzerTest(t, buildDir, "trigger_ubsan", disableMinijail)
 
 		_, reports := test.Run(t)
 
 		CheckReports(t, reports, &CheckReportOptions{
-			ErrorType:   finding.ErrorType_RUNTIME_ERROR,
-			Details:     "undefined behavior",
-			SourceFile:  "trigger_ubsan.cpp",
-			NumFindings: 1,
+			ErrorType:           finding.ErrorType_RUNTIME_ERROR,
+			Details:             "undefined behavior",
+			SourceFile:          "trigger_ubsan.cpp",
+			AllowEmptyInputData: runtime.GOOS == "windows",
+			NumFindings:         1,
 		})
 
 		// We don't check here that the seed corpus is non-empty because
