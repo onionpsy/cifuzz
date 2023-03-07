@@ -116,16 +116,16 @@ func (b *Bundler) Bundle() error {
 		}
 
 		if !filepath.IsAbs(source) {
-			source = filepath.Join(b.opts.ProjectDir, target)
+			source = filepath.Join(b.opts.ProjectDir, source)
 		}
 
 		if fileutil.IsDir(source) {
-			err = archiveWriter.WriteDir(source, target)
+			err = archiveWriter.WriteDir(target, source)
 			if err != nil {
 				return err
 			}
 		} else {
-			err = archiveWriter.WriteFile(source, target)
+			err = archiveWriter.WriteFile(target, source)
 			if err != nil {
 				return err
 			}
