@@ -27,7 +27,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/build/maven"
 	"code-intelligence.com/cifuzz/internal/build/other"
-	"code-intelligence.com/cifuzz/internal/cmd/run/report_handler"
+	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
@@ -123,7 +123,7 @@ type runCmd struct {
 	*cobra.Command
 	opts *runOptions
 
-	reportHandler *report_handler.ReportHandler
+	reportHandler *reporthandler.ReportHandler
 	tempDir       string
 }
 
@@ -360,7 +360,7 @@ func (c *runCmd) run() error {
 	// Initialize the report handler. Only do this right before we start
 	// the fuzz test, because this is storing a timestamp which is used
 	// to figure out how long the fuzzing run is running.
-	c.reportHandler, err = report_handler.NewReportHandler(&report_handler.ReportHandlerOptions{
+	c.reportHandler, err = reporthandler.NewReportHandler(&reporthandler.ReportHandlerOptions{
 		ProjectDir:    c.opts.ProjectDir,
 		SeedCorpusDir: buildResult.SeedCorpus,
 		PrintJSON:     c.opts.PrintJSON,

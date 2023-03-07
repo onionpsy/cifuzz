@@ -1,4 +1,4 @@
-package report_handler
+package reporthandler
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code-intelligence.com/cifuzz/internal/cmd/run/report_handler/metrics"
+	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler/metrics"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"

@@ -1,4 +1,4 @@
-package report_handler
+package reporthandler
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 	"github.com/pterm/pterm"
 	"golang.org/x/term"
 
-	"code-intelligence.com/cifuzz/internal/cmd/run/report_handler/metrics"
+	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler/metrics"
 	"code-intelligence.com/cifuzz/internal/names"
 	"code-intelligence.com/cifuzz/pkg/desktop"
 	"code-intelligence.com/cifuzz/pkg/finding"
