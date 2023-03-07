@@ -195,9 +195,9 @@ produces the fuzz test executable via the '--build-command' flag or the
 'build-command' option in the cifuzz.yaml. See 'cifuzz run --help' for
 more information about the build command.
 
-The FUZZ_TEST_CLFAGS and FUZZ_TEST_LDFLAGS environment variables are
+The FUZZ_TEST_CFLAGS and FUZZ_TEST_LDFLAGS environment variables are
 set by cifuzz when building the fuzz test, please make sure that
-$FUZZ_TEST_CLFAGS is passed as a command-line argument to the compiler
+$FUZZ_TEST_CFLAGS is passed as a command-line argument to the compiler
 and $FUZZ_TEST_LDFLAGS to the linker.`)
 	}
 }
