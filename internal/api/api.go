@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/net/proxy"
@@ -211,7 +212,7 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	}
 	campaignRunNameJSON, ok := objmap["name"]
 	if !ok {
-		err := errors.Errorf("Server response doesn't include run name: %v", stringutil.PrettyString(objmap))
+		err = errors.Errorf("Server response doesn't include run name: %v", stringutil.PrettyString(objmap))
 		log.Error(err)
 		return "", cmdutils.WrapSilentError(err)
 	}
@@ -224,22 +225,30 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	return campaignRunName, nil
 }
 
+// sendRequest sends a request to the API server with a default timeout of 10 seconds.
 func (client *APIClient) sendRequest(method string, endpoint string, body io.Reader, token string) (*http.Response, error) {
+	timeout := 10 * time.Second
+	return client.sendRequestWithTimeout(method, endpoint, body, token, timeout)
+}
+
+// sendRequestWithTimeout sends a request to the API server with a timeout.
+func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, body io.Reader, token string, timeout time.Duration) (*http.Response, error) {
 	url, err := url.JoinPath(client.Server, endpoint)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(context.Background(), method, url, body)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 
-	httpClient := &http.Client{Transport: getCustomTransport()}
+	httpClient := &http.Client{Transport: getCustomTransport(), Timeout: timeout}
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return resp, nil
 }
 
