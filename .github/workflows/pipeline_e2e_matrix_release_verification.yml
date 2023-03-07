@@ -42,6 +42,4 @@ jobs:
         shell: pwsh
 
       - name: Run e2e tests matrix
-        run: go test ./e2e-tests/...
-        env:
-          E2E_TESTS_MATRIX: 1
+        run: make test/e2e

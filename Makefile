@@ -1,6 +1,6 @@
 current_os :=
 label_os :=
-bin_ext := 
+bin_ext :=
 
 ifeq ($(OS),Windows_NT)
 	current_os = windows
@@ -158,6 +158,10 @@ test/integration: deps deps/integration-tests
 test/integration/sequential: deps deps/integration-tests
 	go test -v -timeout=20m -parallel=1 ./... -run 'TestIntegration.*'
 
+.PHONY: test/e2e
+test/e2e:
+	E2E_TESTS_MATRIX=1 go test ./e2e-tests/...
+
 .PHONY: test/race
 test/race: deps build/$(current_os)
 	go test -v ./... -race
@@ -170,7 +174,7 @@ test/coverage: deps
 .PHONY: site/setup
 site/setup:
 	-rm -rf site
-	git clone git@github.com:CodeIntelligenceTesting/cifuzz.wiki.git site 
+	git clone git@github.com:CodeIntelligenceTesting/cifuzz.wiki.git site
 
 .PHONY: site/generate
 site/generate: deps

@@ -25,7 +25,5 @@ jobs:
       - name: Install cifuzz
         run: make install
 
-      - name: Run e2e tests matrix
-        run: go test ./e2e-tests/...
-        env:
-          E2E_TESTS_MATRIX: 1
+      - name: Run E2E tests matrix
+        run: make test/e2e
