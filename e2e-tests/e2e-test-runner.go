@@ -24,7 +24,7 @@ type CommandOutput struct {
 	Workdir  fs.FS  // Expose files from the test folder
 }
 
-type Test struct {
+type TestCase struct {
 	Description  string
 	Command      string
 	Environment  []string
@@ -36,57 +36,67 @@ type Test struct {
 	Assert Assertion
 }
 
-type testRunOptions struct {
+type testCaseRunOptions struct {
 	command      string
 	args         string
 	sampleFolder string
 }
 
-func RunTest(t *testing.T, testOptions *Test) {
+// RunTests Runs all test cases generated from the input combinations
+func RunTests(t *testing.T, testCases []TestCase) {
+	for _, testCase := range testCases {
+		runTest(t, &testCase)
+	}
+}
+
+// runTest Generates 1...n tests from possible combinations in a TestCase.
+func runTest(t *testing.T, testCase *TestCase) {
 	if testing.Short() {
-		t.Skip("skipping testing in short mode")
+		t.Skip("skipping e2e tests in short mode")
 	}
 
 	if cicheck.IsCIEnvironment() && os.Getenv("E2E_TESTS_MATRIX") == "" {
-		t.Skip("Skipping test. You need to set E2E_TESTS_MATRIX envvar to run this test locally.")
+		t.Skip("Skipping e2e tests. You need to set E2E_TESTS_MATRIX envvar to run this test.")
 	}
+
+	fmt.Println("Running test: ", testCase.Description)
 
 	// Set defaults
-	if len(testOptions.Args) == 0 {
-		testOptions.Args = []string{""}
+	if len(testCase.Args) == 0 {
+		testCase.Args = []string{""}
 	}
 
-	if len(testOptions.SampleFolder) == 0 {
-		testOptions.SampleFolder = []string{"empty"}
+	if len(testCase.SampleFolder) == 0 {
+		testCase.SampleFolder = []string{"empty"}
 	}
 
 	// Generate all the combinations we want to test
-	subtests := []testRunOptions{}
-	for _, args := range testOptions.Args {
-		for _, contextFolder := range testOptions.SampleFolder {
-			subtests = append(subtests, testRunOptions{
-				command:      testOptions.Command,
+	testCaseRuns := []testCaseRunOptions{}
+	for _, args := range testCase.Args {
+		for _, contextFolder := range testCase.SampleFolder {
+			testCaseRuns = append(testCaseRuns, testCaseRunOptions{
+				command:      testCase.Command,
 				args:         args,
 				sampleFolder: contextFolder,
 			})
 		}
 	}
 
-	for index, subtest := range subtests {
-		t.Run(fmt.Sprintf("[%d/%d] cifuzz %s %s", index+1, len(subtests), string(subtest.command), subtest.args), func(t *testing.T) {
-			contextFolder := shared.CopyTestdataDirForE2E(t, subtest.sampleFolder)
+	for index, testCaseRun := range testCaseRuns {
+		t.Run(fmt.Sprintf("[%d/%d] cifuzz %s %s", index+1, len(testCaseRuns), testCaseRun.command, testCaseRun.args), func(t *testing.T) {
+			contextFolder := shared.CopyTestdataDirForE2E(t, testCaseRun.sampleFolder)
 			defer fileutil.Cleanup(contextFolder)
 
 			// exec.Cmd can't handle empty args
 			var cmd *exec.Cmd
-			if len(subtest.args) > 0 {
-				cmd = exec.Command("cifuzz", subtest.command, subtest.args)
+			if len(testCaseRun.args) > 0 {
+				cmd = exec.Command("cifuzz", testCaseRun.command, testCaseRun.args)
 			} else {
-				cmd = exec.Command("cifuzz", subtest.command)
+				cmd = exec.Command("cifuzz", testCaseRun.command)
 			}
 
 			// add env vars
-			cmd.Env = append(cmd.Env, testOptions.Environment...)
+			cmd.Env = append(cmd.Env, testCase.Environment...)
 
 			cmd.Dir = contextFolder
 
@@ -100,7 +110,7 @@ func RunTest(t *testing.T, testOptions *Test) {
 				log.Printf("Error running command: %v", err)
 			}
 
-			testOptions.Assert(t, CommandOutput{
+			testCase.Assert(t, CommandOutput{
 				ExitCode: cmd.ProcessState.ExitCode(),
 				Stdout:   stdout.String(),
 				Stderr:   errout.String(),

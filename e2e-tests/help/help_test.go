@@ -8,7 +8,7 @@ import (
 	"code-intelligence.com/cifuzz/e2e-tests"
 )
 
-var helpTests = &[]e2e.Test{
+var helpTests = &[]e2e.TestCase{
 	{
 		Description: "help command without other arguments prints --help text",
 		Command:     "help",
@@ -49,7 +49,5 @@ var helpTests = &[]e2e.Test{
 }
 
 func TestHelp(t *testing.T) {
-	for _, test := range *helpTests {
-		e2e.RunTest(t, &test)
-	}
+	e2e.RunTests(t, *helpTests)
 }

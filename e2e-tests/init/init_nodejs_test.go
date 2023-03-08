@@ -9,7 +9,7 @@ import (
 	"code-intelligence.com/cifuzz/e2e-tests"
 )
 
-var nodeInitTests = &[]e2e.Test{
+var nodeInitTests = &[]e2e.TestCase{
 	{
 		Description:  "init command in Node.js project without prerelease flag prints error",
 		Command:      "init",
@@ -37,7 +37,5 @@ var nodeInitTests = &[]e2e.Test{
 }
 
 func TestInitForNodejs(t *testing.T) {
-	for _, test := range *nodeInitTests {
-		e2e.RunTest(t, &test)
-	}
+	e2e.RunTests(t, *nodeInitTests)
 }
