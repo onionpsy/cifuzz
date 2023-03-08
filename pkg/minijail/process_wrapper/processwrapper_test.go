@@ -1,6 +1,6 @@
 //go:build linux
 
-package process_wrapper
+package processwrapper_test
 
 import (
 	"bytes"
