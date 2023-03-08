@@ -12,11 +12,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
+	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
@@ -141,6 +143,8 @@ func TestIntegration_CMake(t *testing.T) {
 
 		// Run cifuzz bundle with additional args
 		testBundleWithAdditionalArgs(t, cifuzz, dir)
+
+		testBundleWithAddArg(t, cifuzz, dir)
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {
@@ -184,6 +188,48 @@ func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
 	seenExpectedOutput := regexp.MatchString(string(output))
 	require.Error(t, err)
 	require.True(t, seenExpectedOutput)
+}
+
+func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
+	viper.Set("verbose", true)
+
+	test := []struct {
+		param  string
+		expect string
+	}{
+		{param: "--add=add_me.txt", expect: filepath.Join("work_dir", "add_me.txt")},
+		{param: "--add=add_me.txt;rename.txt", expect: "rename.txt"},
+		{param: "--add=add_me.txt;my_dir/add_me.txt", expect: filepath.Join("my_dir", "add_me.txt")},
+	}
+
+	args := []string{"bundle", "parser_fuzz_test"}
+	for _, tc := range test {
+		args = append(args, tc.param)
+	}
+	cmd := executil.Command(cifuzz, args...)
+	cmd.Dir = dir
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	// execute command
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err)
+	assert.Contains(t, string(output), "Successfully created bundle: parser_fuzz_test.tar.gz")
+
+	// extract bundle archive and check for expected files
+	bundlePath := filepath.Join(dir, "parser_fuzz_test.tar.gz")
+	archiveDir, err := os.MkdirTemp("", "cmake-bundle-extracted-archive-*")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(archiveDir)
+
+	err = archive.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
+	require.NoError(t, err)
+
+	for _, tc := range test {
+		assert.FileExists(t, filepath.Join(archiveDir, tc.expect))
+	}
+
 }
 
 func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
