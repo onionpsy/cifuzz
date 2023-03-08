@@ -78,6 +78,7 @@ func AppendLines(t *testing.T, filePath string, linesToAdd []string) {
 // CopyTestdataDirForE2E copies a named folder from the samples directory
 // to a temporary directory called "cifuzz-<name>-testdata" and returns the path.
 func CopyTestdataDirForE2E(t *testing.T, name string) string {
+	t.Helper()
 	fileutil.ForceLongPathTempDir()
 
 	cwd, err := os.Getwd()
