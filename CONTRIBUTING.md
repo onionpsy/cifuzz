@@ -85,3 +85,11 @@ cd examples/cmake
 cifuzz run my_fuzz_test
 ```
 This should stop after a few seconds with an actual finding.
+
+### Windows
+We use symlinks in our repository. Developer mode needs to be
+activated in order to create symlinks without admin privileges.
+It can be activated in the system settings under:
+```
+Settings > Update & Security > For developers > Developer Mode
+```
