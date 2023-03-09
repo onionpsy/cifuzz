@@ -108,7 +108,7 @@ func TestIntegration_CMake(t *testing.T) {
 
 		t.Run("htmlReport", func(t *testing.T) {
 			// Produce a coverage report for parser_fuzz_test
-			testHtmlCoverageReport(t, cifuzz, dir)
+			testHTMLCoverageReport(t, cifuzz, dir)
 		})
 		t.Run("lcovReport", func(t *testing.T) {
 			// Produces a coverage report for crashing_fuzz_test
@@ -438,7 +438,7 @@ func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	})
 }
 
-func testHtmlCoverageReport(t *testing.T, cifuzz string, dir string) {
+func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
 	}
