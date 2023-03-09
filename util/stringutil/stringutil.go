@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ToJsonString(v interface{}) (string, error) {
+func ToJSONString(v interface{}) (string, error) {
 	var bytes []byte
 	bytes, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
@@ -18,7 +18,7 @@ func ToJsonString(v interface{}) (string, error) {
 }
 
 func PrettyString(v interface{}) string {
-	jsonString, err := ToJsonString(v)
+	jsonString, err := ToJSONString(v)
 	if err != nil {
 		return fmt.Sprintf("%+v", v)
 	}

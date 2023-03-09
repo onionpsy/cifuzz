@@ -80,7 +80,7 @@ func (cmd *findingCmd) run(args []string) error {
 		}
 
 		if cmd.opts.PrintJSON {
-			s, err := stringutil.ToJsonString(findings)
+			s, err := stringutil.ToJSONString(findings)
 			if err != nil {
 				return err
 			}
@@ -148,7 +148,7 @@ func (cmd *findingCmd) run(args []string) error {
 
 func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 	if cmd.opts.PrintJSON {
-		s, err := stringutil.ToJsonString(f)
+		s, err := stringutil.ToJSONString(f)
 		if err != nil {
 			return err
 		}

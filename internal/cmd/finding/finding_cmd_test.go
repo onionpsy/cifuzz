@@ -64,7 +64,7 @@ func TestListFindings(t *testing.T) {
 	// Check that the command lists the finding
 	output, err = cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json")
 	require.NoError(t, err)
-	jsonString, err := stringutil.ToJsonString([]*finding.Finding{f})
+	jsonString, err := stringutil.ToJSONString([]*finding.Finding{f})
 	require.NoError(t, err)
 	require.Equal(t, jsonString, output)
 }
@@ -91,7 +91,7 @@ func TestPrintFinding(t *testing.T) {
 	// Check that the command prints the finding
 	output, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json")
 	require.NoError(t, err)
-	jsonString, err := stringutil.ToJsonString(f)
+	jsonString, err := stringutil.ToJSONString(f)
 	require.NoError(t, err)
 	require.Equal(t, jsonString, output)
 }

@@ -27,7 +27,7 @@ type ChannelPassthrough struct {
 func (cp *ChannelPassthrough) Handle(report *report.Report) error {
 	select {
 	case cp.ch <- report:
-		jsonString, err := stringutil.ToJsonString(report)
+		jsonString, err := stringutil.ToJSONString(report)
 		if err != nil {
 			return err
 		}

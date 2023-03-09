@@ -135,7 +135,7 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 			}
 			jsonString = string(bytes)
 		} else {
-			jsonString, err = stringutil.ToJsonString(r)
+			jsonString, err = stringutil.ToJSONString(r)
 			if err != nil {
 				return err
 			}

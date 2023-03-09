@@ -40,14 +40,14 @@ func TestFinding_Save_LoadFinding(t *testing.T) {
 	bytes, err := os.ReadFile(jsonPath)
 	require.NoError(t, err)
 	actualJSON := string(bytes)
-	expectedJSON, err := stringutil.ToJsonString(finding)
+	expectedJSON, err := stringutil.ToJSONString(finding)
 	require.NoError(t, err)
 	require.Equal(t, expectedJSON, actualJSON)
 
 	// Check that LoadFinding also returns the expected finding
 	loadedFinding, err := LoadFinding(testDir, finding.Name)
 	require.NoError(t, err)
-	actualJSON, err = stringutil.ToJsonString(loadedFinding)
+	actualJSON, err = stringutil.ToJSONString(loadedFinding)
 	require.NoError(t, err)
 	require.Equal(t, expectedJSON, actualJSON)
 }

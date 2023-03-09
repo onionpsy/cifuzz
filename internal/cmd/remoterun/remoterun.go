@@ -363,7 +363,7 @@ func (c *runRemoteCmd) run() error {
 
 	if c.opts.PrintJSON {
 		result := struct{ CampaignRun string }{campaignRunName}
-		s, err := stringutil.ToJsonString(result)
+		s, err := stringutil.ToJSONString(result)
 		if err != nil {
 			return err
 		}
