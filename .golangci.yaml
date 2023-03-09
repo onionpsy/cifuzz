@@ -6,10 +6,16 @@ linters:
     - govet
     - nonamedreturns
     - staticcheck
+    - revive
   presets:
     - unused
 
 linters-settings:
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+        disabled: false
   staticcheck:
     checks:
       - '-SA3000'
