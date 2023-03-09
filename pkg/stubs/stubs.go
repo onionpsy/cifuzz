@@ -37,9 +37,9 @@ func Create(path string, testType config.FuzzTestType) error {
 	switch testType {
 	case config.CPP:
 		content = cppStub
-	case config.JAVA, config.KOTLIN:
+	case config.Java, config.Kotlin:
 		stub := string(javaStub)
-		if testType == config.KOTLIN {
+		if testType == config.Kotlin {
 			stub = string(kotlinStub)
 		}
 
@@ -59,7 +59,7 @@ func Create(path string, testType config.FuzzTestType) error {
 			packagePath = strings.ReplaceAll(packagePath, string(os.PathSeparator), ".")
 
 			packageName := fmt.Sprintf("package %s;", packagePath)
-			if testType == config.KOTLIN {
+			if testType == config.Kotlin {
 				strings.TrimSuffix(packageName, ";")
 			}
 			content = []byte(strings.Replace(string(content), "__PACKAGE__", packageName, 1))
@@ -86,11 +86,11 @@ func FuzzTestFilename(testType config.FuzzTestType) (string, error) {
 		basename = "my_fuzz_test"
 		ext = "cpp"
 		filePattern = "%s_%d.%s"
-	case config.KOTLIN:
+	case config.Kotlin:
 		basename = "MyClassFuzzTest"
 		ext = "kt"
 		filePattern = "%s%d.%s"
-	case config.JAVA:
+	case config.Java:
 		basename = "MyClassFuzzTest"
 		ext = "java"
 		filePattern = "%s%d.%s"

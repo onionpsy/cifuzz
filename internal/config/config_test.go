@@ -203,11 +203,11 @@ func TestDetermineBuildSystem_Other(t *testing.T) {
 }
 
 func TestTestTypeFileNameExtension(t *testing.T) {
-	ext, found := TestTypeFileNameExtension(JAVA)
+	ext, found := TestTypeFileNameExtension(Java)
 	assert.True(t, found)
 	assert.Equal(t, ".java", ext)
 
-	ext, found = TestTypeFileNameExtension(KOTLIN)
+	ext, found = TestTypeFileNameExtension(Kotlin)
 	assert.True(t, found)
 	assert.Equal(t, ".kt", ext)
 }

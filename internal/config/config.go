@@ -191,16 +191,16 @@ func DetermineGradleBuildLanguage(projectDir string) (GradleBuildLanguage, error
 		return "", err
 	}
 	if kts {
-		return G_KOTLIN, nil
+		return GradleKotlin, nil
 	}
 
-	return G_GROOVY, nil
+	return GradleGroovy, nil
 }
 
 func TestTypeFileNameExtension(testType FuzzTestType) (string, bool) {
 	fileNameExtension := map[FuzzTestType]string{
-		JAVA:   ".java",
-		KOTLIN: ".kt",
+		Java:   ".java",
+		Kotlin: ".kt",
 	}
 
 	extension, found := fileNameExtension[testType]

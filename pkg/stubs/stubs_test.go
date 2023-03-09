@@ -42,7 +42,7 @@ func TestCreate(t *testing.T) {
 
 	// Test .java files
 	stubFile = filepath.Join(projectDir, "FuzzTestCase.java")
-	err = Create(stubFile, config.JAVA)
+	err = Create(stubFile, config.Java)
 	assert.NoError(t, err)
 
 	exists, err = fileutil.Exists(stubFile)
@@ -68,7 +68,7 @@ func TestCreate_Exists(t *testing.T) {
 	err = os.WriteFile(stubFile, []byte("TEST"), 0644)
 	assert.NoError(t, err)
 
-	err = Create(stubFile, config.JAVA)
+	err = Create(stubFile, config.Java)
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, os.ErrExist)
 }
@@ -88,7 +88,7 @@ func TestCreate_NoPerm(t *testing.T) {
 
 	// Test .java files
 	stubFile = filepath.Join(projectDir, "MyFuzzTest.java")
-	err = Create(stubFile, config.JAVA)
+	err = Create(stubFile, config.Java)
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, os.ErrPermission)
 }
@@ -112,14 +112,14 @@ func TestSuggestFilename(t *testing.T) {
 	assert.Equal(t, filepath.Join(".", "my_fuzz_test_2.cpp"), filename2)
 
 	// Test .java files
-	filename3, err := FuzzTestFilename(config.JAVA)
+	filename3, err := FuzzTestFilename(config.Java)
 	assert.NoError(t, err)
 	assert.Equal(t, filepath.Join(".", "MyClassFuzzTest1.java"), filename3)
 
 	err = os.WriteFile(filename3, []byte("TEST"), 0644)
 	require.NoError(t, err)
 
-	filename4, err := FuzzTestFilename(config.JAVA)
+	filename4, err := FuzzTestFilename(config.Java)
 	assert.NoError(t, err)
 	assert.Equal(t, filepath.Join(".", "MyClassFuzzTest2.java"), filename4)
 }
@@ -133,7 +133,7 @@ func TestCreateJavaFileAndClassName(t *testing.T) {
 	// Test .java files
 	stubName := "MyOwnPersonalFuzzTest.java"
 	stubFile := filepath.Join(projectDir, stubName)
-	err = Create(stubFile, config.JAVA)
+	err = Create(stubFile, config.Java)
 	assert.NoError(t, err)
 
 	exists, err := fileutil.Exists(stubFile)

@@ -4,19 +4,19 @@ type FuzzTestType string
 
 const (
 	CPP    FuzzTestType = "cpp"
-	JAVA   FuzzTestType = "java"
-	KOTLIN FuzzTestType = "kotlin"
+	Java   FuzzTestType = "java"
+	Kotlin FuzzTestType = "kotlin"
 )
 
 type GradleBuildLanguage string
 
 const (
-	G_GROOVY GradleBuildLanguage = "groovy"
-	G_KOTLIN GradleBuildLanguage = "kotlin"
+	GradleGroovy GradleBuildLanguage = "groovy"
+	GradleKotlin GradleBuildLanguage = "kotlin"
 )
 
 type Engine string
 
 const (
-	LIBFUZZER Engine = "libfuzzer"
+	Libfuzzer Engine = "libfuzzer"
 )

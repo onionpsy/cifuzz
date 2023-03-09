@@ -55,7 +55,7 @@ type RunnerTest struct {
 func NewLibfuzzerTest(t *testing.T, buildDir, fuzzTarget string, disableMinijail bool) *RunnerTest {
 	return &RunnerTest{
 		FuzzTarget: FuzzTestExecutablePath(t, buildDir, fuzzTarget),
-		Engine:     config.LIBFUZZER,
+		Engine:     config.Libfuzzer,
 		// Use a deterministic random seed
 		EngineArgs: []string{
 			"-seed=1",
@@ -106,7 +106,7 @@ func (test *RunnerTest) Start(t *testing.T, reportCh chan *report.Report) error 
 	}
 	defer close(reportCh)
 
-	if test.Engine == config.LIBFUZZER {
+	if test.Engine == config.Libfuzzer {
 		libfuzzerRunner := libfuzzer.NewRunner(libfuzzerOptions)
 		return libfuzzerRunner.Run(context.Background())
 	}

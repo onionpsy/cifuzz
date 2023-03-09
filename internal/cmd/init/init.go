@@ -154,9 +154,9 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 		}
 
 		switch gradleBuildLanguage {
-		case config.G_GROOVY:
+		case config.GradleGroovy:
 			log.Print(gradleGroovySetup)
-		case config.G_KOTLIN:
+		case config.GradleKotlin:
 			log.Print(gradleKotlinSetup)
 		}
 	}
