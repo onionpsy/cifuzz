@@ -86,7 +86,7 @@ func NewReportHandler(options *ReportHandlerOptions) (*ReportHandler, error) {
 func (h *ReportHandler) Handle(r *report.Report) error {
 	var err error
 
-	if r.Status == report.RunStatus_INITIALIZING && !h.initStarted {
+	if r.Status == report.RunStatusInitializing && !h.initStarted {
 		h.initStarted = true
 		h.numSeedsAtInit = r.NumSeeds
 		if r.NumSeeds == 0 {
@@ -97,7 +97,7 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 		}
 	}
 
-	if r.Status == report.RunStatus_RUNNING && !h.initFinished {
+	if r.Status == report.RunStatusRunning && !h.initFinished {
 		log.Info("Successfully initialized fuzzer with seed inputs")
 		h.initFinished = true
 	}

@@ -171,7 +171,7 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 			// Report that the fuzzer is now initializing and how many seeds
 			// are used for initialization
 			return p.sendReport(ctx, &report.Report{
-				Status:   report.RunStatus_INITIALIZING,
+				Status:   report.RunStatusInitializing,
 				NumSeeds: numSeeds,
 			})
 		}
@@ -181,9 +181,9 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	if metric != nil {
 		r := &report.Report{Metric: metric}
 		if p.initFinished {
-			r.Status = report.RunStatus_RUNNING
+			r.Status = report.RunStatusRunning
 		} else {
-			r.Status = report.RunStatus_INITIALIZING
+			r.Status = report.RunStatusInitializing
 		}
 		err := p.sendReport(ctx, r)
 		if err != nil {
@@ -571,7 +571,7 @@ func (p *parser) sendFinding(ctx context.Context, finding *finding.Finding) erro
 	p.FindingReported = true
 
 	return p.sendReport(ctx, &report.Report{
-		Status:  report.RunStatus_RUNNING,
+		Status:  report.RunStatusRunning,
 		Finding: finding,
 	})
 }

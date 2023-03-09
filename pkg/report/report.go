@@ -30,17 +30,17 @@ type RunStatus string
 // to parse JSON-marshalled reports as protobuf reports which use an
 // enum for this field.
 const (
-	RunStatus_RUNSTATUS_UNSPECIFIED      RunStatus = "UNSPECIFIED"
-	RunStatus_PENDING                    RunStatus = "PENDING"
-	RunStatus_COMPILING                  RunStatus = "COMPILING"
-	RunStatus_RUNNING                    RunStatus = "RUNNING"
-	RunStatus_STOPPED                    RunStatus = "STOPPED"
-	RunStatus_FAILED                     RunStatus = "FAILED"
-	RunStatus_SUCCEEDED                  RunStatus = "SUCCEEDED"
-	RunStatus_UNKNOWN                    RunStatus = "UNKNOWN"
-	RunStatus_INITIALIZING               RunStatus = "INITIALIZING"
-	RunStatus_FAILED_TO_START            RunStatus = "FAILED_TO_START"
-	RunStatus_WAITING_FOR_FUZZING_AGENTS RunStatus = "WAITING_FOR_FUZZING_AGENTS"
+	RunStatusUnspecified             RunStatus = "UNSPECIFIED"
+	RunStatusPending                 RunStatus = "PENDING"
+	RunStatusCompiling               RunStatus = "COMPILING"
+	RunStatusRunning                 RunStatus = "RUNNING"
+	RunStatusStopped                 RunStatus = "STOPPED"
+	RunStatusFailed                  RunStatus = "FAILED"
+	RunStatusSucceeded               RunStatus = "SUCCEEDED"
+	RunStatusUnknown                 RunStatus = "UNKNOWN"
+	RunStatusInitializing            RunStatus = "INITIALIZING"
+	RunStatusFailedToStart           RunStatus = "FAILED_TO_START"
+	RunStatusWaitingForFuzzingAgents RunStatus = "WAITING_FOR_FUZZING_AGENTS"
 )
 
 type FuzzingMetric struct {

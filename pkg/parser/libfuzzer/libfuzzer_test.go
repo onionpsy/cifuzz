@@ -65,9 +65,9 @@ INFO: A corpus is not provided, starting from an empty corpus
 #22045	REDUCE cov: 7 ft: 5 corp: 4/11b exec/s: 123 rss: 81Mb L: 4/4 MS 5 CopyPart-ChangeByte-
 some invalid logs`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     10,
 						Features:                4,
@@ -79,7 +79,7 @@ some invalid logs`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     12,
 						Features:                4,
@@ -91,7 +91,7 @@ some invalid logs`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond: 123,
 						Features:            5,
@@ -111,9 +111,9 @@ INFO: A corpus is not provided, starting from an empty corpus
 error info 1
 error info 2`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     10,
 						Features:                4,
@@ -125,7 +125,7 @@ error info 2`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:    finding.ErrorTypeCrash,
 						Details: "global-buffer-overflow on address 0x00",
@@ -153,9 +153,9 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 #8388608	pulse  cov: 2 ft: 2 corp: 1/1b lim: 4096 exec/s: 1398101 rss: 590Mb
 ==397442== libFuzzer: run interrupted; exiting`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     0,
 						Features:                2,
@@ -167,7 +167,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     1398101,
 						Features:                2,
@@ -179,7 +179,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:    finding.ErrorTypeRuntimeError,
 						Details: "undefined behavior: signed integer overflow",
@@ -197,7 +197,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     1398101,
 						Features:                2,
@@ -220,9 +220,9 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 				"Base64: c2VhcmNoLXNlcnZpY2UKL3NlYXJjaD9xdWVyeT3/LQUmY2hhbm5lbElkPWtrZXVfZGVfREUmY3VzdG9tZXJJZD0zJmlkc09ubHk9VCZzZXNzaW9uSWQ9LgoK\n" +
 				"#512 pulse cov: 4 ft: 4 corp: 59/4451b exec/s: 1 rss: 981Mb",
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     1,
 						Features:                2,
@@ -234,7 +234,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     1,
 						Features:                2,
@@ -245,7 +245,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     1,
 						Features:                4,
@@ -257,7 +257,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeWarning,
 						Details:   "Slow input detected. Processing time: 26 s",
@@ -293,9 +293,9 @@ MS: 0 ; base unit: 0000000000000000000000000000000000000000
 artifact_prefix='./'; Test unit written to ` + testInputFile.Name() + `
 Base64: i/SIw2hR3wI=`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:    finding.ErrorTypeCrash,
 						Details: "stack-buffer-overflow on address 0x7fffb9492184 at pc 0x0000004969aa bp 0x7fffb9492150 sp 0x7fffb9491918",
@@ -311,7 +311,7 @@ Base64: i/SIw2hR3wI=`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						InputData: testInput,
@@ -340,9 +340,9 @@ INFO: A corpus is not provided, starting from an empty corpus
 error info 1
 error info 2`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     10,
 						Features:                4,
@@ -354,7 +354,7 @@ error info 2`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:    finding.ErrorTypeCrash,
 						Details: "use-of-uninitialized-value",
@@ -383,9 +383,9 @@ deadbeef
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: ZGVhZGJlZWY=`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeWarning,
 						Details:   "java.lang.ArrayIndexOutOfBoundsException: Index 22 out of bounds for length 8",
@@ -428,9 +428,9 @@ QQ<script-
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: UVFcb1w8L1xzY3JpcHQt`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						Details:   "Security Issue: Output contains </script",
@@ -474,9 +474,9 @@ DEDUP_TOKEN: e943c470c21ef432
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: QGphei5aZXIKLR8AACEAHw==`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						Details:   "Security Issue: Remote Code Execution",
@@ -526,9 +526,9 @@ deadbeef
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: ZGVhZGJlZWY=`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeWarning,
 						Details:   "Java Assertion Error",
@@ -560,9 +560,9 @@ SUMMARY: libFuzzer: deadly signal
 artifact_prefix='./'; Test unit written to %s
 Base64: CiMKIQoDZm9vEhoaGGJeAABkZWFkYmVlZjEyMzQ1Njc4OVfHng==`, llvmDir, testInputFile.Name()),
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						Details:   "deadly signal",
@@ -596,9 +596,9 @@ SUMMARY: libFuzzer: deadly signal
 artifact_prefix='./'; Test unit written to %s
 Base64: J3JycnJiYXJycnJycnJycmZvb3IAcgAAAXJyAAAAAHJycnJycnJycnJycnJycnJycnJycnJycnI=`, llvmDir, testInputFile.Name()),
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     38,
 						Features:                39,
@@ -610,7 +610,7 @@ Base64: J3JycnJiYXJycnJycnJycmZvb3IAcgAAAXJyAAAAAHJycnJycnJycnJycnJycnJycnJycnJy
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						Details:   "deadly signal",
@@ -646,9 +646,9 @@ MS: 0 ; base unit: 0000000000000000000000000000000000000000
 artifact_prefix='./'; Test unit written to ` + testInputFile.Name() + `
 Base64: i/SIw2hR3wI=`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:    finding.ErrorTypeCrash,
 						Details: "stack-buffer-overflow on address 0x7fffb9492184 at pc 0x0000004969aa bp 0x7fffb9492150 sp 0x7fffb9491918",
@@ -660,7 +660,7 @@ Base64: i/SIw2hR3wI=`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						InputData: testInput,
@@ -701,9 +701,9 @@ error info 1
 error info 2
 SUMMARY: libFuzzer: timeout`,
 			expected: []*report.Report{
-				{Status: report.RunStatus_INITIALIZING},
+				{Status: report.RunStatusInitializing},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Metric: &report.FuzzingMetric{
 						ExecutionsPerSecond:     0,
 						Features:                3,
@@ -715,7 +715,7 @@ SUMMARY: libFuzzer: timeout`,
 					},
 				},
 				{
-					Status: report.RunStatus_RUNNING,
+					Status: report.RunStatusRunning,
 					Finding: &finding.Finding{
 						Type:      finding.ErrorTypeCrash,
 						Details:   "timeout after 1 seconds",
@@ -835,7 +835,7 @@ func TestOOMCrashLogs(t *testing.T) {
 func assertCorrectCrashesParsing(t *testing.T, errorDetails, crashFile string, crashingInput []byte, logs []string) {
 	expectedReports := []*report.Report{
 		{
-			Status: report.RunStatus_RUNNING,
+			Status: report.RunStatusRunning,
 			Finding: &finding.Finding{
 				Type:      finding.ErrorTypeCrash,
 				InputData: crashingInput,

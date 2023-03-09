@@ -41,7 +41,7 @@ func TestReportHandler_EmptyCorpus(t *testing.T) {
 	require.NoError(t, err)
 
 	initStartedReport := &report.Report{
-		Status:   report.RunStatus_INITIALIZING,
+		Status:   report.RunStatusInitializing,
 		NumSeeds: 0,
 	}
 	err = h.Handle(initStartedReport)
@@ -55,14 +55,14 @@ func TestReportHandler_NonEmptyCorpus(t *testing.T) {
 	require.NoError(t, err)
 
 	initStartedReport := &report.Report{
-		Status:   report.RunStatus_INITIALIZING,
+		Status:   report.RunStatusInitializing,
 		NumSeeds: 1,
 	}
 	err = h.Handle(initStartedReport)
 	require.NoError(t, err)
 	checkOutput(t, logOutput, "Initializing fuzzer with")
 
-	initFinishedReport := &report.Report{Status: report.RunStatus_RUNNING}
+	initFinishedReport := &report.Report{Status: report.RunStatusRunning}
 	err = h.Handle(initFinishedReport)
 	require.NoError(t, err)
 	checkOutput(t, logOutput, "Successfully initialized fuzzer")
@@ -76,7 +76,7 @@ func TestReportHandler_Metrics(t *testing.T) {
 	h.printer.(*metrics.LinePrinter).BasicTextPrinter.Writer = printerOut
 
 	metricsReport := &report.Report{
-		Status: report.RunStatus_RUNNING,
+		Status: report.RunStatusRunning,
 		Metric: &report.FuzzingMetric{
 			Timestamp:           time.Now(),
 			ExecutionsPerSecond: 1234,
@@ -98,7 +98,7 @@ func TestReportHandler_Finding(t *testing.T) {
 	require.NoError(t, err)
 
 	findingReport := &report.Report{
-		Status: report.RunStatus_RUNNING,
+		Status: report.RunStatusRunning,
 		Finding: &finding.Finding{
 			InputFile: testfile,
 		},
@@ -119,7 +119,7 @@ func TestReportHandler_PrintJSON(t *testing.T) {
 
 	findingLogs := []string{"Oops", "The program crashed"}
 	findingReport := &report.Report{
-		Status: report.RunStatus_RUNNING,
+		Status: report.RunStatusRunning,
 		Finding: &finding.Finding{
 			Logs: findingLogs,
 		},
@@ -135,7 +135,7 @@ func TestReportHandler_GenerateName(t *testing.T) {
 
 	findingLogs := []string{"Oops", "The program crashed"}
 	findingReport := &report.Report{
-		Status: report.RunStatus_RUNNING,
+		Status: report.RunStatusRunning,
 		Finding: &finding.Finding{
 			Logs:      findingLogs,
 			InputData: []byte("123"),
