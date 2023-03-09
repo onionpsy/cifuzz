@@ -159,8 +159,14 @@ test/integration/sequential: deps deps/integration-tests
 	go test -v -timeout=20m -parallel=1 ./... -run 'TestIntegration.*'
 
 .PHONY: test/e2e
+test/e2e: deps install
+	E2E_TESTS_MATRIX=1 go test -v ./e2e-tests/...
+
+# For Release E2E testing, we want to use the installed cifuzz, instead of installing from source.
+.PHONY: test/e2e-use-installed-cifuzz
 test/e2e:
-	E2E_TESTS_MATRIX=1 go test ./e2e-tests/...
+	E2E_TESTS_MATRIX=1 go test -v ./e2e-tests/...
+
 
 .PHONY: test/race
 test/race: deps build/$(current_os)

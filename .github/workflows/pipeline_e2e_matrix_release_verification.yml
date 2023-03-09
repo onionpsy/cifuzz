@@ -42,4 +42,4 @@ jobs:
         shell: pwsh
 
       - name: Run e2e tests matrix
-        run: make test/e2e
+        run: make test/e2e-use-installed-cifuzz
