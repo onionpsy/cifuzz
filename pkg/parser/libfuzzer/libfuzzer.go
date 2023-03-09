@@ -1,4 +1,4 @@
-package libfuzzer_output_parser
+package libfuzzer
 
 import (
 	"bufio"

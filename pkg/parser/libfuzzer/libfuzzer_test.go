@@ -1,4 +1,4 @@
-package libfuzzer_output_parser
+package libfuzzer
 
 import (
 	"context"
@@ -684,8 +684,8 @@ Base64: i/SIw2hR3wI=`,
 			name: "timeout-error",
 			logs: `INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 3221175179
-INFO: Loaded 1 modules   (8 inline 8-bit counters): 8 [0x5acf93, 0x5acf9b), 
-INFO: Loaded 1 PC tables (8 PCs): 8 [0x5acfa0,0x5ad020), 
+INFO: Loaded 1 modules   (8 inline 8-bit counters): 8 [0x5acf93, 0x5acf9b),
+INFO: Loaded 1 PC tables (8 PCs): 8 [0x5acfa0,0x5ad020),
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
 INFO: A corpus is not provided, starting from an empty corpus
 #2	INITED cov: 3 ft: 3 corp: 1/1b exec/s: 0 rss: 30Mb
