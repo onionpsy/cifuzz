@@ -161,9 +161,9 @@ func (b *jazzerBundler) checkDependencies() error {
 	var deps []dependencies.Key
 	switch b.opts.BuildSystem {
 	case config.BuildSystemMaven:
-		deps = []dependencies.Key{dependencies.JAVA, dependencies.MAVEN}
+		deps = []dependencies.Key{dependencies.Java, dependencies.Maven}
 	case config.BuildSystemGradle:
-		deps = []dependencies.Key{dependencies.JAVA, dependencies.GRADLE}
+		deps = []dependencies.Key{dependencies.Java, dependencies.Gradle}
 	}
 	err := dependencies.Check(deps)
 	if err != nil {

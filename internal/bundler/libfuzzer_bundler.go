@@ -359,9 +359,9 @@ func (b *libfuzzerBundler) checkDependencies() error {
 	var deps []dependencies.Key
 	switch b.opts.BuildSystem {
 	case config.BuildSystemCMake:
-		deps = []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}
+		deps = []dependencies.Key{dependencies.Clang, dependencies.CMake}
 	case config.BuildSystemOther:
-		deps = []dependencies.Key{dependencies.CLANG}
+		deps = []dependencies.Key{dependencies.Clang}
 	}
 	err := dependencies.Check(deps)
 	if err != nil {

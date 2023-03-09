@@ -20,21 +20,21 @@ For installation instruction see:
 type Key string
 
 const (
-	BAZEL           Key = "bazel"
-	CLANG           Key = "clang"
-	CMAKE           Key = "cmake"
-	LLVM_COV        Key = "llvm-cov"
-	LLVM_SYMBOLIZER Key = "llvm-symbolizer"
-	LLVM_PROFDATA   Key = "llvm-profdata"
+	Bazel          Key = "bazel"
+	Clang          Key = "clang"
+	CMake          Key = "cmake"
+	LLVMCov        Key = "llvm-cov"
+	LLVMSymbolizer Key = "llvm-symbolizer"
+	LLVMProfData   Key = "llvm-profdata"
 
-	GENHTML Key = "genhtml"
+	GenHTML Key = "genhtml"
 
-	JAVA   Key = "java"
-	MAVEN  Key = "mvn"
-	GRADLE Key = "gradle"
+	Java   Key = "java"
+	Maven  Key = "mvn"
+	Gradle Key = "gradle"
 
-	MESSAGE_VERSION = "cifuzz requires %s %s or higher, have %s"
-	MESSAGE_MISSING = "cifuzz requires %s, but it is not installed"
+	MessageVersion = "cifuzz requires %s %s or higher, have %s"
+	MessageMissing = "cifuzz requires %s, but it is not installed"
 )
 
 // Dependency represents a single dependency
@@ -60,7 +60,7 @@ func (dep *Dependency) checkVersion() bool {
 	}
 
 	if currentVersion.Compare(&dep.MinVersion) == -1 {
-		log.Warnf(MESSAGE_VERSION, dep.Key, dep.MinVersion.String(), currentVersion.String())
+		log.Warnf(MessageVersion, dep.Key, dep.MinVersion.String(), currentVersion.String())
 		return false
 	}
 	return true
@@ -96,7 +96,7 @@ func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error 
 		}
 
 		if !dep.Installed(dep) {
-			log.Warnf(MESSAGE_MISSING, dep.Key)
+			log.Warnf(MessageMissing, dep.Key)
 			allFine = false
 		}
 

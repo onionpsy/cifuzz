@@ -103,7 +103,7 @@ func (c *reloadCmd) reloadCMake() error {
 func (c *reloadCmd) checkDependencies() error {
 	deps := []dependencies.Key{}
 	if c.opts.BuildSystem == config.BuildSystemCMake {
-		deps = append(deps, []dependencies.Key{dependencies.CLANG, dependencies.CMAKE}...)
+		deps = append(deps, []dependencies.Key{dependencies.Clang, dependencies.CMake}...)
 	}
 	err := dependencies.Check(deps)
 	if err != nil {

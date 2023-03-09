@@ -17,16 +17,16 @@ type Dependencies map[Key]*Dependency
 
 // List of all known dependencies
 var deps = Dependencies{
-	BAZEL: {
-		Key:        BAZEL,
+	Bazel: {
+		Key:        Bazel,
 		MinVersion: getMinVersionBazel(),
 		GetVersion: bazelVersion,
 		Installed: func(dep *Dependency) bool {
 			return dep.checkFinder(dep.finder.BazelPath)
 		},
 	},
-	CLANG: {
-		Key:        CLANG,
+	Clang: {
+		Key:        Clang,
 		MinVersion: *semver.MustParse("11.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return clangVersion(dep, clangCheck)
@@ -55,16 +55,16 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.ClangPath)
 		},
 	},
-	CMAKE: {
-		Key:        CMAKE,
+	CMake: {
+		Key:        CMake,
 		MinVersion: *semver.MustParse("3.16.0"),
 		GetVersion: cmakeVersion,
 		Installed: func(dep *Dependency) bool {
 			return dep.checkFinder(dep.finder.CMakePath)
 		},
 	},
-	LLVM_COV: {
-		Key:        LLVM_COV,
+	LLVMCov: {
+		Key:        LLVMCov,
 		MinVersion: *semver.MustParse("11.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			path, err := dep.finder.LLVMCovPath()
@@ -82,8 +82,8 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.LLVMCovPath)
 		},
 	},
-	LLVM_PROFDATA: {
-		Key: LLVM_PROFDATA,
+	LLVMProfData: {
+		Key: LLVMProfData,
 		// llvm-profdata provides no version information
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
@@ -98,8 +98,8 @@ var deps = Dependencies{
 			return true
 		},
 	},
-	LLVM_SYMBOLIZER: {
-		Key:        LLVM_SYMBOLIZER,
+	LLVMSymbolizer: {
+		Key:        LLVMSymbolizer,
 		MinVersion: *semver.MustParse("11.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			path, err := dep.finder.LLVMSymbolizerPath()
@@ -117,8 +117,8 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.LLVMSymbolizerPath)
 		},
 	},
-	GENHTML: {
-		Key:        GENHTML,
+	GenHTML: {
+		Key:        GenHTML,
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
@@ -132,16 +132,16 @@ var deps = Dependencies{
 			return true
 		},
 	},
-	JAVA: {
-		Key:        JAVA,
+	Java: {
+		Key:        Java,
 		MinVersion: *semver.MustParse("1.8.0"),
 		GetVersion: javaVersion,
 		Installed: func(dep *Dependency) bool {
 			return dep.checkFinder(dep.finder.JavaHomePath)
 		},
 	},
-	MAVEN: {
-		Key:        MAVEN,
+	Maven: {
+		Key:        Maven,
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
@@ -150,8 +150,8 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.MavenPath)
 		},
 	},
-	GRADLE: {
-		Key:        GRADLE,
+	Gradle: {
+		Key:        Gradle,
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")

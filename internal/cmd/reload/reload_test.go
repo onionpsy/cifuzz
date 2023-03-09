@@ -60,14 +60,14 @@ func TestClangMissing(t *testing.T) {
 	}
 
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "clang"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
 }
 
 func TestCMakeMissing(t *testing.T) {
@@ -79,14 +79,14 @@ func TestCMakeMissing(t *testing.T) {
 	}
 
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "cmake"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestWrongCMakeVersion(t *testing.T) {
@@ -98,7 +98,7 @@ func TestWrongCMakeVersion(t *testing.T) {
 	}
 
 	dependencies.MockAllDeps(t)
-	dep := dependencies.GetDep(dependencies.CMAKE)
+	dep := dependencies.GetDep(dependencies.CMake)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
@@ -107,5 +107,5 @@ func TestWrongCMakeVersion(t *testing.T) {
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
 	assert.Contains(t, string(output),
-		fmt.Sprintf(dependencies.MESSAGE_VERSION, "cmake", dep.MinVersion.String(), version))
+		fmt.Sprintf(dependencies.MessageVersion, "cmake", dep.MinVersion.String(), version))
 }

@@ -11,10 +11,10 @@ import (
 )
 
 func TestCheck(t *testing.T) {
-	keys := []Key{CMAKE}
+	keys := []Key{CMake}
 	deps := getDeps(keys)
 
-	dep := deps[CMAKE]
+	dep := deps[CMake]
 	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
 		return &d.MinVersion, nil
 	}
@@ -27,7 +27,7 @@ func TestCheck(t *testing.T) {
 }
 
 func TestCheck_NotInstalled(t *testing.T) {
-	keys := []Key{CMAKE}
+	keys := []Key{CMake}
 	deps := getDeps(keys)
 
 	finder := &mocks.RunfilesFinderMock{}
@@ -38,11 +38,11 @@ func TestCheck_NotInstalled(t *testing.T) {
 }
 
 func TestCheck_WrongVersion(t *testing.T) {
-	keys := []Key{CMAKE}
+	keys := []Key{CMake}
 	deps := getDeps(keys)
 
 	// overwrite GetVersion for clang
-	dep := deps[CMAKE]
+	dep := deps[CMake]
 	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
 		return semver.MustParse("1.0.0"), nil
 	}
@@ -55,11 +55,11 @@ func TestCheck_WrongVersion(t *testing.T) {
 }
 
 func TestCheck_ShortVersion(t *testing.T) {
-	keys := []Key{CMAKE}
+	keys := []Key{CMake}
 	deps := getDeps(keys)
 
 	// overwrite GetVersion for clang
-	dep := deps[CMAKE]
+	dep := deps[CMake]
 	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
 		return semver.MustParse("3.16"), nil
 	}
@@ -72,11 +72,11 @@ func TestCheck_ShortVersion(t *testing.T) {
 }
 
 func TestCheck_UnableToGetVersion(t *testing.T) {
-	keys := []Key{CMAKE}
+	keys := []Key{CMake}
 	deps := getDeps(keys)
 
 	// overwrite GetVersion for clang
-	dep := deps[CMAKE]
+	dep := deps[CMake]
 	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
 		return nil, errors.New("version-error")
 	}

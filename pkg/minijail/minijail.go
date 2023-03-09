@@ -25,12 +25,12 @@ const (
 
 	// Mount flags as defined in golang.org/x/sys/unix. We're not using
 	// that package because it's not available on macOS.
-	MS_RDONLY      = 0x1
-	MS_NOSUID      = 0x2
-	MS_NODEV       = 0x4
-	MS_BIND        = 0x1000
-	MS_REC         = 0x4000
-	MS_STRICTATIME = 0x1000000
+	MS_RDONLY      = 0x1       //nolint:all
+	MS_NOSUID      = 0x2       //nolint:all
+	MS_NODEV       = 0x4       //nolint:all
+	MS_BIND        = 0x1000    //nolint:all
+	MS_REC         = 0x4000    //nolint:all
+	MS_STRICTATIME = 0x1000000 //nolint:all
 )
 
 type WritableOption int

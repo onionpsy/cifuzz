@@ -703,14 +703,14 @@ func (c *runCmd) checkDependencies() error {
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
 		deps = []dependencies.Key{
-			dependencies.CLANG,
-			dependencies.LLVM_SYMBOLIZER,
-			dependencies.CMAKE,
+			dependencies.Clang,
+			dependencies.LLVMSymbolizer,
+			dependencies.CMake,
 		}
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{
-			dependencies.JAVA,
-			dependencies.MAVEN,
+			dependencies.Java,
+			dependencies.Maven,
 		}
 	case config.BuildSystemGradle:
 		// First check if gradle wrapper exists and check for gradle in path otherwise
@@ -725,19 +725,19 @@ func (c *runCmd) checkDependencies() error {
 		}
 
 		deps = []dependencies.Key{
-			dependencies.JAVA,
-			dependencies.GRADLE,
+			dependencies.Java,
+			dependencies.Gradle,
 		}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{
-			dependencies.CLANG,
-			dependencies.LLVM_SYMBOLIZER,
+			dependencies.Clang,
+			dependencies.LLVMSymbolizer,
 		}
 	case config.BuildSystemBazel:
 		// All dependencies are managed via bazel but it should be checked
 		// that the correct bazel version is installed
 		deps = []dependencies.Key{
-			dependencies.BAZEL,
+			dependencies.Bazel,
 		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)

@@ -52,7 +52,7 @@ func TestUnknownBuildSystem(t *testing.T) {
 
 func TestClangMissing(t *testing.T) {
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
 	opts := &options{}
 	opts.BuildSystem = config.BuildSystemCMake
@@ -67,13 +67,13 @@ func TestClangMissing(t *testing.T) {
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "clang"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
 }
 
 func TestClangVersion(t *testing.T) {
 	dependencies.MockAllDeps(t)
 
-	dep := dependencies.GetDep(dependencies.CLANG)
+	dep := dependencies.GetDep(dependencies.Clang)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	opts := &options{}
@@ -90,12 +90,12 @@ func TestClangVersion(t *testing.T) {
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
 	assert.Contains(t, string(output),
-		fmt.Sprintf(dependencies.MESSAGE_VERSION, "clang", dep.MinVersion.String(), version))
+		fmt.Sprintf(dependencies.MessageVersion, "clang", dep.MinVersion.String(), version))
 }
 
 func TestCMakeMissing(t *testing.T) {
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	opts := &options{}
 	opts.BuildSystem = config.BuildSystemCMake
@@ -111,7 +111,7 @@ func TestCMakeMissing(t *testing.T) {
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
 
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "cmake"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestEnvVarsSetInConfigFile(t *testing.T) {

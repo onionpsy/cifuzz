@@ -117,8 +117,8 @@ func TestClangVersion_AllEnv(t *testing.T) {
 	t.Setenv("CC", "CC/clang")
 	t.Setenv("CXX", "CXX/clang")
 
-	keys := []Key{CLANG}
-	dep := getDeps(keys)[CLANG]
+	keys := []Key{Clang}
+	dep := getDeps(keys)[Clang]
 
 	version, err := clangVersion(dep, mockCheck)
 	require.NoError(t, err)
@@ -146,8 +146,8 @@ func TestClangVersion_CCMissing(t *testing.T) {
 	t.Setenv("CC", "")
 	t.Setenv("CXX", "CC/clang++")
 
-	keys := []Key{CLANG}
-	dep := getDeps(keys)[CLANG]
+	keys := []Key{Clang}
+	dep := getDeps(keys)[Clang]
 	dep.finder = finderMock
 
 	version, err := clangVersion(dep, mockCheck)
@@ -170,8 +170,8 @@ func TestClangVersion_CCFilename(t *testing.T) {
 	t.Setenv("CC", filename)
 	t.Setenv("CXX", "g++")
 
-	keys := []Key{CLANG}
-	dep := getDeps(keys)[CLANG]
+	keys := []Key{Clang}
+	dep := getDeps(keys)[Clang]
 	dep.finder = finderMock
 
 	versionFound, err := clangVersion(dep, mockCheck)
@@ -193,8 +193,8 @@ func TestClangVersion_CXXFilename(t *testing.T) {
 	t.Setenv("CC", "gcc")
 	t.Setenv("CXX", filename)
 
-	keys := []Key{CLANG}
-	dep := getDeps(keys)[CLANG]
+	keys := []Key{Clang}
+	dep := getDeps(keys)[Clang]
 	dep.finder = finderMock
 
 	versionFound, err := clangVersion(dep, mockCheck)

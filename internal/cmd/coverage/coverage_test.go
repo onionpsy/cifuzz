@@ -39,7 +39,7 @@ func TestFail(t *testing.T) {
 
 func TestClangMissing(t *testing.T) {
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CLANG))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
 	// clone the example project because this command needs to parse an actual
 	// project config... if there is none it will fail before the dependency check
@@ -51,12 +51,12 @@ func TestClangMissing(t *testing.T) {
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "clang"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
 }
 
 func TestCMakeMissing(t *testing.T) {
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	// clone the example project because this command needs to parse an actual
 	// project config... if there is none it will fail before the dependency check
@@ -69,13 +69,13 @@ func TestCMakeMissing(t *testing.T) {
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "cmake"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestLlvmCovVersion(t *testing.T) {
 	dependencies.MockAllDeps(t)
 
-	dep := dependencies.GetDep(dependencies.LLVM_COV)
+	dep := dependencies.GetDep(dependencies.LLVMCov)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	// clone the example project because this command needs to parse an actual
@@ -90,5 +90,5 @@ func TestLlvmCovVersion(t *testing.T) {
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
 	assert.Contains(t, string(output),
-		fmt.Sprintf(dependencies.MESSAGE_VERSION, "llvm-cov", dep.MinVersion.String(), version))
+		fmt.Sprintf(dependencies.MessageVersion, "llvm-cov", dep.MinVersion.String(), version))
 }

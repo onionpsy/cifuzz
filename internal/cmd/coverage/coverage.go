@@ -417,21 +417,21 @@ func (c *coverageCmd) checkDependencies() error {
 	switch c.opts.BuildSystem {
 	case config.BuildSystemBazel:
 		deps = []dependencies.Key{
-			dependencies.BAZEL,
-			dependencies.GENHTML,
+			dependencies.Bazel,
+			dependencies.GenHTML,
 		}
 	case config.BuildSystemCMake:
 		deps = []dependencies.Key{
-			dependencies.CLANG,
-			dependencies.CMAKE,
-			dependencies.LLVM_SYMBOLIZER,
-			dependencies.LLVM_COV,
-			dependencies.LLVM_PROFDATA,
-			dependencies.GENHTML,
+			dependencies.Clang,
+			dependencies.CMake,
+			dependencies.LLVMSymbolizer,
+			dependencies.LLVMCov,
+			dependencies.LLVMProfData,
+			dependencies.GenHTML,
 		}
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{
-			dependencies.MAVEN,
+			dependencies.Maven,
 		}
 	case config.BuildSystemGradle:
 		// First check if gradle wrapper exists and check for gradle in path otherwise
@@ -444,15 +444,15 @@ func (c *coverageCmd) checkDependencies() error {
 		}
 
 		deps = []dependencies.Key{
-			dependencies.GRADLE,
+			dependencies.Gradle,
 		}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{
-			dependencies.CLANG,
-			dependencies.LLVM_SYMBOLIZER,
-			dependencies.LLVM_COV,
-			dependencies.LLVM_PROFDATA,
-			dependencies.GENHTML,
+			dependencies.Clang,
+			dependencies.LLVMSymbolizer,
+			dependencies.LLVMCov,
+			dependencies.LLVMProfData,
+			dependencies.GenHTML,
 		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)

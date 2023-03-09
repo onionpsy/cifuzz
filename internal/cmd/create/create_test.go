@@ -88,7 +88,7 @@ func TestCreateCmd_OutDir(t *testing.T) {
 
 func TestCMakeMissing(t *testing.T) {
 	dependencies.MockAllDeps(t)
-	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMAKE))
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
@@ -108,12 +108,12 @@ func TestCMakeMissing(t *testing.T) {
 
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MESSAGE_MISSING, "cmake"))
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestClangVersion(t *testing.T) {
 	dependencies.MockAllDeps(t)
-	dep := dependencies.GetDep(dependencies.CLANG)
+	dep := dependencies.GetDep(dependencies.Clang)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
@@ -135,5 +135,5 @@ func TestClangVersion(t *testing.T) {
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
 	assert.Contains(t, string(output),
-		fmt.Sprintf(dependencies.MESSAGE_VERSION, "clang", dep.MinVersion.String(), version))
+		fmt.Sprintf(dependencies.MessageVersion, "clang", dep.MinVersion.String(), version))
 }
