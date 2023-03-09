@@ -366,10 +366,10 @@ func runAndAssertTests(t *testing.T, buildDir string, buildType string, expected
 		junitReportFile,
 	)
 	require.FileExists(t, junitReportFile)
-	junitReportXml, err := os.ReadFile(junitReportFile)
+	junitReportXML, err := os.ReadFile(junitReportFile)
 	require.NoError(t, err)
 	var junitReport junitTestSuite
-	err = xml.Unmarshal(junitReportXml, &junitReport)
+	err = xml.Unmarshal(junitReportXML, &junitReport)
 	require.NoError(t, err)
 
 	actualTestStatus := make(map[string]bool)
