@@ -155,7 +155,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	}
 
 	// Test the coverage command
-	createHtmlCoverageReport(t, cifuzz, dir, cifuzzEnv(dir), "my_fuzz_test")
+	createHTMLCoverageReport(t, cifuzz, dir, cifuzzEnv(dir), "my_fuzz_test")
 }
 
 func TestIntegration_Other_DetailedCoverage(t *testing.T) {
@@ -203,7 +203,7 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 	shared.TestBundleLibFuzzer(t, dir, cifuzz, cifuzzEnv(dir), args...)
 }
 
-func createHtmlCoverageReport(t *testing.T, cifuzz string, dir string, cifuzzEnv []string, fuzzTest string) {
+func createHTMLCoverageReport(t *testing.T, cifuzz string, dir string, cifuzzEnv []string, fuzzTest string) {
 	t.Helper()
 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
