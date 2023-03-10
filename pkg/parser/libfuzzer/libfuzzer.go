@@ -302,7 +302,7 @@ func parseAsTestInputFilePath(logLine string) (string, bool) {
 func (p *parser) parseAsGoFinding(line string) *finding.Finding {
 	if _, found := regexutil.FindNamedGroupsMatch(goPanicPattern, line); found {
 		return &finding.Finding{
-			Type:    finding.ErrorType_CRASH,
+			Type:    finding.ErrorTypeCrash,
 			Details: "Go Panic",
 			Logs:    []string{line},
 		}
@@ -321,7 +321,7 @@ func (p *parser) parseAsLibfuzzerFinding(line string) *finding.Finding {
 	result, found := regexutil.FindNamedGroupsMatch(libfuzzerTimeoutErrorPattern, line)
 	if found {
 		return &finding.Finding{
-			Type:    finding.ErrorType_CRASH, // aka Vulnerability
+			Type:    finding.ErrorTypeCrash, // aka Vulnerability
 			Details: fmt.Sprintf("timeout after %s seconds", result["timeout_seconds"]),
 			Logs:    []string{line},
 		}
@@ -347,7 +347,7 @@ func (p *parser) parseAsLibfuzzerFinding(line string) *finding.Finding {
 		}
 
 		return &finding.Finding{
-			Type:    finding.ErrorType_CRASH, // aka Vulnerability
+			Type:    finding.ErrorTypeCrash, // aka Vulnerability
 			Details: result["error_type"],
 			Logs:    []string{line},
 		}
@@ -365,16 +365,16 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 		switch issueSeverity {
 		case "Critical":
 			severityScore = 9.0
-			severityLevel = finding.SeverityLevel_CRITICAL
+			severityLevel = finding.SeverityLevelCritical
 		case "High":
 			severityScore = 7.0
-			severityLevel = finding.SeverityLevel_HIGH
+			severityLevel = finding.SeverityLevelHigh
 		case "Medium":
 			severityScore = 5.0
-			severityLevel = finding.SeverityLevel_MEDIUM
+			severityLevel = finding.SeverityLevelMedium
 		case "Low":
 			severityScore = 1.0
-			severityLevel = finding.SeverityLevel_LOW
+			severityLevel = finding.SeverityLevelLow
 		}
 		exceptionMessage := strings.TrimSpace(matches["message"])
 		description := "Security Issue: " + exceptionMessage
@@ -384,7 +384,7 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 		}
 
 		return &finding.Finding{
-			Type:    finding.ErrorType_CRASH, // aka Vulnerability
+			Type:    finding.ErrorTypeCrash, // aka Vulnerability
 			Details: description,
 			MoreDetails: &finding.ErrorDetails{
 				Name: uiDescription, // This field is shown in the UI
@@ -400,7 +400,7 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 	_, found = regexutil.FindNamedGroupsMatch(javaAssertionErrorPattern, line)
 	if found {
 		return &finding.Finding{
-			Type:    finding.ErrorType_WARNING, // aka Bug
+			Type:    finding.ErrorTypeWarning, // aka Bug
 			Details: "Java Assertion Error",
 			Logs:    []string{line},
 		}
@@ -409,7 +409,7 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 	matches, found = regexutil.FindNamedGroupsMatch(javaExceptionErrorPattern, line)
 	if found {
 		return &finding.Finding{
-			Type:    finding.ErrorType_WARNING, // aka Bug
+			Type:    finding.ErrorTypeWarning, // aka Bug
 			Details: matches["error_type"],
 			Logs:    []string{line},
 		}
@@ -489,14 +489,14 @@ func (p *parser) parseAsFuzzingMetric(line string) *report.FuzzingMetric {
 func parseAsSlowInput(log string) *finding.Finding {
 	if res, ok := regexutil.FindNamedGroupsMatch(slowInputPattern, log); ok {
 		return &finding.Finding{
-			Type:    finding.ErrorType_WARNING,
+			Type:    finding.ErrorTypeWarning,
 			Details: fmt.Sprintf("Slow input detected. Processing time: %s s", res["duration"]),
 			Logs:    []string{fmt.Sprintf("Slow input: %s seconds for processing", res["duration"])},
 			MoreDetails: &finding.ErrorDetails{
 				ID:   "Slow Input Detected",
 				Name: "Slow Input Detected",
 				Severity: &finding.Severity{
-					Level: finding.SeverityLevel_LOW,
+					Level: finding.SeverityLevelLow,
 					Score: 2,
 				},
 			},

@@ -20,7 +20,7 @@ func TestIntegration_ASAN(t *testing.T) {
 		_, reports := test.Run(t)
 
 		CheckReports(t, reports, &CheckReportOptions{
-			ErrorType:   finding.ErrorType_CRASH,
+			ErrorType:   finding.ErrorTypeCrash,
 			SourceFile:  "trigger_asan.c",
 			Details:     "heap-buffer-overflow",
 			NumFindings: 1,

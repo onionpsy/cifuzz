@@ -127,7 +127,7 @@ error info 2`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:    finding.ErrorType_CRASH,
+						Type:    finding.ErrorTypeCrash,
 						Details: "global-buffer-overflow on address 0x00",
 						Logs: []string{
 							"==8141==ERROR: AddressSanitizer: global-buffer-overflow on address 0x00",
@@ -181,7 +181,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:    finding.ErrorType_RUNTIME_ERROR,
+						Type:    finding.ErrorTypeRuntimeError,
 						Details: "undefined behavior: signed integer overflow",
 						Logs: []string{
 							"fuzz_targets/manual.cpp:6:5: runtime error: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'",
@@ -259,7 +259,7 @@ SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior fuzz_targets/manual.cpp:
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_WARNING,
+						Type:      finding.ErrorTypeWarning,
 						Details:   "Slow input detected. Processing time: 26 s",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -297,7 +297,7 @@ Base64: i/SIw2hR3wI=`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:    finding.ErrorType_CRASH,
+						Type:    finding.ErrorTypeCrash,
 						Details: "stack-buffer-overflow on address 0x7fffb9492184 at pc 0x0000004969aa bp 0x7fffb9492150 sp 0x7fffb9491918",
 						Logs: []string{
 							"==16==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7fffb9492184 at pc 0x0000004969aa bp 0x7fffb9492150 sp 0x7fffb9491918",
@@ -313,7 +313,7 @@ Base64: i/SIw2hR3wI=`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
 						Details:   "SEGV on unknown address 0x000000000000 (pc 0x000000000000 bp 0x7fffb9492290 sp 0x7fffb9492158 T0)",
@@ -356,7 +356,7 @@ error info 2`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:    finding.ErrorType_CRASH,
+						Type:    finding.ErrorTypeCrash,
 						Details: "use-of-uninitialized-value",
 						Logs: []string{
 							"==2248837==WARNING: MemorySanitizer: use-of-uninitialized-value",
@@ -387,7 +387,7 @@ Base64: ZGVhZGJlZWY=`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_WARNING,
+						Type:      finding.ErrorTypeWarning,
 						Details:   "java.lang.ArrayIndexOutOfBoundsException: Index 22 out of bounds for length 8",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -432,7 +432,7 @@ Base64: UVFcb1w8L1xzY3JpcHQt`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						Details:   "Security Issue: Output contains </script",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -478,7 +478,7 @@ Base64: QGphei5aZXIKLR8AACEAHw==`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						Details:   "Security Issue: Remote Code Execution",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -530,7 +530,7 @@ Base64: ZGVhZGJlZWY=`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_WARNING,
+						Type:      finding.ErrorTypeWarning,
 						Details:   "Java Assertion Error",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -564,7 +564,7 @@ Base64: CiMKIQoDZm9vEhoaGGJeAABkZWFkYmVlZjEyMzQ1Njc4OVfHng==`, llvmDir, testInpu
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						Details:   "deadly signal",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -612,7 +612,7 @@ Base64: J3JycnJiYXJycnJycnJycmZvb3IAcgAAAXJyAAAAAHJycnJycnJycnJycnJycnJycnJycnJy
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						Details:   "deadly signal",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -650,7 +650,7 @@ Base64: i/SIw2hR3wI=`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:    finding.ErrorType_CRASH,
+						Type:    finding.ErrorTypeCrash,
 						Details: "stack-buffer-overflow on address 0x7fffb9492184 at pc 0x0000004969aa bp 0x7fffb9492150 sp 0x7fffb9491918",
 						Logs: []string{
 							"==16==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7fffb9492184 at pc 0x0000004969aa bp 0x7fffb9492150 sp 0x7fffb9491918",
@@ -662,7 +662,7 @@ Base64: i/SIw2hR3wI=`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
 						Details:   "SEGV on unknown address 0x000000000000 (pc 0x000000000000 bp 0x7fffb9492290 sp 0x7fffb9492158 T0)",
@@ -717,7 +717,7 @@ SUMMARY: libFuzzer: timeout`,
 				{
 					Status: report.RunStatus_RUNNING,
 					Finding: &finding.Finding{
-						Type:      finding.ErrorType_CRASH,
+						Type:      finding.ErrorTypeCrash,
 						Details:   "timeout after 1 seconds",
 						InputData: testInput,
 						InputFile: testInputFile.Name(),
@@ -837,7 +837,7 @@ func assertCorrectCrashesParsing(t *testing.T, errorDetails, crashFile string, c
 		{
 			Status: report.RunStatus_RUNNING,
 			Finding: &finding.Finding{
-				Type:      finding.ErrorType_CRASH,
+				Type:      finding.ErrorTypeCrash,
 				InputData: crashingInput,
 				InputFile: crashFile,
 				Details:   errorDetails,

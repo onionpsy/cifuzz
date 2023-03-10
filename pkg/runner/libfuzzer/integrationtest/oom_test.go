@@ -21,7 +21,7 @@ func TestIntegration_OOM(t *testing.T) {
 		_, reports := test.Run(t)
 
 		CheckReports(t, reports, &CheckReportOptions{
-			ErrorType:   finding.ErrorType_CRASH,
+			ErrorType:   finding.ErrorTypeCrash,
 			SourceFile:  "trigger_oom.cpp",
 			Details:     "out-of-memory",
 			NumFindings: 1,

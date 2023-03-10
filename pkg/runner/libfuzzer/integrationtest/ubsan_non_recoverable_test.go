@@ -22,7 +22,7 @@ func TestIntegration_UBSANNonRecoverable(t *testing.T) {
 		_, reports := test.Run(t)
 
 		CheckReports(t, reports, &CheckReportOptions{
-			ErrorType:   finding.ErrorType_RUNTIME_ERROR,
+			ErrorType:   finding.ErrorTypeRuntimeError,
 			Details:     "undefined behavior",
 			SourceFile:  "trigger_ubsan.cpp",
 			NumFindings: 1,

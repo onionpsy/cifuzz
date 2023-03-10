@@ -20,7 +20,7 @@ func TestIntegration_CrashFileFoundAfterChdir(t *testing.T) {
 		_, reports := test.Run(t)
 
 		CheckReports(t, reports, &CheckReportOptions{
-			ErrorType:   finding.ErrorType_CRASH,
+			ErrorType:   finding.ErrorTypeCrash,
 			SourceFile:  "trigger_asan_after_chdir.c",
 			Details:     "heap-buffer-overflow",
 			NumFindings: 1,

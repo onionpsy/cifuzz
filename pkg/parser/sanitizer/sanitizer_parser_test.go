@@ -18,8 +18,8 @@ func TestParseAsFinding(t *testing.T) {
 	}
 
 	tests := []test{
-		{desc: "LSAN fatal error", error: finding.ErrorType_CRASH, details: "", input: "==14237==LeakSanitizer has encountered a fatal error."},
-		{desc: "LSAN memory leak", error: finding.ErrorType_CRASH, details: "detected memory leaks", input: "==7829==ERROR: LeakSanitizer: detected memory leaks"},
+		{desc: "LSAN fatal error", error: finding.ErrorTypeCrash, details: "", input: "==14237==LeakSanitizer has encountered a fatal error."},
+		{desc: "LSAN memory leak", error: finding.ErrorTypeCrash, details: "detected memory leaks", input: "==7829==ERROR: LeakSanitizer: detected memory leaks"},
 	}
 
 	for _, tc := range tests {

@@ -50,11 +50,11 @@ type ErrorType string
 // to parse JSON-marshalled reports as protobuf reports which use an
 // enum for this field.
 const (
-	ErrorType_UNKNOWN_ERROR     ErrorType = "UNKNOWN_ERROR"
-	ErrorType_COMPILATION_ERROR ErrorType = "COMPILATION_ERROR"
-	ErrorType_CRASH             ErrorType = "CRASH"
-	ErrorType_WARNING           ErrorType = "WARNING"
-	ErrorType_RUNTIME_ERROR     ErrorType = "RUNTIME_ERROR"
+	ErrorTypeUnknownError     ErrorType = "UNKNOWN_ERROR"
+	ErrorTypeCompilationError ErrorType = "COMPILATION_ERROR"
+	ErrorTypeCrash            ErrorType = "CRASH"
+	ErrorTypeWarning          ErrorType = "WARNING"
+	ErrorTypeRuntimeError     ErrorType = "RUNTIME_ERROR"
 )
 
 type ErrorDetails struct {
@@ -71,10 +71,10 @@ type ErrorDetails struct {
 type SeverityLevel string
 
 const (
-	SeverityLevel_CRITICAL SeverityLevel = "CRITICAL"
-	SeverityLevel_HIGH     SeverityLevel = "HIGH"
-	SeverityLevel_MEDIUM   SeverityLevel = "MEDIUM"
-	SeverityLevel_LOW      SeverityLevel = "LOW"
+	SeverityLevelCritical SeverityLevel = "CRITICAL"
+	SeverityLevelHigh     SeverityLevel = "HIGH"
+	SeverityLevelMedium   SeverityLevel = "MEDIUM"
+	SeverityLevelLow      SeverityLevel = "LOW"
 )
 
 type Severity struct {
@@ -241,7 +241,7 @@ func (f *Finding) ShortDescriptionColumns() []string {
 	// This should be replace as soon as we have a list of the different error types.
 	var errorType string
 	switch f.Type {
-	case ErrorType_CRASH:
+	case ErrorTypeCrash:
 		switch {
 		case f.Details == "detected memory leaks":
 			// Special vulnerabilities
@@ -252,7 +252,7 @@ func (f *Finding) ShortDescriptionColumns() []string {
 		default:
 			errorType = strings.ReplaceAll(strings.Split(f.Details, " ")[0], "-", " ")
 		}
-	case ErrorType_RUNTIME_ERROR:
+	case ErrorTypeRuntimeError:
 		errorType = strings.Split(f.Details, ":")[0]
 	default:
 		errorType = f.Details

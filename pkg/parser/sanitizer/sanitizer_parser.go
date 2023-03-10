@@ -37,7 +37,7 @@ func parseAsErrorReport(log string) *finding.Finding {
 	result, found := regexutil.FindNamedGroupsMatch(errorPattern, log)
 	if found {
 		return &finding.Finding{
-			Type:    finding.ErrorType_CRASH, // aka Vulnerability
+			Type:    finding.ErrorTypeCrash, // aka Vulnerability
 			Details: result["error_type"],
 			Logs:    []string{log},
 		}
@@ -50,7 +50,7 @@ func parseAsFatalErrorReport(log string) *finding.Finding {
 	found := fatalErrorPattern.MatchString(log)
 	if found {
 		return &finding.Finding{
-			Type: finding.ErrorType_CRASH,
+			Type: finding.ErrorTypeCrash,
 			Logs: []string{log},
 		}
 	}
@@ -64,7 +64,7 @@ func parseAsRuntimeReport(log string) *finding.Finding {
 		return nil
 	}
 	return &finding.Finding{
-		Type:    finding.ErrorType_RUNTIME_ERROR,
+		Type:    finding.ErrorTypeRuntimeError,
 		Details: "undefined behavior: " + result["error_type"],
 		Logs:    []string{log},
 	}

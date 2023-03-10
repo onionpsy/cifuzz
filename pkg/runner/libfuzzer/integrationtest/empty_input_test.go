@@ -28,7 +28,7 @@ func TestIntegration_CrashOnEmptyInput(t *testing.T) {
 		}
 
 		CheckReports(t, reports, &CheckReportOptions{
-			ErrorType:           finding.ErrorType_CRASH,
+			ErrorType:           finding.ErrorTypeCrash,
 			SourceFile:          "trigger_asan_on_empty_input.c",
 			Details:             errMsg,
 			NumFindings:         1,

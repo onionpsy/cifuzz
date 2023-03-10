@@ -24,7 +24,7 @@ func TestIntegration_InputTimeout(t *testing.T) {
 		_, reports := test.Run(t)
 
 		options := &CheckReportOptions{
-			ErrorType:   finding.ErrorType_CRASH,
+			ErrorType:   finding.ErrorTypeCrash,
 			Details:     "timeout",
 			NumFindings: 1,
 		}
