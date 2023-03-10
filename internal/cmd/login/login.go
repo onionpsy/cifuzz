@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/term"
 
-	"code-intelligence.com/cifuzz/internal/access_tokens"
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
+	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -102,7 +102,7 @@ func (c *loginCmd) run() error {
 	}
 
 	// Try the access tokens config file
-	token = access_tokens.Get(c.opts.Server)
+	token = tokenstorage.Get(c.opts.Server)
 	if token != "" {
 		return c.handleExistingToken(token)
 	}
@@ -127,11 +127,11 @@ func (c *loginCmd) handleExistingToken(token string) error {
 	if !tokenValid {
 		err := errors.Errorf(`Failed to authenticate with the configured API access token.
 It's possible that the token has been revoked. Please try again after
-removing the token from %s.`, access_tokens.GetTokenFilePath())
+removing the token from %s.`, tokenstorage.GetTokenFilePath())
 		log.Warn(err.Error())
 		return err
 	}
 	log.Success("You are already logged in.")
-	log.Infof("Your API access token is stored in %s", access_tokens.GetTokenFilePath())
+	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
 	return nil
 }

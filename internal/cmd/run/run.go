@@ -20,7 +20,6 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
 
-	"code-intelligence.com/cifuzz/internal/access_tokens"
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/bazel"
@@ -35,6 +34,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
+	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
@@ -819,7 +819,7 @@ Your results will not be synced to a remote fuzzing server.`)
 
 func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 	apiClient := api.APIClient{Server: c.opts.Server}
-	token := access_tokens.Get(c.opts.Server)
+	token := tokenstorage.Get(c.opts.Server)
 	if token == "" {
 		return nil, errors.New("No access token found")
 	}
@@ -842,7 +842,7 @@ func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) error {
 	// get projects from server
 	apiClient := api.APIClient{Server: c.opts.Server}
-	token := access_tokens.Get(c.opts.Server)
+	token := tokenstorage.Get(c.opts.Server)
 	if token == "" {
 		return errors.New("No access token found")
 	}
@@ -998,10 +998,9 @@ func getAuthStatus(server string) (bool, error) {
 	apiClient := api.APIClient{Server: server}
 	err := login.CheckValidToken(&apiClient, token)
 	if err != nil {
-
 		log.Warnf(`Failed to authenticate with the configured API access token.
 It's possible that the token has been revoked. Please try again after
-removing the token from %s.`, access_tokens.GetTokenFilePath())
+removing the token from %s.`, tokenstorage.GetTokenFilePath())
 
 		return false, err
 	}
@@ -1066,7 +1065,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 			return "", errors.WithStack(err)
 		}
 
-		token := access_tokens.Get(c.opts.Server)
+		token := tokenstorage.Get(c.opts.Server)
 		project, err := apiClient.CreateProject(projectName, token)
 		if err != nil {
 			return "", errors.WithStack(err)

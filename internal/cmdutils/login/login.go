@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 
-	"code-intelligence.com/cifuzz/internal/access_tokens"
 	"code-intelligence.com/cifuzz/internal/api"
+	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
@@ -22,7 +22,7 @@ func GetToken(server string) string {
 	}
 
 	// Try the access tokens config file
-	return access_tokens.Get(server)
+	return tokenstorage.Get(server)
 }
 
 func ReadTokenInteractively(server string, additionalParams *url.Values) (string, error) {
@@ -92,12 +92,12 @@ func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
 	if err != nil {
 		return err
 	}
-	err = access_tokens.Set(apiClient.Server, token)
+	err = tokenstorage.Set(apiClient.Server, token)
 	if err != nil {
 		return err
 	}
 	log.Successf("Successfully authenticated with %s", apiClient.Server)
-	log.Infof("Your API access token is stored in %s", access_tokens.GetTokenFilePath())
+	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
 	return nil
 }
 

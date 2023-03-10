@@ -1,4 +1,4 @@
-package access_tokens
+package tokenstorage
 
 import (
 	"encoding/json"
