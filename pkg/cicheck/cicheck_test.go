@@ -1,4 +1,4 @@
-package detect_ci
+package cicheck
 
 import (
 	"os"
@@ -17,14 +17,14 @@ var envvarsAndExpected = [][]string{
 
 func TestIsCI(t *testing.T) {
 	os.Clearenv()
-	assert.False(t, IsCI())
+	assert.False(t, IsCIEnvironment())
 	for _, envvarAndExpected := range envvarsAndExpected {
 		os.Setenv(envvarAndExpected[0], "true")
 
-		assert.True(t, IsCI())
+		assert.True(t, IsCIEnvironment())
 		assert.Equal(t, envvarAndExpected[1], CIName())
 
 		os.Unsetenv(envvarAndExpected[0])
-		assert.False(t, IsCI())
+		assert.False(t, IsCIEnvironment())
 	}
 }

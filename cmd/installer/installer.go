@@ -19,7 +19,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/installer"
-	"code-intelligence.com/cifuzz/pkg/detect_ci"
+	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -81,7 +81,7 @@ func main() {
 	// and users need to press 'Enter' to close the window. Otherwise, the
 	// installer will close immediately and users won't see the installation
 	// notes. We don't want to wait for 'Enter' when running in CI, though.
-	if runtime.GOOS == "windows" && detect_ci.IsCI() {
+	if runtime.GOOS == "windows" && cicheck.IsCIEnvironment() {
 		log.Printf("Press 'Enter' to terminate the installer")
 		fmt.Scanln()
 	}

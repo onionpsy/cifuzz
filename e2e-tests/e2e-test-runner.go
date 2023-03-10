@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
-	"code-intelligence.com/cifuzz/pkg/detect_ci"
+	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -47,7 +47,7 @@ func RunTest(t *testing.T, testOptions *Test) {
 		t.Skip("skipping testing in short mode")
 	}
 
-	if detect_ci.IsCI() && os.Getenv("E2E_TESTS_MATRIX") == "" {
+	if cicheck.IsCIEnvironment() && os.Getenv("E2E_TESTS_MATRIX") == "" {
 		t.Skip("Skipping test. You need to set E2E_TESTS_MATRIX envvar to run this test locally.")
 	}
 

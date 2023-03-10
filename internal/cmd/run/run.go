@@ -35,8 +35,8 @@ import (
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
+	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
-	"code-intelligence.com/cifuzz/pkg/detect_ci"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -754,7 +754,7 @@ func (c *runCmd) checkDependencies() error {
 // setupSync initiates user dialog and returns if findings should be synced
 func (c *runCmd) setupSync() (bool, error) {
 	interactive := viper.GetBool("interactive")
-	if detect_ci.IsCI() {
+	if cicheck.IsCIEnvironment() {
 		interactive = false
 	}
 	var willSync bool

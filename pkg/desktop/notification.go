@@ -8,7 +8,7 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/spf13/viper"
 
-	"code-intelligence.com/cifuzz/pkg/detect_ci"
+	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
@@ -19,7 +19,7 @@ func Notify(title, body string) {
 
 	// just skip notifications when running in CI/CD, user set
 	// no-notifications flag or the program is executed by go test
-	if detect_ci.IsCI() ||
+	if cicheck.IsCIEnvironment() ||
 		viper.GetBool("no-notifications") ||
 		flag.Lookup("test.v") != nil {
 		return
