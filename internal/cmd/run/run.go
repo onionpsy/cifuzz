@@ -290,19 +290,15 @@ depends on the build system configured for the project.
 		cmdutils.AddBuildOnlyFlag,
 		cmdutils.AddDictFlag,
 		cmdutils.AddEngineArgFlag,
+		cmdutils.AddInteractiveFlag,
 		cmdutils.AddPrintJSONFlag,
+		cmdutils.AddProjectFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
+		cmdutils.AddServerFlag,
 		cmdutils.AddTimeoutFlag,
 		cmdutils.AddUseSandboxFlag,
 		cmdutils.AddResolveSourceFileFlag,
-	}
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		funcs = append(funcs,
-			cmdutils.AddServerFlag,
-			cmdutils.AddProjectFlag,
-			cmdutils.AddInteractiveFlag,
-		)
 	}
 	bindFlags = cmdutils.AddFlags(cmd, funcs...)
 	return cmd
@@ -318,17 +314,15 @@ func (c *runCmd) run() error {
 
 	var errorDetails *[]finding.ErrorDetails
 
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		authenticatedUser, err = c.setupSync()
+	authenticatedUser, err = c.setupSync()
+	if err != nil {
+		return err
+	}
+
+	if authenticatedUser {
+		errorDetails, err = c.errorDetails()
 		if err != nil {
 			return err
-		}
-
-		if authenticatedUser {
-			errorDetails, err = c.errorDetails()
-			if err != nil {
-				return err
-			}
 		}
 	}
 

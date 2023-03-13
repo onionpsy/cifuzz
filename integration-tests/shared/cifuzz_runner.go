@@ -115,15 +115,16 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 
 	runCtx, closeRunCtx := context.WithCancel(context.Background())
 	defer closeRunCtx()
-	args := append([]string{"run", "-v", opts.FuzzTest,
-		"--no-notifications",
-		"--engine-arg=-seed=1",
-		"--engine-arg=-runs=1000000"},
-		opts.Args...)
-
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		args = append(args, "--interactive=false")
-	}
+	args := append(
+		[]string{
+			"run", "-v", opts.FuzzTest,
+			"--no-notifications",
+			"--engine-arg=-seed=1",
+			"--engine-arg=-runs=1000000",
+			"--interactive=false",
+		},
+		opts.Args...,
+	)
 
 	cmd := executil.CommandContext(
 		runCtx,

@@ -156,11 +156,9 @@ func TestIntegration_CMake(t *testing.T) {
 		testRemoteRunWithAdditionalArgs(t, cifuzzRunner)
 	})
 
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		t.Run("runWithUpload", func(t *testing.T) {
-			testRunWithUpload(t, cifuzzRunner)
-		})
-	}
+	t.Run("runWithUpload", func(t *testing.T) {
+		testRunWithUpload(t, cifuzzRunner)
+	})
 }
 
 func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
