@@ -40,7 +40,7 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
 	handleGetErrorDetails := func(w http.ResponseWriter, req *http.Request) {
 		_, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
-		_, err = fmt.Fprint(w, `[
+		_, err = fmt.Fprint(w, `{ schema_version: 1, error_details: [
         {
           "id": "undefined behavior: .*",
           "name": "Undefined Behavior",
@@ -57,7 +57,7 @@ func StartMockServer(t *testing.T, projectName, artifactsName string) *MockServe
             }
           ],
           "language": 1
-        }]`)
+        }]}`)
 		require.NoError(t, err)
 	}
 

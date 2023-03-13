@@ -11,6 +11,11 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
+type errorDetailsJSON struct {
+	VersionSchema int                    `json:"version_schema"`
+	ErrorDetails  []finding.ErrorDetails `json:"error_details"`
+}
+
 // GetErrorDetails gets the error details from the API
 func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, error) {
 	// get it from the API
@@ -38,11 +43,11 @@ func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, 
 		return nil, errors.WithStack(err)
 	}
 
-	var errorDetails []finding.ErrorDetails
-	err = json.Unmarshal(body, &errorDetails)
+	var errorDetailsFromJSON errorDetailsJSON
+	err = json.Unmarshal(body, &errorDetailsFromJSON)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return errorDetails, nil
+	return errorDetailsFromJSON.ErrorDetails, nil
 }
