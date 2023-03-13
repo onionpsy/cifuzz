@@ -96,7 +96,7 @@ func (cmd *findingCmd) run(args []string) error {
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 1, ' ', 0)
 
 		data := [][]string{
-			{"Severity", "Name", "Description", "Location"},
+			{"Severity", "Name", "Description", "FuzzTest", "Location"},
 		}
 		for _, f := range findings {
 			if f.MoreDetails != nil {
@@ -109,6 +109,7 @@ func (cmd *findingCmd) run(args []string) error {
 					// f.MoreDetails.Name once we cover all bugs with our
 					// error-details.json
 					f.ShortDescriptionColumns()[0],
+					f.FuzzTest,
 					f.ShortDescriptionColumns()[1],
 				})
 			} else {
@@ -116,6 +117,7 @@ func (cmd *findingCmd) run(args []string) error {
 					"n/a",
 					f.Name,
 					f.ShortDescriptionColumns()[0],
+					f.FuzzTest,
 					f.ShortDescriptionColumns()[1],
 				})
 			}
@@ -160,7 +162,7 @@ func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 		s := pterm.Style{pterm.Reset, pterm.Bold}.Sprint(f.ShortDescriptionWithName())
 		s += fmt.Sprintf("\nDate: %s\n", f.CreatedAt)
 		s += fmt.Sprintf("\n  %s\n", strings.Join(f.Logs, "\n  "))
-		_, err := fmt.Fprintf(cmd.OutOrStdout(), s)
+		_, err := fmt.Fprint(cmd.OutOrStdout(), s)
 		if err != nil {
 			return err
 		}

@@ -49,15 +49,17 @@ type ReportHandler struct {
 
 	jsonOutput io.Writer
 
+	FuzzTest string
 	Findings []*finding.Finding
 }
 
-func NewReportHandler(options *ReportHandlerOptions) (*ReportHandler, error) {
+func NewReportHandler(fuzzTest string, options *ReportHandlerOptions) (*ReportHandler, error) {
 	var err error
 	h := &ReportHandler{
 		ReportHandlerOptions: options,
 		startedAt:            time.Now(),
 		jsonOutput:           os.Stdout,
+		FuzzTest:             fuzzTest,
 	}
 
 	// When --json was used, we don't want anything but JSON output on
@@ -198,6 +200,8 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	if err != nil {
 		return err
 	}
+
+	f.FuzzTest = h.FuzzTest
 
 	// Do not mutate f after this call.
 	err = f.Save(h.ProjectDir)

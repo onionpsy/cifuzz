@@ -42,6 +42,10 @@ type Finding struct {
 	StackTrace []*stacktrace.StackFrame `json:"stack_trace,omitempty"`
 
 	seedPath string
+
+	// We also store the name of the fuzz test that found this finding so that
+	// we can show it in the finding overview.
+	FuzzTest string `json:"fuzz_test,omitempty"`
 }
 
 type ErrorType string
@@ -347,12 +351,10 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) error {
 	// TODO: optimize matching of error details
 	var details *ErrorDetails
 
-	if errorDetails != nil {
-		for _, d := range *errorDetails {
-			if strings.EqualFold(d.Name, f.ShortDescriptionColumns()[0]) {
-				details = &d
-				break
-			}
+	for _, d := range *errorDetails {
+		if strings.EqualFold(d.Name, f.ShortDescriptionColumns()[0]) {
+			details = &d
+			break
 		}
 	}
 

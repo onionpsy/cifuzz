@@ -360,11 +360,13 @@ func (c *runCmd) run() error {
 	// Initialize the report handler. Only do this right before we start
 	// the fuzz test, because this is storing a timestamp which is used
 	// to figure out how long the fuzzing run is running.
-	c.reportHandler, err = reporthandler.NewReportHandler(&reporthandler.ReportHandlerOptions{
-		ProjectDir:    c.opts.ProjectDir,
-		SeedCorpusDir: buildResult.SeedCorpus,
-		PrintJSON:     c.opts.PrintJSON,
-	})
+	c.reportHandler, err = reporthandler.NewReportHandler(
+		c.opts.fuzzTest,
+		&reporthandler.ReportHandlerOptions{
+			ProjectDir:    c.opts.ProjectDir,
+			SeedCorpusDir: buildResult.SeedCorpus,
+			PrintJSON:     c.opts.PrintJSON,
+		})
 	if err != nil {
 		return err
 	}
