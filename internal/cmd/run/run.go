@@ -382,6 +382,12 @@ func (c *runCmd) run() error {
 		return err
 	}
 
+	// We need this check, otherwise we might hang forever in CI
+	if c.opts.Project == "" && !c.opts.Interactive {
+		log.Info("Skipping upload of findings because no project was specified and running in non-interactive mode.")
+		return nil
+	}
+
 	// check if there are findings that should be uploaded
 	if authenticatedUser && len(c.reportHandler.Findings) > 0 {
 		err = c.uploadFindings(c.opts.fuzzTest, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics, c.opts.NumBuildJobs)
