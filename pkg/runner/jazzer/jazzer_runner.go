@@ -180,7 +180,8 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 	// Try to find a reasonable JAVA_HOME if none is set.
 	if _, set := envutil.LookupEnv(env, "JAVA_HOME"); !set {
 		javaHome, err := runfiles.Finder.JavaHomePath()
-		if err == nil {
+		if err != nil {
+			return nil, err
 		}
 		env, err = envutil.Setenv(env, "JAVA_HOME", javaHome)
 		if err != nil {
