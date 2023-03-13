@@ -164,7 +164,7 @@ test/e2e: deps install
 
 # For Release E2E testing, we want to use the installed cifuzz, instead of installing from source.
 .PHONY: test/e2e-use-installed-cifuzz
-test/e2e:
+test/e2e-use-installed-cifuzz:
 	E2E_TESTS_MATRIX=1 go test -v ./e2e-tests/...
 
 
