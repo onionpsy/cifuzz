@@ -705,11 +705,13 @@ func (c *runCmd) checkDependencies() error {
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
 		deps = []dependencies.Key{
-			dependencies.Clang,
-			dependencies.LLVMSymbolizer,
 			dependencies.CMake,
 		}
-		if runtime.GOOS == "windows" {
+		switch runtime.GOOS {
+		case "linux", "darwin":
+			deps = append(deps, dependencies.Clang)
+			deps = append(deps, dependencies.LLVMSymbolizer)
+		case "windows":
 			deps = append(deps, dependencies.VisualStudio)
 		}
 	case config.BuildSystemMaven:
@@ -734,12 +736,16 @@ func (c *runCmd) checkDependencies() error {
 			dependencies.Gradle,
 		}
 	case config.BuildSystemOther:
-		deps = []dependencies.Key{
-			dependencies.Clang,
-			dependencies.LLVMSymbolizer,
-		}
-		if runtime.GOOS == "windows" {
-			deps = append(deps, dependencies.VisualStudio)
+		switch runtime.GOOS {
+		case "linux", "darwin":
+			deps = []dependencies.Key{
+				dependencies.Clang,
+				dependencies.LLVMSymbolizer,
+			}
+		case "windows":
+			deps = []dependencies.Key{
+				dependencies.VisualStudio,
+			}
 		}
 	case config.BuildSystemBazel:
 		// All dependencies are managed via bazel but it should be checked
