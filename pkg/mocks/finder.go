@@ -87,6 +87,11 @@ func (m *RunfilesFinderMock) DumperSourcePath() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
+func (m *RunfilesFinderMock) VisualStudioPath() (string, error) {
+	args := m.Called()
+	return args.String(0), args.Error(1)
+}
+
 func (m *RunfilesFinderMock) VSCodeTasksPath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)

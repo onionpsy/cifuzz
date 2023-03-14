@@ -161,6 +161,19 @@ func javaVersion(dep *Dependency) (*semver.Version, error) {
 	return version, nil
 }
 
+func visualStudioVersion() (*semver.Version, error) {
+	var vsVersion *semver.Version
+	versionFromEnv := os.Getenv("VisualStudioVersion")
+
+	version, err := semver.NewVersion(versionFromEnv)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	vsVersion = version
+	return vsVersion, nil
+}
+
 // takes a command + args and parses the output for a semver
 func getVersionFromCommand(cmdPath string, args []string, re *regexp.Regexp, key Key) (*semver.Version, error) {
 	output := bytes.Buffer{}

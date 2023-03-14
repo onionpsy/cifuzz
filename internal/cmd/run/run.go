@@ -709,6 +709,9 @@ func (c *runCmd) checkDependencies() error {
 			dependencies.LLVMSymbolizer,
 			dependencies.CMake,
 		}
+		if runtime.GOOS == "windows" {
+			deps = append(deps, dependencies.VisualStudio)
+		}
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{
 			dependencies.Java,
@@ -734,6 +737,9 @@ func (c *runCmd) checkDependencies() error {
 		deps = []dependencies.Key{
 			dependencies.Clang,
 			dependencies.LLVMSymbolizer,
+		}
+		if runtime.GOOS == "windows" {
+			deps = append(deps, dependencies.VisualStudio)
 		}
 	case config.BuildSystemBazel:
 		// All dependencies are managed via bazel but it should be checked

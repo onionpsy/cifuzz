@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -93,6 +94,16 @@ func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
 	return f.findFollowSymlinks("src/dumper.c")
 }
 
+func (f RunfilesFinderImpl) VisualStudioPath() (string, error) {
+	path, found := os.LookupEnv("VSINSTALLDIR")
+	if !found {
+		log.Warn(`Please make sure that you run this command from a Developer Command Prompt for VS 2022.
+Otherwise Visual Studio will not be found.`)
+		return "", errors.New("Visual Studio not found.")
+	}
+	return path, nil
+}
+
 func (f RunfilesFinderImpl) VSCodeTasksPath() (string, error) {
 	return f.findFollowSymlinks("share/integration/tasks.json")
 }
@@ -142,7 +153,6 @@ func (f RunfilesFinderImpl) JavaHomePath() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return filepath.Dir(filepath.Dir(absoluteJavaBinary)), nil
-
 }
 
 func (f RunfilesFinderImpl) findFollowSymlinks(relativePath string) (string, error) {

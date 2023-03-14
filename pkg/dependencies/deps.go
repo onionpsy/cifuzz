@@ -33,6 +33,8 @@ const (
 	Maven  Key = "mvn"
 	Gradle Key = "gradle"
 
+	VisualStudio Key = "Visual Studio"
+
 	MessageVersion = "cifuzz requires %s %s or higher, have %s"
 	MessageMissing = "cifuzz requires %s, but it is not installed"
 )

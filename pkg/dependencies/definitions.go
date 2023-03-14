@@ -160,6 +160,16 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.GradlePath)
 		},
 	},
+	VisualStudio: {
+		Key:        VisualStudio,
+		MinVersion: *semver.MustParse("17.0"),
+		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+			return visualStudioVersion()
+		},
+		Installed: func(dep *Dependency) bool {
+			return dep.checkFinder(dep.finder.VisualStudioPath)
+		},
+	},
 }
 
 func getMinVersionBazel() semver.Version {

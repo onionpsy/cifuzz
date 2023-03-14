@@ -21,6 +21,7 @@ type RunfilesFinder interface {
 	ProcessWrapperPath() (string, error)
 	ReplayerSourcePath() (string, error)
 	DumperSourcePath() (string, error)
+	VisualStudioPath() (string, error)
 	VSCodeTasksPath() (string, error)
 	LogoPath() (string, error)
 	MavenPath() (string, error)
