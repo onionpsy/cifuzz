@@ -91,15 +91,16 @@ func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error 
 
 		dep.finder = finder
 
+		if !dep.Installed(dep) {
+			log.Warnf(MessageMissing, dep.Key)
+			allFine = false
+			continue
+		}
+
 		if dep.MinVersion.Equal(semver.MustParse("0.0.0")) {
 			log.Debugf("Checking dependency: %s ", dep.Key)
 		} else {
 			log.Debugf("Checking dependency: %s version >= %s", dep.Key, dep.MinVersion.String())
-		}
-
-		if !dep.Installed(dep) {
-			log.Warnf(MessageMissing, dep.Key)
-			allFine = false
 		}
 
 		if !dep.checkVersion() {
