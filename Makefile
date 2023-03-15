@@ -6,6 +6,7 @@ ifeq ($(OS),Windows_NT)
 	current_os = windows
 	label_os = windows
 	bin_ext = .exe
+	RM = cmd //C rmdir //Q //S
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
@@ -17,6 +18,7 @@ else
 		label_os = macOS
 		UNAME_P := $(shell uname -p)
 	endif
+	RM = rm -r -f
 endif
 
 bin_dir = build/bin
@@ -34,14 +36,14 @@ default:
 
 .PHONY: clean
 clean: clean/examples/cmake clean/third-party/minijail
-	rm -rf build/
+	$(RM) build/
 
 .PHONY: clean/examples/cmake
 clean/examples/cmake:
-	-rm -rf examples/cmake/.cifuzz-*
-	-rm -rf examples/cmake/build/
-	-rm -f examples/cmake/crash-*
-	-rm -rf examples/cmake/*_inputs
+	-$(RM) examples/cmake/.cifuzz-*
+	-$(RM) examples/cmake/build/
+	-$(RM) examples/cmake/crash-*
+	-$(RM) examples/cmake/*_inputs
 
 .PHONY: clean/third-party/minijail
 clean/third-party/minijail:
@@ -64,19 +66,19 @@ deps/dev: deps
 install:
 	go run tools/builder/builder.go --version $(version)
 	go run -tags installer cmd/installer/installer.go
-	rm -rf cmd/installer/build
+	$(RM) cmd/installer/build
 
 .PHONY: installer
 installer:
 	go run tools/builder/builder.go --version $(version)
 	go build -tags installer -o $(installer_base_path)_$(label_os)_amd64$(bin_ext) cmd/installer/installer.go
-	rm -rf cmd/installer/build
+	$(RM) cmd/installer/build
 
 .PHONY: installer/darwin-arm64
 installer/darwin-arm64:
 	go run tools/builder/builder.go --version $(version) --goos darwin --goarch arm64
 	GOOS=darwin GOARCH=arm64 go build -tags installer -o $(installer_base_path)_macOS_arm64 cmd/installer/installer.go
-	rm -rf cmd/installer/build
+	$(RM) cmd/installer/build
 
 .PHONY: build
 build: build/$(current_os)
@@ -179,12 +181,12 @@ test/coverage: deps
 
 .PHONY: site/setup
 site/setup:
-	-rm -rf site
+	-$(RM) site
 	git clone git@github.com:CodeIntelligenceTesting/cifuzz.wiki.git site
 
 .PHONY: site/generate
 site/generate: deps
-	rm -f ./site/*.md
+	$(RM) ./site/*.md
 	go run ./cmd/gen-docs/main.go --dir ./site/
 	cp -R ./docs/*.md ./site
 
