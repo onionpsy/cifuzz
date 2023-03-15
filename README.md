@@ -127,12 +127,18 @@ brew install cmake llvm lcov
 ```
 
 **Windows**
-<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
-<!-- clang is included in the llvm package --->
+
 At least Visual Studio 2022 version 17 is required.
 
+Please make sure to
+* select **"Develop Desktop C++ applications"** in the Visual Studio Installer
+* check **"C++ Clang Compiler for Windows"** in the "Individual Components" tab
+* check **"C++ CMake Tools for Windows"** in the "Individual Conponents" tab
+
+You can add these components anytime by choosing "Modify" in the Visual Studio Installer.
+
 ```bash
-choco install cmake llvm
+choco install lcov
 ```
 
 </details>
@@ -174,12 +180,17 @@ brew install llvm lcov openjdk bazelisk zip
 ```
 
 **Windows**
-<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
-<!-- clang is included in the llvm package --->
+
 At least Visual Studio 2022 version 17 is required.
 
+Please make sure to
+* select **"Develop Desktop C++ applications"** in the Visual Studio Installer
+* check **"C++ Clang Compiler for Windows"** in the "Individual Components" tab
+
+You can add these components anytime by choosing "Modify" in the Visual Studio Installer.
+
 ```bash
-choco install cmake llvm microsoft-openjdk bazelisk zip
+choco install lcov microsoft-openjdk bazelisk zip
 ```
 
 </details>
