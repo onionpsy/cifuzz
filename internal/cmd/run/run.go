@@ -833,7 +833,7 @@ Your results will not be synced to a remote fuzzing server.`)
 
 func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 	apiClient := api.APIClient{Server: c.opts.Server}
-	token := tokenstorage.Get(c.opts.Server)
+	token := login.GetToken(c.opts.Server)
 	if token == "" {
 		return nil, errors.New("No access token found")
 	}
@@ -856,7 +856,7 @@ func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) error {
 	// get projects from server
 	apiClient := api.APIClient{Server: c.opts.Server}
-	token := tokenstorage.Get(c.opts.Server)
+	token := login.GetToken(c.opts.Server)
 	if token == "" {
 		return errors.New("No access token found")
 	}
