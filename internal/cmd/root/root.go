@@ -39,6 +39,9 @@ func New() (*cobra.Command, error) {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+
+			log.Debugf("cifuzz build: %s", version)
+
 			err := cmdutils.Chdir()
 			if err != nil {
 				log.Error(err, err.Error())
