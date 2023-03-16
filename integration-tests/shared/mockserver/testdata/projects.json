@@ -1,0 +1,13 @@
+{
+	"projects": [
+		{
+			"name": "projects/my_fuzz_test-bac40407",
+			"display_name": "my_fuzz_test",
+			"location": {
+				"git_path": {}
+			},
+			"owner_username": "users/55",
+			"contact_username": "users/55"
+		}
+	]
+}

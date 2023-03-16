@@ -159,6 +159,10 @@ func TestIntegration_CMake(t *testing.T) {
 	t.Run("runWithUpload", func(t *testing.T) {
 		testRunWithUpload(t, cifuzzRunner)
 	})
+
+	t.Run("runNotAuthenticated", func(t *testing.T) {
+		testRunNotAuthenticated(t, cifuzzRunner)
+	})
 }
 
 func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
@@ -227,7 +231,6 @@ func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
 	for _, tc := range test {
 		assert.FileExists(t, filepath.Join(archiveDir, tc.expect))
 	}
-
 }
 
 func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
@@ -404,12 +407,12 @@ func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	testdata := cifuzzRunner.DefaultWorkDir
 
 	configFileContent := `use-sandbox: false`
-	err := os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), []byte(configFileContent), 0644)
+	err := os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), []byte(configFileContent), 0o644)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
-		err = os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), nil, 0644)
+		err = os.WriteFile(filepath.Join(testdata, "cifuzz.yaml"), nil, 0o644)
 		assert.NoError(t, err)
 	})
 
@@ -545,9 +548,13 @@ func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRu
 }
 
 func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	t.Parallel()
-
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRunWithUpload(t, testdata, cifuzz)
+}
+
+func testRunNotAuthenticated(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	shared.TestRunNotAuthenticated(t, testdata, cifuzz)
 }

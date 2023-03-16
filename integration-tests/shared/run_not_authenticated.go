@@ -1,8 +1,7 @@
 package shared
 
 import (
-	_ "embed"
-	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,18 +14,12 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestRunWithUpload(t *testing.T, dir string, cifuzz string, args ...string) {
-	projectName := "my_fuzz_test-bac40407"
-
+func TestRunNotAuthenticated(t *testing.T, dir string, cifuzz string, args ...string) {
+	// Start a mock server to handle our requests
 	server := mockserver.New(t)
-
-	// define handlers
-	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
-	server.Handlers["/v2/error-details"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
-	server.Handlers[fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName)] = mockserver.ReturnResponse(t, "{}")
-	server.Handlers[fmt.Sprintf("/v1/projects/%s/findings", projectName)] = mockserver.ReturnResponse(t, "{}")
-
-	// start the server
+	server.Handlers["/v1/projects"] = func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}
 	server.Start(t)
 
 	tempDir, err := os.MkdirTemp("", "cifuzz-run-*")
@@ -47,9 +40,8 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, args ...string) 
 	args = append(
 		[]string{
 			"run",
-			"--project", projectName,
-			"--server", server.Address,
 			"--interactive=false",
+			"--server=" + server.Address,
 			"--no-notifications",
 			"crashing_fuzz_test",
 		}, args...)
@@ -57,11 +49,9 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, args ...string) 
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
 
-	os.Setenv("CIFUZZ_API_TOKEN", "test-token")
-	out, err := cmd.CombinedOutput()
 	os.Unsetenv("CIFUZZ_API_TOKEN")
+	out, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 
-	assert.Contains(t, string(out), "✓ You are authenticated.")
-	assert.Contains(t, string(out), "You can view the findings at http://127.0.0.1")
+	assert.Contains(t, string(out), "You are not authenticated with a remote fuzzing server.")
 }

@@ -1,6 +1,8 @@
 package shared
 
 import (
+	_ "embed"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -8,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -16,10 +18,18 @@ import (
 func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	projectName := "test-project"
 	artifactsName := "test-artifacts-123"
-	token := "test-token"
 
-	// Start a mock server to handle our requests
-	server := StartMockServer(t, projectName, artifactsName)
+	server := mockserver.New(t)
+
+	// define handlers
+	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
+	server.Handlers[fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName)] = mockserver.ReturnResponse(t,
+		fmt.Sprintf(`{"display-name": "test-artifacts", "resource-name": %q}`, artifactsName),
+	)
+	server.Handlers[fmt.Sprintf("/v1/%s:run", artifactsName)] = mockserver.ReturnResponse(t, `{"name": "test-campaign-run-123"}`)
+
+	// start the server
+	server.Start(t)
 
 	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
 	require.NoError(t, err)
@@ -27,7 +37,7 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0600)
+	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -49,8 +59,6 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 			"--server", server.Address,
 		}, args...)
 	cmd := executil.Command(cifuzz, args...)
-	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", token)
-	require.NoError(t, err)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -60,21 +68,28 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	TerminateOnSignal(t, cmd)
 
 	t.Logf("Command: %s", cmd.String())
+	os.Setenv("CIFUZZ_API_TOKEN", "test-token")
 	err = cmd.Run()
+	os.Unsetenv("CIFUZZ_API_TOKEN")
 	require.NoError(t, err)
-
-	require.True(t, server.ArtifactsUploaded)
-	require.True(t, server.RunStarted)
 }
 
 func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, expectedErrorExp *regexp.Regexp, args ...string) {
 	var err error
 	projectName := "test-project"
 	artifactsName := "test-artifacts-123"
-	token := "test-token"
 
-	// Start a mock server to handle our requests
-	server := StartMockServer(t, projectName, artifactsName)
+	server := mockserver.New(t)
+
+	// define handlers
+	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
+	server.Handlers[fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName)] = mockserver.ReturnResponse(t,
+		fmt.Sprintf(`{"display-name": "test-artifacts", "resource-name": %q}`, artifactsName),
+	)
+	server.Handlers[fmt.Sprintf("/v1/%s:run", artifactsName)] = mockserver.ReturnResponse(t, `{"name": "test-campaign-run-123"}`)
+
+	// start the server
+	server.Start(t)
 
 	args = append(
 		[]string{
@@ -84,8 +99,6 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, ex
 		}, args...)
 	args = append(args, "--", "--non-existent-flag")
 	cmd := executil.Command(cifuzz, args...)
-	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", token)
-	require.NoError(t, err)
 	cmd.Dir = dir
 
 	// Terminate the cifuzz process when we receive a termination signal
@@ -93,8 +106,9 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, ex
 	TerminateOnSignal(t, cmd)
 
 	t.Logf("Command: %s", cmd.String())
+	os.Setenv("CIFUZZ_API_TOKEN", "test-token")
 	output, err := cmd.CombinedOutput()
-	t.Logf("XXXXX: %s", string(output))
+	os.Unsetenv("CIFUZZ_API_TOKEN")
 	require.Error(t, err)
 
 	seenExpectedOutput := expectedErrorExp.MatchString(string(output))

@@ -1,0 +1,22 @@
+{
+	"schema_version": 1,
+	"error_details": [
+		{
+			"id": "undefined behavior: .*",
+			"name": "Undefined Behavior",
+			"description": "An operation has been detected which is undefined by the C/C++ standard. The result will \nbe compiler dependent and is often unpredictable.",
+			"severity": {
+				"description": "Low",
+				"score": 2
+			},
+			"mitigation": "Avoid all operations that cause undefined behavior as per the C/C++ standard.",
+			"links": [
+				{
+					"description": "Undefined Behavior Sanitizer",
+					"url": "https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#available-checks"
+				}
+			],
+			"language": 1
+		}
+	]
+}

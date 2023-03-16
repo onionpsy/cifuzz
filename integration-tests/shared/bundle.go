@@ -1,6 +1,7 @@
 package shared
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
+	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/envutil"
@@ -37,7 +39,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0600)
+	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -79,7 +81,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 	assert.Equal(t, []string{"-runs=0"}, metadata.Fuzzers[0].EngineOptions.Flags)
 
 	// Verify that the metadata contains the Docker image
-	assert.Equal(t, "my-image", metadata.RunEnvironment.Docker)
+	assert.Equal(t, "my-image", metadata.Docker)
 
 	// Verify the metadata contains the env vars
 	require.Equal(t, []string{"FOO=foo", "BAR=bar", "NO_CIFUZZ=1"}, metadata.Fuzzers[0].EngineOptions.Env)
@@ -155,24 +157,33 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 		// Try to use the artifacts to start a remote run on a mock server
 		projectName := "test-project"
 		artifactsName := "test-artifacts-123"
-		token := "test-token"
-		server := StartMockServer(t, projectName, artifactsName)
+
+		server := mockserver.New(t)
+
+		// define handlers
+		server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
+		server.Handlers[fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName)] = mockserver.ReturnResponse(t,
+			fmt.Sprintf(`{"display-name": "test-artifacts", "resource-name": %q}`, artifactsName),
+		)
+		server.Handlers[fmt.Sprintf("/v1/%s:run", artifactsName)] = mockserver.ReturnResponse(t, `{"name": "test-campaign-run-123"}`)
+
+		// start the server
+		server.Start(t)
+
 		cmd = executil.Command(cifuzz, "remote-run",
 			"--bundle", bundlePath,
 			"--project", projectName,
 			"--server", server.Address,
 		)
-		cmd.Env, err = envutil.Setenv(cifuzzEnv, "CIFUZZ_API_TOKEN", token)
-		require.NoError(t, err)
 		cmd.Dir = dir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		t.Logf("Command: %s", cmd.String())
+		os.Setenv("CIFUZZ_API_TOKEN", "test-token")
 		err = cmd.Run()
+		os.Unsetenv("CIFUZZ_API_TOKEN")
 		require.NoError(t, err)
 		require.FileExists(t, bundlePath)
-		require.True(t, server.ArtifactsUploaded)
-		require.True(t, server.RunStarted)
 	}
 }
 
@@ -185,7 +196,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0600)
+	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -280,7 +291,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0600)
+	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -317,7 +328,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	assert.Equal(t, "123456abcdef", metadata.CodeRevision.Git.Commit)
 
 	// Verify that the metadata contains the Docker image
-	assert.Equal(t, "my-image", metadata.RunEnvironment.Docker)
+	assert.Equal(t, "my-image", metadata.Docker)
 
 	// Verify the metadata contains the env vars
 	require.Equal(t, []string{"FOO=foo", "BAR=bar"}, metadata.Fuzzers[0].EngineOptions.Env)
