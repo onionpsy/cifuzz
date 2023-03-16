@@ -379,6 +379,7 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 // readInfoFileAsPath returns the contents of the CMake-generated info file of type kind for the given fuzz test,
 // interpreted as a path. All symlinks are followed.
 func (b *Builder) readInfoFileAsPath(fuzzTest string, kind string) (string, error) {
+
 	fuzzTestsInfoDir, err := b.fuzzTestsInfoDir()
 	if err != nil {
 		return "", err
@@ -398,13 +399,16 @@ func (b *Builder) fuzzTestsInfoDir() (string, error) {
 	}
 	// The path to the info file for single-configuration CMake generators (e.g. Makefiles).
 	fuzzTestsDir := filepath.Join(buildDir, ".cifuzz", "fuzz_tests")
+	log.Debugf("Searching for test info file in %s", fuzzTestsDir)
 	if fileutil.IsDir(fuzzTestsDir) {
 		return fuzzTestsDir, nil
 	}
 	// The path to the info file for multi-configuration CMake generators (e.g. MSBuild).
 	fuzzTestsDir = filepath.Join(buildDir, cmakeBuildConfiguration, ".cifuzz", "fuzz_tests")
+	log.Debugf("Searching for test info file in %s", fuzzTestsDir)
 	if fileutil.IsDir(fuzzTestsDir) {
 		return fuzzTestsDir, nil
 	}
-	return "", os.ErrNotExist
+	log.Warn("Did not find test info file")
+	return "", errors.WithStack(os.ErrNotExist)
 }
