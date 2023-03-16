@@ -222,7 +222,7 @@ func FindConfigDir() (string, error) {
 	for !configFileExists {
 		if dir == filepath.Dir(dir) {
 			err = fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", projectConfigFile, os.ErrNotExist)
-			return "", errors.WithStack(err)
+			return "", err
 		}
 		dir = filepath.Dir(dir)
 		configFileExists, err = fileutil.Exists(filepath.Join(dir, projectConfigFile))
