@@ -816,7 +816,7 @@ Your results will not be synced to a remote fuzzing server.`)
 
 	if interactive && !authenticated {
 		// establish server connection to check user auth
-		willSync, err = showServerConnectionDialog(c.opts.Server)
+		willSync, err = nil // showServerConnectionDialog(c.opts.Server)
 		if err != nil {
 			var connErr *api.ConnectionError
 			if errors.As(err, &connErr) {
