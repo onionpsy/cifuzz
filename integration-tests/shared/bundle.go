@@ -178,10 +178,12 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 		cmd.Dir = dir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
+		require.NoError(t, err)
+
 		t.Logf("Command: %s", cmd.String())
-		os.Setenv("CIFUZZ_API_TOKEN", "test-token")
+
 		err = cmd.Run()
-		os.Unsetenv("CIFUZZ_API_TOKEN")
 		require.NoError(t, err)
 		require.FileExists(t, bundlePath)
 	}

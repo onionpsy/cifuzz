@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -62,15 +63,15 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
+	require.NoError(t, err)
 
 	// Terminate the cifuzz process when we receive a termination signal
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
 	t.Logf("Command: %s", cmd.String())
-	os.Setenv("CIFUZZ_API_TOKEN", "test-token")
 	err = cmd.Run()
-	os.Unsetenv("CIFUZZ_API_TOKEN")
 	require.NoError(t, err)
 }
 
@@ -100,15 +101,15 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, ex
 	args = append(args, "--", "--non-existent-flag")
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
+	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
+	require.NoError(t, err)
 
 	// Terminate the cifuzz process when we receive a termination signal
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
 	t.Logf("Command: %s", cmd.String())
-	os.Setenv("CIFUZZ_API_TOKEN", "test-token")
 	output, err := cmd.CombinedOutput()
-	os.Unsetenv("CIFUZZ_API_TOKEN")
 	require.Error(t, err)
 
 	seenExpectedOutput := expectedErrorExp.MatchString(string(output))

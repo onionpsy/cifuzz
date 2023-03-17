@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -48,8 +49,9 @@ func TestRunNotAuthenticated(t *testing.T, dir string, cifuzz string, args ...st
 
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
+	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "")
+	require.NoError(t, err)
 
-	os.Unsetenv("CIFUZZ_API_TOKEN")
 	out, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 

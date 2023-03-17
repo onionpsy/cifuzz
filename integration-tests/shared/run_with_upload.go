@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -57,9 +58,10 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, args ...string) 
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
 
-	os.Setenv("CIFUZZ_API_TOKEN", "test-token")
+	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
+	require.NoError(t, err)
+
 	out, err := cmd.CombinedOutput()
-	os.Unsetenv("CIFUZZ_API_TOKEN")
 	require.NoError(t, err)
 
 	assert.Contains(t, string(out), "✓ You are authenticated.")
