@@ -85,7 +85,7 @@ You can get the
 or by running our install script:
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/onionpsy/cifuzz/main/install.sh)"
 ```
 If you are using Windows you can download
 the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows.exe)
